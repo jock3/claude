@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gustav Mattsson — AI Labb</title>
+  <meta name="description" content="Personlig sida med AI-experiment och verktyg byggda av Gustav Mattsson.">
+
+  <link rel="stylesheet" href="./styles/colors_and_type.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       index.html — page-specific styles
+       ========================================================= */
+
+    html, body { height: 100%; overflow: hidden; }
+
+    .page {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: var(--sp-6) var(--sp-8);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ---------- Nav ---------- */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: var(--sp-6);
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      height: 40px;
+      color: var(--color-text);
+      border: 0;
+      text-decoration: none;
+      transition: opacity var(--dur-base) var(--ease-out);
+    }
+    .logo:hover { opacity: 0.85; }
+    .logo svg { height: 100%; width: auto; display: block; }
+
+    .menu {
+      display: flex;
+      gap: var(--sp-7);
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      align-items: center;
+    }
+
+    .menu a {
+      font-family: var(--font-display);
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-muted);
+      text-decoration: none;
+      border: 0;
+      letter-spacing: 0.02em;
+      transition: color var(--dur-base) var(--ease-out);
+      position: relative;
+      padding-bottom: 4px;
+    }
+    .menu a:hover { color: var(--color-text); }
+    .menu a.active { color: var(--color-text); }
+    .menu a.active::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -2px;
+      height: 2px;
+      background: var(--color-red);
+      border-radius: 2px;
+    }
+
+    /* ---------- Dropdown ---------- */
+    .has-dropdown { position: relative; }
+    .has-dropdown > a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chev {
+      font-size: 9px;
+      line-height: 1;
+      transition: transform var(--dur-base) var(--ease-out);
+    }
+    .has-dropdown:hover .chev,
+    .has-dropdown:focus-within .chev { transform: rotate(180deg); }
+
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      min-width: 180px;
+      list-style: none;
+      margin: 0;
+      padding: 6px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--r-md);
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-4px);
+      transition: opacity var(--dur-base) var(--ease-out),
+                  visibility var(--dur-base) var(--ease-out),
+                  transform var(--dur-base) var(--ease-out);
+      z-index: 10;
+    }
+    .dropdown::before {
+      content: '';
+      position: absolute;
+      top: -10px; left: 0; right: 0;
+      height: 10px;
+    }
+    .has-dropdown:hover .dropdown,
+    .has-dropdown:focus-within .dropdown {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+    .dropdown li { display: block; }
+    .dropdown a {
+      display: block;
+      padding: 8px 12px;
+      border-radius: var(--r-sm);
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-medium);
+      color: var(--color-text-muted);
+      border: 0;
+      transition: background var(--dur-fast) var(--ease-out),
+                  color var(--dur-fast) var(--ease-out);
+    }
+    .dropdown a:hover {
+      background: var(--color-surface-2);
+      color: var(--color-text);
+    }
+
+    /* ---------- Hero ---------- */
+    .hero {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-8);
+    }
+
+    .hero-left { flex: 1; max-width: 600px; }
+
+    .eyebrow {
+      margin: 0 0 var(--sp-5);
+      color: var(--color-text-faint);
+    }
+
+    .headline {
+      margin-bottom: var(--sp-5);
+      line-height: 1;
+    }
+
+    .headline-line1 {
+      display: block;
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3.5vw, 48px);
+      font-weight: var(--fw-bold);
+      color: var(--color-text);
+      white-space: nowrap;
+      letter-spacing: var(--tr-tight);
+      line-height: 1.1;
+    }
+
+    .headline-line2 {
+      display: block;
+      font-family: var(--font-hand);
+      font-size: clamp(58px, 7.5vw, 96px);
+      color: var(--color-red);
+      transform: rotate(-3deg);
+      transform-origin: left center;
+      line-height: 1;
+      margin-top: 4px;
+    }
+
+    .tagline {
+      font-size: var(--fs-lg);
+      color: var(--color-text-muted);
+      line-height: var(--lh-loose);
+      max-width: 52ch;
+      margin: 0;
+    }
+
+    /* ---------- Portrait ---------- */
+    .hero-right { flex: 0 0 auto; }
+
+    .portrait-wrap {
+      position: relative;
+      width: clamp(280px, 28vw, 400px);
+      height: clamp(280px, 28vw, 400px);
+    }
+
+    .portrait-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+      border: 1px dashed rgba(214, 59, 59, 0.35);
+      pointer-events: none;
+    }
+
+    .portrait {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(1) contrast(1.05);
+    }
+
+    /* ---------- Mobile ---------- */
+    @media (max-width: 900px) {
+      html, body { overflow: auto; }
+
+      .page {
+        height: auto;
+        min-height: 100vh;
+        padding: var(--sp-5) var(--sp-5);
+      }
+
+      .hero {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: var(--sp-6) 0;
+        gap: var(--sp-6);
+      }
+
+      .hero-right { order: -1; }
+
+      .portrait-wrap {
+        width: 200px;
+        height: 200px;
+      }
+
+      .headline-line1 { white-space: normal; }
+      .headline-line2 { transform-origin: center center; }
+
+      .tagline { margin: 0 auto; }
+    }
+
+    @media (max-width: 540px) {
+      nav { padding-bottom: var(--sp-4); }
+      .menu { gap: var(--sp-4); }
+
+      .headline-line1 { font-size: 24px; }
+      .headline-line2 { font-size: 52px; }
+    }
+
+    @media (max-width: 520px) {
+      .logo svg { height: 32px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <nav>
+      <a href="/" class="logo" aria-label="Gustav Mattsson — AI Labb">
+        <svg viewBox="0 0 140 70" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <g>
+            <path d="M 30 5 C 35 18, 28 34, 18 46 L 23 50 C 33 38, 40 20, 36 5 Z"/>
+            <path d="M 16 46 L 25 50 L 23 56 L 14 52 Z"/>
+            <path d="M 14 52 C 9 60, 5 66, 7 67 C 14 64, 19 58, 23 52 Z"/>
+          </g>
+          <text x="48" y="32" font-family="Montserrat" font-weight="800" font-size="26" letter-spacing="-0.5">0100</text>
+          <text x="48" y="62" font-family="Montserrat" font-weight="800" font-size="26" letter-spacing="-0.5">0111</text>
+        </svg>
+      </a>
+
+      <ul class="menu">
+        <li><a href="/" class="active">Hem</a></li>
+        <li class="has-dropdown">
+          <a href="#" aria-haspopup="true" aria-expanded="false">
+            Appar <span class="chev" aria-hidden="true">▾</span>
+          </a>
+          <ul class="dropdown" role="menu">
+            <li role="none"><a href="#" role="menuitem">App 1</a></li>
+            <li role="none"><a href="#" role="menuitem">App 2</a></li>
+            <li role="none"><a href="#" role="menuitem">App 3</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+
+    <main class="hero">
+      <div class="hero-left">
+        <p class="eyebrow">AI · Experiment · Verktyg</p>
+        <div class="headline">
+          <span class="headline-line1">Välkommen till mitt</span>
+          <span class="headline-line2">AI labb!</span>
+        </div>
+        <p class="tagline">
+          En plats för experiment, verktyg och idéer byggda med artificiell intelligens — allt skapat av Gustav Mattsson.
+        </p>
+      </div>
+
+      <div class="hero-right">
+        <div class="portrait-wrap">
+          <img
+            class="portrait"
+            src="https://i.pravatar.cc/400?img=8"
+            alt="Gustav Mattsson"
+            width="400"
+            height="400"
+          >
+        </div>
+      </div>
+    </main>
+
+  </div>
+</body>
+</html>
