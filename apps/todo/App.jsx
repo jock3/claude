@@ -1,5 +1,6 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Plus, Trash2, X, Calendar, ChevronDown, LogOut } from 'lucide-react';
+import * as db from './db.js';
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -10,15 +11,10 @@ const CHECKPOINTS = [
   { key: 'done',   label: 'Klar',       color: '#5BAE6E' },
 ];
 
-const STORAGE_KEYS = {
-  users: 'ailabb_users',
-  activeUser: 'ailabb_active_user',
-  userProjects: (name) => `ailabb_user_${sanitize(name)}_projects`,
-};
+const SESSION_ID_KEY   = 'ailabb_profile_id';
+const SESSION_NAME_KEY = 'ailabb_profile_name';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
-
-const sanitize = (name) => name.replace(/[\s/\\'"]+/g, '_');
 
 const getDefaultDeadline = () => {
   const d = new Date();
@@ -32,21 +28,6 @@ const daysUntil = (iso) => {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const target = new Date(iso); target.setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
-};
-
-const storage = {
-  get: (key, fallback = null) => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch { return fallback; }
-  },
-  set: (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-  },
-  remove: (key) => {
-    try { localStorage.removeItem(key); } catch {}
-  },
 };
 
 /* ─── Logo ────────────────────────────────────────────────── */
@@ -76,20 +57,24 @@ const Logo = () => (
 
 /* ─── Welcome Screen ──────────────────────────────────────── */
 
-function WelcomeScreen({ users, onLogin }) {
+function WelcomeScreen({ users, onLogin, loading }) {
   const [name, setName] = useState('');
-  const submit = (n) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const submit = async (n) => {
     const v = (n || '').trim();
-    if (v) onLogin(v);
+    if (!v || submitting) return;
+    setSubmitting(true);
+    await onLogin(v);
+    setSubmitting(false);
   };
 
   return (
     <div className="tl-welcome-root">
       <header className="tl-welcome-nav"><Logo /></header>
-
       <div className="tl-welcome-card">
         <h1>Hej, <span className="hand">vem är du?</span></h1>
-        <p>Skriv ditt namn för att börja, eller välj en befintlig profil. Dina projekt och anteckningar sparas separat per namn.</p>
+        <p>Skriv ditt namn för att börja, eller välj en befintlig profil. Dina projekt sparas i molnet och är tillgängliga från alla enheter.</p>
 
         <div className="tl-welcome-input">
           <input
@@ -100,18 +85,21 @@ function WelcomeScreen({ users, onLogin }) {
             onKeyDown={(e) => e.key === 'Enter' && submit(name)}
             autoFocus
             maxLength={40}
+            disabled={submitting}
           />
-          <button className="tl-btn-primary" onClick={() => submit(name)} disabled={!name.trim()}>
-            Fortsätt →
+          <button className="tl-btn-primary" onClick={() => submit(name)} disabled={!name.trim() || submitting}>
+            {submitting ? '…' : 'Fortsätt →'}
           </button>
         </div>
 
-        {users.length > 0 && (
+        {loading ? (
+          <p className="tl-loading">Laddar profiler…</p>
+        ) : users.length > 0 && (
           <div className="tl-welcome-users">
             <span className="tl-welcome-label">Eller fortsätt som</span>
             <div className="tl-user-pills">
               {users.map((u) => (
-                <button key={u} className="tl-user-pill" onClick={() => onLogin(u)}>
+                <button key={u} className="tl-user-pill" onClick={() => submit(u)} disabled={submitting}>
                   <span className="tl-avatar">{u[0].toUpperCase()}</span>
                   {u}
                 </button>
@@ -194,7 +182,7 @@ function ProjectCard({ project, onUpdate, onDelete }) {
           <Calendar size={12} />
           {dlText}
         </div>
-        <button className="tl-icon-btn" onClick={onDelete} title="Ta bort projekt" aria-label="Ta bort projekt">
+        <button className="tl-icon-btn" onClick={onDelete} aria-label="Ta bort projekt">
           <Trash2 size={16} />
         </button>
       </div>
@@ -242,7 +230,6 @@ function ProjectCard({ project, onUpdate, onDelete }) {
             </div>
           ))
         )}
-
         <div className="tl-add-note">
           <input
             type="text"
@@ -265,46 +252,61 @@ function ProjectCard({ project, onUpdate, onDelete }) {
 
 export default function TodoLabb() {
   const [activeUser, setActiveUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [profileId, setProfileId] = useState(null);
+  const [users, setUsers]         = useState([]);
+  const [projects, setProjects]   = useState([]);
+  const [loading, setLoading]     = useState(true);
 
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
+  const [showForm,   setShowForm]   = useState(false);
+  const [name,       setName]       = useState('');
   const [checkpoint, setCheckpoint] = useState(0);
-  const [deadline, setDeadline] = useState(getDefaultDeadline());
+  const [deadline,   setDeadline]   = useState(getDefaultDeadline());
 
+  /* Load profiles + restore session on mount */
   useEffect(() => {
-    const usersList = storage.get(STORAGE_KEYS.users, []);
-    setUsers(usersList);
-    const current = storage.get(STORAGE_KEYS.activeUser, null);
-    if (current) {
-      setActiveUser(current);
-      setProjects(storage.get(STORAGE_KEYS.userProjects(current), []));
+    async function init() {
+      const profiles = await db.getProfiles();
+      setUsers(profiles.map((p) => p.name));
+
+      const savedId   = localStorage.getItem(SESSION_ID_KEY);
+      const savedName = localStorage.getItem(SESSION_NAME_KEY);
+      if (savedId && savedName) {
+        setProfileId(savedId);
+        setActiveUser(savedName);
+        const projs = await db.getProjects(savedId);
+        setProjects(projs);
+      }
+      setLoading(false);
     }
+    init();
   }, []);
 
-  const persist = (next) => {
-    setProjects(next);
-    if (activeUser) storage.set(STORAGE_KEYS.userProjects(activeUser), next);
-  };
-
-  const handleLogin = (rawName) => {
+  /* Login / create profile */
+  const handleLogin = async (rawName) => {
     const trimmed = rawName.trim();
     if (!trimmed) return;
-    const nextUsers = users.includes(trimmed) ? users : [...users, trimmed];
-    setUsers(nextUsers);
-    storage.set(STORAGE_KEYS.users, nextUsers);
-    setActiveUser(trimmed);
-    storage.set(STORAGE_KEYS.activeUser, trimmed);
-    setProjects(storage.get(STORAGE_KEYS.userProjects(trimmed), []));
+    const profile = await db.getOrCreateProfile(trimmed);
+    setProfileId(profile.id);
+    setActiveUser(profile.name);
+    localStorage.setItem(SESSION_ID_KEY,   profile.id);
+    localStorage.setItem(SESSION_NAME_KEY, profile.name);
+    const [projs, profiles] = await Promise.all([
+      db.getProjects(profile.id),
+      db.getProfiles(),
+    ]);
+    setProjects(projs);
+    setUsers(profiles.map((p) => p.name));
   };
 
+  /* Switch user */
   const handleSwitch = () => {
     setActiveUser(null);
+    setProfileId(null);
     setProjects([]);
     setShowForm(false);
     resetForm();
-    storage.remove(STORAGE_KEYS.activeUser);
+    localStorage.removeItem(SESSION_ID_KEY);
+    localStorage.removeItem(SESSION_NAME_KEY);
   };
 
   const resetForm = () => {
@@ -313,34 +315,56 @@ export default function TodoLabb() {
     setDeadline(getDefaultDeadline());
   };
 
-  const addProject = () => {
+  /* Add project */
+  const addProject = async () => {
     if (!name.trim()) return;
     const project = {
       id: Date.now().toString(),
+      profile_id: profileId,
       name: name.trim(),
       checkpoint,
       deadline,
       notes: [],
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
-    persist([project, ...projects]);
+    setProjects((prev) => [project, ...prev]);
     resetForm();
     setShowForm(false);
+    await db.upsertProject(project);
   };
 
-  const updateProject = (id, updates) =>
-    persist(projects.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+  /* Update project */
+  const updateProject = async (id, updates) => {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
+    );
+    const updated = projects.find((p) => p.id === id);
+    if (updated) await db.upsertProject({ ...updated, ...updates, profile_id: profileId });
+  };
 
-  const deleteProject = (id) => {
+  /* Delete project */
+  const deleteProject = async (id) => {
     if (!window.confirm('Ta bort projektet?')) return;
-    persist(projects.filter((p) => p.id !== id));
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    await db.deleteProject(id);
   };
+
+  /* ─── Render ─── */
+
+  if (loading) {
+    return (
+      <>
+        <ScopedStyles />
+        <div className="tl-fullscreen-loader">Laddar…</div>
+      </>
+    );
+  }
 
   if (!activeUser) {
     return (
       <>
         <ScopedStyles />
-        <WelcomeScreen users={users} onLogin={handleLogin} />
+        <WelcomeScreen users={users} onLogin={handleLogin} loading={false} />
       </>
     );
   }
@@ -374,7 +398,6 @@ export default function TodoLabb() {
         ) : (
           <div className="tl-form-card">
             <h2>Nytt projekt</h2>
-
             <div className="tl-field">
               <label className="tl-field-label">Projektnamn</label>
               <input
@@ -386,7 +409,6 @@ export default function TodoLabb() {
                 autoFocus
               />
             </div>
-
             <div className="tl-field">
               <label className="tl-field-label">Status</label>
               <div className="tl-checkpoints">
@@ -404,12 +426,10 @@ export default function TodoLabb() {
                 ))}
               </div>
             </div>
-
             <div className="tl-field">
               <label className="tl-field-label">Deadline</label>
               <input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </div>
-
             <div className="tl-form-actions">
               <button className="tl-btn-primary" onClick={addProject} disabled={!name.trim()}>
                 Skapa projekt
@@ -458,6 +478,13 @@ function ScopedStyles() {
       }
       .tl-app-root { max-width: 880px; padding: 32px 24px 96px; }
       .tl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
+
+      .tl-fullscreen-loader {
+        min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        color: var(--color-text-faint); font-size: 15px;
+        font-family: var(--font-body, "Montserrat", sans-serif);
+      }
+      .tl-loading { color: var(--color-text-faint); font-size: 13px; margin: 0; }
 
       .tl-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; gap: 16px; }
       .tl-nav-right { display: flex; align-items: center; gap: 32px; }
@@ -530,6 +557,7 @@ function ScopedStyles() {
         font-size: 14px; font-weight: 500; cursor: pointer; transition: all 200ms;
       }
       .tl-user-pill:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
+      .tl-user-pill:disabled { opacity: 0.5; cursor: not-allowed; }
 
       .tl-hero { margin-bottom: 32px; }
       .tl-hero h1 { font-size: clamp(32px, 4.5vw, 48px); font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 12px; }
@@ -613,10 +641,8 @@ function ScopedStyles() {
       .tl-progress { padding: 4px 24px 20px; display: flex; align-items: center; overflow-x: auto; }
       .tl-progress::-webkit-scrollbar { display: none; }
       .tl-progress-step {
-        display: flex; align-items: center; gap: 8px;
-        cursor: pointer; flex-shrink: 0;
-        background: transparent; border: 0; padding: 4px 2px;
-        color: inherit; font-family: inherit;
+        display: flex; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0;
+        background: transparent; border: 0; padding: 4px 2px; color: inherit; font-family: inherit;
       }
       .tl-pdot {
         width: 12px; height: 12px; border-radius: 50%;
@@ -635,8 +661,7 @@ function ScopedStyles() {
       .tl-note:last-of-type { border-bottom: 0; }
       .tl-note-checkbox {
         appearance: none; -webkit-appearance: none;
-        width: 18px; height: 18px;
-        border: 2px solid var(--color-border-strong); border-radius: 4px;
+        width: 18px; height: 18px; border: 2px solid var(--color-border-strong); border-radius: 4px;
         background: var(--color-surface-2); cursor: pointer;
         margin: 1px 0 0; flex-shrink: 0; position: relative; transition: all 200ms;
       }
