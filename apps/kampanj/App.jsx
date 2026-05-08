@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, X, ChevronDown, LogOut } from 'lucide-react';
+import * as db from './db.js';
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -21,11 +22,8 @@ const CAMPAIGN_STATUS = {
   completed: { key: 'completed', label: 'Avslutad', color: '#2E6FD4' },
 };
 
-const STORAGE_KEYS = {
-  users: 'ailabb_users',
-  activeUser: 'ailabb_active_user',
-  userCampaigns: (name) => `ailabb_user_${sanitize(name)}_campaigns`,
-};
+const SESSION_ID_KEY   = 'ailabb_profile_id';
+const SESSION_NAME_KEY = 'ailabb_profile_name';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -116,22 +114,6 @@ function newPlatform(start, end) {
   return { name: '', budget: 0, start, end, status: getDefaultPlatformStatus(start) };
 }
 
-const storage = {
-  get: (key, fallback = null) => {
-    try {
-      const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
-    } catch {
-      return fallback;
-    }
-  },
-  set: (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-  },
-  remove: (key) => {
-    try { localStorage.removeItem(key); } catch {}
-  },
-};
 
 /* ─── Logo ────────────────────────────────────────────────── */
 
@@ -518,7 +500,9 @@ function PlatformFormCard({ platform, onChange, onRemove, canRemove, campaignSta
 
 export default function KampanjLabb() {
   const [activeUser, setActiveUser] = useState(null);
+  const [profileId, setProfileId] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading]     = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [client, setClient] = useState('');
@@ -529,24 +513,43 @@ export default function KampanjLabb() {
 
   /* Restore session on mount — redirect home if not logged in */
   useEffect(() => {
-    const name = storage.get(STORAGE_KEYS.activeUser, null);
-    if (!name) { window.location.replace('../../'); return; }
+    async function init() {
+      let userName = null;
+      try { userName = JSON.parse(localStorage.getItem('ailabb_active_user')); } catch {}
 
-    setActiveUser(name);
-    const stored = storage.get(STORAGE_KEYS.userCampaigns(name), []);
-    const { campaigns: promoted, changed } = promoteCampaigns(stored);
-    setCampaigns(promoted);
-    if (changed) storage.set(STORAGE_KEYS.userCampaigns(name), promoted);
+      if (!userName) { window.location.replace('../../'); return; }
+
+      setActiveUser(userName);
+
+      const cachedId   = localStorage.getItem(SESSION_ID_KEY);
+      const cachedName = localStorage.getItem(SESSION_NAME_KEY);
+
+      let pid;
+      if (cachedId && cachedName === userName) {
+        pid = cachedId;
+      } else {
+        const profile = await db.getOrCreateProfile(userName);
+        if (!profile) { window.location.replace('../../'); return; }
+        pid = profile.id;
+        localStorage.setItem(SESSION_ID_KEY, pid);
+        localStorage.setItem(SESSION_NAME_KEY, userName);
+      }
+
+      setProfileId(pid);
+      const stored = await db.getCampaigns(pid);
+      const { campaigns: promoted, changed } = promoteCampaigns(stored);
+      setCampaigns(promoted);
+      if (changed) promoted.forEach((c) => db.upsertCampaign(c));
+      setLoading(false);
+    }
+    init();
   }, []);
-
-  const persist = (next) => {
-    setCampaigns(next);
-    if (activeUser) storage.set(STORAGE_KEYS.userCampaigns(activeUser), next);
-  };
 
   /* Switch user — log out globally and go home */
   const handleSwitch = () => {
-    storage.remove(STORAGE_KEYS.activeUser);
+    localStorage.removeItem('ailabb_active_user');
+    localStorage.removeItem(SESSION_ID_KEY);
+    localStorage.removeItem(SESSION_NAME_KEY);
     window.location.replace('../../');
   };
 
@@ -576,7 +579,7 @@ export default function KampanjLabb() {
 
   const canSubmit = client.trim() && name.trim() && start && end && new Date(end) >= new Date(start);
 
-  const addCampaign = () => {
+  const addCampaign = async () => {
     if (!canSubmit) return;
     const cleanPlatforms = platforms
       .filter((p) => p.name.trim() || p.budget)
@@ -590,25 +593,28 @@ export default function KampanjLabb() {
 
     const campaign = {
       id: Date.now().toString(),
+      profile_id: profileId,
       client: client.trim(),
       name: name.trim(),
       start,
       end,
       platforms: cleanPlatforms,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
-    persist([campaign, ...campaigns]);
+    setCampaigns((prev) => [campaign, ...prev]);
     resetForm();
     setShowForm(false);
+    await db.upsertCampaign(campaign);
   };
 
-  const deleteCampaign = (id) => {
+  const deleteCampaign = async (id) => {
     if (!window.confirm('Ta bort kampanjen?')) return;
-    persist(campaigns.filter((c) => c.id !== id));
+    setCampaigns((prev) => prev.filter((c) => c.id !== id));
+    await db.deleteCampaign(id);
   };
 
-  const updateCampaignPlatform = (campaignId, idx, updates) => {
+  const updateCampaignPlatform = async (campaignId, idx, updates) => {
     const next = campaigns.map((c) => {
       if (c.id !== campaignId) return c;
       const ps = (c.platforms || []).map((p, i) => {
@@ -619,17 +625,30 @@ export default function KampanjLabb() {
       });
       return { ...c, platforms: ps };
     });
-    persist(next);
+    setCampaigns(next);
+    const updated = next.find((c) => c.id === campaignId);
+    if (updated) await db.upsertCampaign({ ...updated, profile_id: profileId });
   };
 
-  const addCampaignPlatform = (campaignId) => {
+  const addCampaignPlatform = async (campaignId) => {
     const next = campaigns.map((c) => {
       if (c.id !== campaignId) return c;
       const np = newPlatform(c.start, c.end);
       return { ...c, platforms: [...(c.platforms || []), np] };
     });
-    persist(next);
+    setCampaigns(next);
+    const updated = next.find((c) => c.id === campaignId);
+    if (updated) await db.upsertCampaign({ ...updated, profile_id: profileId });
   };
+
+  if (loading) {
+    return (
+      <>
+        <ScopedStyles />
+        <div className="kl-fullscreen-loader">Laddar…</div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -781,6 +800,12 @@ function ScopedStyles() {
       }
       .kl-app-root { max-width: 920px; padding: 32px 24px 96px; }
       .kl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
+
+      .kl-fullscreen-loader {
+        min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        color: var(--color-text-faint); font-size: 15px;
+        font-family: var(--font-body, "Montserrat", sans-serif);
+      }
 
       /* Top nav */
       .kl-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; gap: 16px; }
