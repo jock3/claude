@@ -12,14 +12,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
 
   <style>
-    /* =========================================================
-       index.html — page-specific styles
-       ========================================================= */
-
-    html, body { height: 100%; overflow: hidden; }
-
+    /* ─── Layout ─── */
     .page {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       padding: var(--sp-6) var(--sp-8);
@@ -27,7 +22,7 @@
       margin: 0 auto;
     }
 
-    /* ---------- Nav ---------- */
+    /* ─── Nav ─── */
     nav {
       display: flex;
       justify-content: space-between;
@@ -79,7 +74,6 @@
       border-radius: 2px;
     }
 
-    /* ---------- Dropdown ---------- */
     .has-dropdown { position: relative; }
     .has-dropdown > a {
       display: inline-flex;
@@ -98,7 +92,7 @@
       position: absolute;
       top: calc(100% + 10px);
       right: 0;
-      min-width: 180px;
+      min-width: 200px;
       list-style: none;
       margin: 0;
       padding: 6px;
@@ -143,124 +137,202 @@
       color: var(--color-text);
     }
 
-    /* ---------- Hero ---------- */
+    /* ─── Hero ─── */
     .hero {
       flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-8);
+      text-align: center;
+      padding-top: var(--sp-8);
+      padding-bottom: var(--sp-9);
     }
 
-    .hero-left { flex: 1; max-width: 600px; }
-
-    .eyebrow {
-      margin: 0 0 var(--sp-5);
-      color: var(--color-text-faint);
-    }
+    .hero .eyebrow { margin: 0 0 var(--sp-5); }
 
     .headline {
-      margin-bottom: var(--sp-5);
-      line-height: 1;
-    }
-
-    .headline-line1 {
-      display: block;
-      font-family: var(--font-display);
       font-size: clamp(28px, 3.5vw, 48px);
       font-weight: var(--fw-bold);
-      color: var(--color-text);
-      white-space: nowrap;
       letter-spacing: var(--tr-tight);
-      line-height: 1.1;
+      line-height: 1.2;
+      margin: 0 0 var(--sp-5);
+      color: var(--color-text);
     }
-
-    .headline-line2 {
-      display: block;
+    .headline .hand-accent {
       font-family: var(--font-hand);
-      font-size: clamp(58px, 7.5vw, 96px);
       color: var(--color-red);
-      transform: rotate(-3deg);
-      transform-origin: left center;
-      line-height: 1;
-      margin-top: 4px;
+      font-weight: var(--fw-regular);
+      font-size: 1.3em;
+      display: inline-block;
+      transform: rotate(-2deg);
+      margin-left: 6px;
+      vertical-align: middle;
     }
 
     .tagline {
       font-size: var(--fs-lg);
       color: var(--color-text-muted);
       line-height: var(--lh-loose);
-      max-width: 52ch;
-      margin: 0;
+      max-width: 50ch;
+      margin: 0 0 var(--sp-7);
     }
 
-    /* ---------- Portrait ---------- */
-    .hero-right { flex: 0 0 auto; }
+    /* ─── Login section ─── */
+    #login-section { width: 100%; max-width: 480px; }
 
-    .portrait-wrap {
-      position: relative;
-      width: clamp(280px, 28vw, 400px);
-      height: clamp(280px, 28vw, 400px);
+    .login-input-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
     }
-
-    .portrait-wrap::before {
-      content: '';
-      position: absolute;
-      inset: -14px;
-      border-radius: 50%;
-      border: 1px dashed rgba(214, 59, 59, 0.35);
-      pointer-events: none;
+    .login-input-row input {
+      flex: 1;
+      font-family: var(--font-display);
+      font-size: var(--fs-lg);
+      padding: 14px 18px;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      border-radius: var(--r-md);
+      outline: none;
+      transition: border-color var(--dur-base) var(--ease-out);
+      min-width: 0;
     }
+    .login-input-row input:focus { border-color: var(--color-blue); }
+    .login-input-row input::placeholder { color: var(--color-text-faint); }
 
-    .portrait {
+    .btn-primary {
+      background: var(--color-red);
+      color: var(--color-text);
+      border: 0;
+      font-family: var(--font-display);
+      font-weight: var(--fw-semibold);
+      font-size: var(--fs-sm);
+      padding: 14px 22px;
+      border-radius: var(--r-md);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .btn-primary:hover { background: var(--color-red-hover); }
+
+    .pill-label {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tr-wider);
+      text-transform: uppercase;
+      color: var(--color-text-faint);
+      margin: 0 0 14px;
+    }
+    .user-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 18px 6px 6px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: var(--font-display);
+      font-size: var(--fs-sm);
+      font-weight: var(--fw-medium);
+      cursor: pointer;
+      transition: border-color var(--dur-base), background var(--dur-base);
+    }
+    .user-pill:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
+
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--color-red); color: var(--color-text);
+      font-size: 13px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .avatar-lg { width: 48px; height: 48px; font-size: 20px; }
+
+    /* ─── Logged-in section ─── */
+    #loggedin-section {
       width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      object-fit: cover;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .loggedin-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .loggedin-info { text-align: left; }
+    .loggedin-greeting {
+      font-size: var(--fs-xl);
+      font-weight: var(--fw-semibold);
+      margin: 0 0 5px;
+      color: var(--color-text);
+    }
+
+    .btn-switch {
+      background: transparent; border: 0;
+      color: var(--color-text-faint);
+      font-family: var(--font-display);
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-medium);
+      cursor: pointer; padding: 0;
+      transition: color var(--dur-fast) var(--ease-out);
+    }
+    .btn-switch:hover { color: var(--color-text-muted); }
+
+    .apps-grid {
+      display: flex; flex-direction: column;
+      gap: 10px; width: 100%;
+    }
+    .app-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      border-radius: var(--r-lg);
+      text-decoration: none; color: inherit;
+      transition: border-color var(--dur-base), background var(--dur-base);
+      text-align: left;
+      gap: 16px;
+    }
+    .app-card:hover {
+      border-color: var(--color-border-strong);
+      background: var(--color-surface-2);
+      color: inherit;
+    }
+    .app-card-name {
       display: block;
-      filter: grayscale(1) contrast(1.05);
+      font-size: var(--fs-md);
+      font-weight: var(--fw-semibold);
+      color: var(--color-text);
     }
+    .app-card-desc {
+      display: block;
+      font-size: var(--fs-xs);
+      color: var(--color-text-muted);
+      margin-top: 3px;
+    }
+    .app-card-arrow { font-size: 18px; color: var(--color-text-faint); flex-shrink: 0; }
 
-    /* ---------- Mobile ---------- */
+    /* ─── Mobile ─── */
     @media (max-width: 900px) {
-      html, body { overflow: auto; }
-
-      .page {
-        height: auto;
-        min-height: 100vh;
-        padding: var(--sp-5) var(--sp-5);
-      }
-
-      .hero {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        padding: var(--sp-6) 0;
-        gap: var(--sp-6);
-      }
-
-      .hero-right { order: -1; }
-
-      .portrait-wrap {
-        width: 200px;
-        height: 200px;
-      }
-
-      .headline-line1 { white-space: normal; }
-      .headline-line2 { transform-origin: center center; }
-
-      .tagline { margin: 0 auto; }
+      .page { padding: var(--sp-5) var(--sp-5); }
+      .hero { padding-top: var(--sp-6); }
     }
-
     @media (max-width: 540px) {
-      nav { padding-bottom: var(--sp-4); }
+      .login-input-row { flex-direction: column; }
+      .btn-primary { width: 100%; }
+      .headline { font-size: 26px; }
       .menu { gap: var(--sp-4); }
-
-      .headline-line1 { font-size: 24px; }
-      .headline-line2 { font-size: 52px; }
     }
-
-    @media (max-width: 520px) {
+    @media (max-width: 400px) {
       .logo svg { height: 32px; }
     }
   </style>
@@ -305,30 +377,131 @@
     </nav>
 
     <main class="hero">
-      <div class="hero-left">
-        <p class="eyebrow">AI · Experiment · Verktyg</p>
-        <div class="headline">
-          <span class="headline-line1">Välkommen till mitt</span>
-          <span class="headline-line2">AI labb!</span>
-        </div>
-        <p class="tagline">
-          En plats för experiment, verktyg och idéer byggda med artificiell intelligens — allt skapat av Gustav Mattsson.
-        </p>
-      </div>
+      <p class="eyebrow">AI · Experiment · Verktyg</p>
+      <h1 class="headline">Välkommen till mitt<span class="hand-accent">AI labb!</span></h1>
+      <p class="tagline">En plats för experiment, verktyg och idéer byggda med artificiell intelligens — allt skapat av Gustav Mattsson.</p>
 
-      <div class="hero-right">
-        <div class="portrait-wrap">
-          <img
-            class="portrait"
-            src="https://i.pravatar.cc/400?img=8"
-            alt="Gustav Mattsson"
-            width="400"
-            height="400"
-          >
+      <!-- Not logged in -->
+      <section id="login-section" aria-label="Logga in">
+        <div class="login-input-row">
+          <input type="text" id="name-input" placeholder="Ditt namn" maxlength="40" autocomplete="off" />
+          <button class="btn-primary" id="login-btn">Fortsätt →</button>
         </div>
-      </div>
+        <div id="existing-users-wrap" hidden>
+          <p class="pill-label">Eller fortsätt som</p>
+          <div id="existing-users" class="user-pills"></div>
+        </div>
+      </section>
+
+      <!-- Logged in -->
+      <section id="loggedin-section" hidden>
+        <div class="loggedin-header">
+          <span class="avatar avatar-lg" id="user-avatar"></span>
+          <div class="loggedin-info">
+            <p class="loggedin-greeting">Hej, <strong id="user-name"></strong>!</p>
+            <button class="btn-switch" id="logout-btn">Byt användare</button>
+          </div>
+        </div>
+        <div class="apps-grid">
+          <a href="./apps/todo/" class="app-card">
+            <div>
+              <span class="app-card-name">Todo</span>
+              <span class="app-card-desc">Projektspårare med anteckningar</span>
+            </div>
+            <span class="app-card-arrow">→</span>
+          </a>
+          <a href="./apps/kampanj/" class="app-card">
+            <div>
+              <span class="app-card-name">Kampanjplanerare</span>
+              <span class="app-card-desc">Planera kampanjer med plattformar och budget</span>
+            </div>
+            <span class="app-card-arrow">→</span>
+          </a>
+        </div>
+      </section>
     </main>
 
   </div>
+
+  <script>
+    const ACTIVE_USER_KEY = 'ailabb_active_user';
+    const USERS_KEY = 'ailabb_users';
+
+    function stor(key, fallback) {
+      try { const v = JSON.parse(localStorage.getItem(key)); return v !== null ? v : fallback; }
+      catch { return fallback; }
+    }
+    function storSet(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+    }
+
+    function getActiveUser() { return stor(ACTIVE_USER_KEY, null); }
+    function getUsers() { return stor(USERS_KEY, []); }
+
+    function login(name) {
+      name = (name || '').trim();
+      if (!name) return;
+      const users = getUsers();
+      if (!users.includes(name)) users.push(name);
+      storSet(USERS_KEY, users);
+      storSet(ACTIVE_USER_KEY, name);
+      render();
+    }
+
+    function logout() {
+      localStorage.removeItem(ACTIVE_USER_KEY);
+      render();
+    }
+
+    function render() {
+      const user = getActiveUser();
+      const users = getUsers();
+      const loginSec = document.getElementById('login-section');
+      const loggedSec = document.getElementById('loggedin-section');
+
+      if (user) {
+        loginSec.hidden = true;
+        loggedSec.hidden = false;
+        document.getElementById('user-name').textContent = user;
+        document.getElementById('user-avatar').textContent = user[0].toUpperCase();
+      } else {
+        loginSec.hidden = false;
+        loggedSec.hidden = true;
+
+        const exWrap = document.getElementById('existing-users-wrap');
+        const pillsEl = document.getElementById('existing-users');
+        pillsEl.innerHTML = '';
+
+        if (users.length > 0) {
+          exWrap.hidden = false;
+          users.forEach(function(u) {
+            var btn = document.createElement('button');
+            btn.className = 'user-pill';
+            btn.addEventListener('click', function() { login(u); });
+            var av = document.createElement('span');
+            av.className = 'avatar';
+            av.textContent = u[0].toUpperCase();
+            btn.appendChild(av);
+            btn.appendChild(document.createTextNode(u));
+            pillsEl.appendChild(btn);
+          });
+        } else {
+          exWrap.hidden = true;
+        }
+
+        var input = document.getElementById('name-input');
+        input.value = '';
+        setTimeout(function() { input.focus(); }, 0);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var input = document.getElementById('name-input');
+      document.getElementById('login-btn').addEventListener('click', function() { login(input.value); });
+      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') login(input.value); });
+      document.getElementById('logout-btn').addEventListener('click', logout);
+      render();
+    });
+  </script>
 </body>
 </html>

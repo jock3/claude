@@ -158,55 +158,6 @@ const Logo = () => (
   </a>
 );
 
-/* ─── Welcome Screen ──────────────────────────────────────── */
-
-function WelcomeScreen({ users, onLogin }) {
-  const [name, setName] = useState('');
-  const submit = (n) => {
-    const v = (n || '').trim();
-    if (v) onLogin(v);
-  };
-
-  return (
-    <div className="kl-welcome-root">
-      <header className="kl-welcome-nav"><Logo /></header>
-      <div className="kl-welcome-card">
-        <h1>Hej, <span className="hand">vem är du?</span></h1>
-        <p>Skriv ditt namn för att börja, eller välj en befintlig profil. Dina kampanjer sparas separat per namn.</p>
-
-        <div className="kl-welcome-input">
-          <input
-            type="text"
-            placeholder="Ditt namn"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && submit(name)}
-            autoFocus
-            maxLength={40}
-          />
-          <button className="kl-btn-primary" onClick={() => submit(name)} disabled={!name.trim()}>
-            Fortsätt →
-          </button>
-        </div>
-
-        {users.length > 0 && (
-          <div className="kl-welcome-users">
-            <span className="kl-welcome-label">Eller fortsätt som</span>
-            <div className="kl-user-pills">
-              {users.map((u) => (
-                <button key={u} className="kl-user-pill" onClick={() => onLogin(u)}>
-                  <span className="kl-avatar">{u[0].toUpperCase()}</span>
-                  {u}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ─── User Menu ───────────────────────────────────────────── */
 
 function UserMenu({ activeUser, onSwitch }) {
@@ -567,7 +518,6 @@ function PlatformFormCard({ platform, onChange, onRemove, canRemove, campaignSta
 
 export default function KampanjLabb() {
   const [activeUser, setActiveUser] = useState(null);
-  const [users, setUsers] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
 
   const [showForm, setShowForm] = useState(false);
@@ -577,18 +527,16 @@ export default function KampanjLabb() {
   const [end, setEnd] = useState(inDays(30));
   const [platforms, setPlatforms] = useState([newPlatform(today(), inDays(30))]);
 
+  /* Restore session on mount — redirect home if not logged in */
   useEffect(() => {
-    const usersList = storage.get(STORAGE_KEYS.users, []);
-    setUsers(usersList);
+    const name = storage.get(STORAGE_KEYS.activeUser, null);
+    if (!name) { window.location.replace('../../'); return; }
 
-    const current = storage.get(STORAGE_KEYS.activeUser, null);
-    if (current) {
-      setActiveUser(current);
-      const stored = storage.get(STORAGE_KEYS.userCampaigns(current), []);
-      const { campaigns: promoted, changed } = promoteCampaigns(stored);
-      setCampaigns(promoted);
-      if (changed) storage.set(STORAGE_KEYS.userCampaigns(current), promoted);
-    }
+    setActiveUser(name);
+    const stored = storage.get(STORAGE_KEYS.userCampaigns(name), []);
+    const { campaigns: promoted, changed } = promoteCampaigns(stored);
+    setCampaigns(promoted);
+    if (changed) storage.set(STORAGE_KEYS.userCampaigns(name), promoted);
   }, []);
 
   const persist = (next) => {
@@ -596,29 +544,10 @@ export default function KampanjLabb() {
     if (activeUser) storage.set(STORAGE_KEYS.userCampaigns(activeUser), next);
   };
 
-  const handleLogin = (rawName) => {
-    const trimmed = rawName.trim();
-    if (!trimmed) return;
-
-    const nextUsers = users.includes(trimmed) ? users : [...users, trimmed];
-    setUsers(nextUsers);
-    storage.set(STORAGE_KEYS.users, nextUsers);
-
-    setActiveUser(trimmed);
-    storage.set(STORAGE_KEYS.activeUser, trimmed);
-
-    const stored = storage.get(STORAGE_KEYS.userCampaigns(trimmed), []);
-    const { campaigns: promoted, changed } = promoteCampaigns(stored);
-    setCampaigns(promoted);
-    if (changed) storage.set(STORAGE_KEYS.userCampaigns(trimmed), promoted);
-  };
-
+  /* Switch user — log out globally and go home */
   const handleSwitch = () => {
-    setActiveUser(null);
-    setCampaigns([]);
-    setShowForm(false);
-    resetForm();
     storage.remove(STORAGE_KEYS.activeUser);
+    window.location.replace('../../');
   };
 
   const resetForm = () => {
@@ -701,15 +630,6 @@ export default function KampanjLabb() {
     });
     persist(next);
   };
-
-  if (!activeUser) {
-    return (
-      <>
-        <ScopedStyles />
-        <WelcomeScreen users={users} onLogin={handleLogin} />
-      </>
-    );
-  }
 
   return (
     <>

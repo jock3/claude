@@ -55,63 +55,6 @@ const Logo = () => (
   </a>
 );
 
-/* ─── Welcome Screen ──────────────────────────────────────── */
-
-function WelcomeScreen({ users, onLogin, loading }) {
-  const [name, setName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  const submit = async (n) => {
-    const v = (n || '').trim();
-    if (!v || submitting) return;
-    setSubmitting(true);
-    await onLogin(v);
-    setSubmitting(false);
-  };
-
-  return (
-    <div className="tl-welcome-root">
-      <header className="tl-welcome-nav"><Logo /></header>
-      <div className="tl-welcome-card">
-        <h1>Hej, <span className="hand">vem är du?</span></h1>
-        <p>Skriv ditt namn för att börja, eller välj en befintlig profil. Dina projekt sparas i molnet och är tillgängliga från alla enheter.</p>
-
-        <div className="tl-welcome-input">
-          <input
-            type="text"
-            placeholder="Ditt namn"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && submit(name)}
-            autoFocus
-            maxLength={40}
-            disabled={submitting}
-          />
-          <button className="tl-btn-primary" onClick={() => submit(name)} disabled={!name.trim() || submitting}>
-            {submitting ? '…' : 'Fortsätt →'}
-          </button>
-        </div>
-
-        {loading ? (
-          <p className="tl-loading">Laddar profiler…</p>
-        ) : users.length > 0 && (
-          <div className="tl-welcome-users">
-            <span className="tl-welcome-label">Eller fortsätt som</span>
-            <div className="tl-user-pills">
-              {users.map((u) => (
-                <button key={u} className="tl-user-pill" onClick={() => submit(u)} disabled={submitting}>
-                  <span className="tl-avatar">{u[0].toUpperCase()}</span>
-                  {u}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 /* ─── User Menu ───────────────────────────────────────────── */
 
 function UserMenu({ activeUser, onSwitch }) {
@@ -253,7 +196,6 @@ function ProjectCard({ project, onUpdate, onDelete }) {
 export default function TodoLabb() {
   const [activeUser, setActiveUser] = useState(null);
   const [profileId, setProfileId] = useState(null);
-  const [users, setUsers]         = useState([]);
   const [projects, setProjects]   = useState([]);
   const [loading, setLoading]     = useState(true);
 
@@ -262,51 +204,44 @@ export default function TodoLabb() {
   const [checkpoint, setCheckpoint] = useState(0);
   const [deadline,   setDeadline]   = useState(getDefaultDeadline());
 
-  /* Load profiles + restore session on mount */
+  /* Restore session on mount — redirect home if not logged in */
   useEffect(() => {
     async function init() {
-      const profiles = await db.getProfiles();
-      setUsers(profiles.map((p) => p.name));
+      let name = null;
+      try { name = JSON.parse(localStorage.getItem('ailabb_active_user')); } catch {}
 
-      const savedId   = localStorage.getItem(SESSION_ID_KEY);
-      const savedName = localStorage.getItem(SESSION_NAME_KEY);
-      if (savedId && savedName) {
-        setProfileId(savedId);
-        setActiveUser(savedName);
-        const projs = await db.getProjects(savedId);
-        setProjects(projs);
+      if (!name) { window.location.replace('../../'); return; }
+
+      setActiveUser(name);
+
+      const cachedId   = localStorage.getItem(SESSION_ID_KEY);
+      const cachedName = localStorage.getItem(SESSION_NAME_KEY);
+
+      let pid;
+      if (cachedId && cachedName === name) {
+        pid = cachedId;
+      } else {
+        const profile = await db.getOrCreateProfile(name);
+        if (!profile) { window.location.replace('../../'); return; }
+        pid = profile.id;
+        localStorage.setItem(SESSION_ID_KEY, pid);
+        localStorage.setItem(SESSION_NAME_KEY, name);
       }
+
+      setProfileId(pid);
+      const projs = await db.getProjects(pid);
+      setProjects(projs);
       setLoading(false);
     }
     init();
   }, []);
 
-  /* Login / create profile */
-  const handleLogin = async (rawName) => {
-    const trimmed = rawName.trim();
-    if (!trimmed) return;
-    const profile = await db.getOrCreateProfile(trimmed);
-    setProfileId(profile.id);
-    setActiveUser(profile.name);
-    localStorage.setItem(SESSION_ID_KEY,   profile.id);
-    localStorage.setItem(SESSION_NAME_KEY, profile.name);
-    const [projs, profiles] = await Promise.all([
-      db.getProjects(profile.id),
-      db.getProfiles(),
-    ]);
-    setProjects(projs);
-    setUsers(profiles.map((p) => p.name));
-  };
-
-  /* Switch user */
+  /* Switch user — log out globally and go home */
   const handleSwitch = () => {
-    setActiveUser(null);
-    setProfileId(null);
-    setProjects([]);
-    setShowForm(false);
-    resetForm();
+    localStorage.removeItem('ailabb_active_user');
     localStorage.removeItem(SESSION_ID_KEY);
     localStorage.removeItem(SESSION_NAME_KEY);
+    window.location.replace('../../');
   };
 
   const resetForm = () => {
@@ -356,15 +291,6 @@ export default function TodoLabb() {
       <>
         <ScopedStyles />
         <div className="tl-fullscreen-loader">Laddar…</div>
-      </>
-    );
-  }
-
-  if (!activeUser) {
-    return (
-      <>
-        <ScopedStyles />
-        <WelcomeScreen users={users} onLogin={handleLogin} loading={false} />
       </>
     );
   }
