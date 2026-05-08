@@ -136,7 +136,7 @@ const storage = {
 /* ─── Logo ────────────────────────────────────────────────── */
 
 const Logo = () => (
-  <a href="/" className="kl-logo" aria-label="Gustav Mattsson — AI Labb">
+  <a href="../../" className="kl-logo" aria-label="Gustav Mattsson — AI Labb">
     <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
       <defs>
         <style>{`
@@ -720,8 +720,16 @@ export default function KampanjLabb() {
           <Logo />
           <div className="kl-nav-right">
             <ul className="kl-menu">
-              <li><a href="/">Hem</a></li>
-              <li><a href="#" className="active">Appar</a></li>
+              <li><a href="../../">Hem</a></li>
+              <li className="kl-has-dropdown">
+                <a href="#" aria-haspopup="true">
+                  Appar <span className="kl-chev" aria-hidden="true">▾</span>
+                </a>
+                <ul className="kl-dropdown" role="menu">
+                  <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
+                  <li role="none"><a href="../kampanj/" role="menuitem" className="active">Kampanjplanerare</a></li>
+                </ul>
+              </li>
             </ul>
             <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
           </div>
@@ -867,6 +875,30 @@ function ScopedStyles() {
         content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
         height: 2px; background: var(--color-red); border-radius: 2px;
       }
+      .kl-has-dropdown { position: relative; }
+      .kl-has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
+      .kl-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
+      .kl-has-dropdown:hover .kl-chev,
+      .kl-has-dropdown:focus-within .kl-chev { transform: rotate(180deg); }
+      .kl-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
+        list-style: none; margin: 0; padding: 6px;
+        background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+        opacity: 0; visibility: hidden; transform: translateY(-4px);
+        transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
+      }
+      .kl-dropdown::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
+      .kl-has-dropdown:hover .kl-dropdown,
+      .kl-has-dropdown:focus-within .kl-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
+      .kl-dropdown li { display: block; }
+      .kl-dropdown a {
+        display: block; padding: 8px 12px; border-radius: 6px;
+        font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0;
+        transition: background 150ms, color 150ms;
+      }
+      .kl-dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
+      .kl-dropdown a::after { display: none; }
 
       /* User chip */
       .kl-user-menu { position: relative; }

@@ -33,7 +33,7 @@ const daysUntil = (iso) => {
 /* ─── Logo ────────────────────────────────────────────────── */
 
 const Logo = () => (
-  <a href="/" className="tl-logo" aria-label="Gustav Mattsson — AI Labb">
+  <a href="../../" className="tl-logo" aria-label="Gustav Mattsson — AI Labb">
     <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
       <defs>
         <style>{`
@@ -378,8 +378,16 @@ export default function TodoLabb() {
           <Logo />
           <div className="tl-nav-right">
             <ul className="tl-menu">
-              <li><a href="/">Hem</a></li>
-              <li><a href="#" className="active">Appar</a></li>
+              <li><a href="../../">Hem</a></li>
+              <li className="tl-has-dropdown">
+                <a href="#" aria-haspopup="true">
+                  Appar <span className="tl-chev" aria-hidden="true">▾</span>
+                </a>
+                <ul className="tl-dropdown" role="menu">
+                  <li role="none"><a href="../todo/" role="menuitem" className="active">Todo</a></li>
+                  <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
+                </ul>
+              </li>
             </ul>
             <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
           </div>
@@ -498,6 +506,30 @@ function ScopedStyles() {
         content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
         height: 2px; background: var(--color-red); border-radius: 2px;
       }
+      .tl-has-dropdown { position: relative; }
+      .tl-has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
+      .tl-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
+      .tl-has-dropdown:hover .tl-chev,
+      .tl-has-dropdown:focus-within .tl-chev { transform: rotate(180deg); }
+      .tl-dropdown {
+        position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
+        list-style: none; margin: 0; padding: 6px;
+        background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+        opacity: 0; visibility: hidden; transform: translateY(-4px);
+        transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
+      }
+      .tl-dropdown::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
+      .tl-has-dropdown:hover .tl-dropdown,
+      .tl-has-dropdown:focus-within .tl-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
+      .tl-dropdown li { display: block; }
+      .tl-dropdown a {
+        display: block; padding: 8px 12px; border-radius: 6px;
+        font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0;
+        transition: background 150ms, color 150ms;
+      }
+      .tl-dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
+      .tl-dropdown a::after { display: none; }
 
       .tl-user-menu { position: relative; }
       .tl-user-chip {
