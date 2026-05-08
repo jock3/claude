@@ -52,7 +52,6 @@
       padding: 0;
       align-items: center;
     }
-
     .menu a {
       font-family: var(--font-display);
       font-size: var(--fs-sm);
@@ -77,67 +76,43 @@
     }
 
     .has-dropdown { position: relative; }
-    .has-dropdown > a {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .chev {
-      font-size: 9px;
-      line-height: 1;
-      transition: transform var(--dur-base) var(--ease-out);
-    }
+    .has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
+    .chev { font-size: 9px; line-height: 1; transition: transform var(--dur-base) var(--ease-out); }
     .has-dropdown:hover .chev,
     .has-dropdown:focus-within .chev { transform: rotate(180deg); }
 
     .dropdown {
       position: absolute;
-      top: calc(100% + 10px);
-      right: 0;
+      top: calc(100% + 10px); right: 0;
       min-width: 200px;
-      list-style: none;
-      margin: 0;
-      padding: 6px;
+      list-style: none; margin: 0; padding: 6px;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--r-md);
       box-shadow: var(--shadow-lg);
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-4px);
+      opacity: 0; visibility: hidden; transform: translateY(-4px);
       transition: opacity var(--dur-base) var(--ease-out),
                   visibility var(--dur-base) var(--ease-out),
                   transform var(--dur-base) var(--ease-out);
       z-index: 10;
     }
     .dropdown::before {
-      content: '';
-      position: absolute;
-      top: -10px; left: 0; right: 0;
-      height: 10px;
+      content: ''; position: absolute;
+      top: -10px; left: 0; right: 0; height: 10px;
     }
     .has-dropdown:hover .dropdown,
     .has-dropdown:focus-within .dropdown {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
+      opacity: 1; visibility: visible; transform: translateY(0);
     }
     .dropdown li { display: block; }
     .dropdown a {
-      display: block;
-      padding: 8px 12px;
+      display: block; padding: 8px 12px;
       border-radius: var(--r-sm);
-      font-size: var(--fs-sm);
-      font-weight: var(--fw-medium);
-      color: var(--color-text-muted);
-      border: 0;
-      transition: background var(--dur-fast) var(--ease-out),
-                  color var(--dur-fast) var(--ease-out);
+      font-size: var(--fs-sm); font-weight: var(--fw-medium);
+      color: var(--color-text-muted); border: 0;
+      transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
     }
-    .dropdown a:hover {
-      background: var(--color-surface-2);
-      color: var(--color-text);
-    }
+    .dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
 
     /* ─── Hero ─── */
     .hero {
@@ -180,15 +155,12 @@
     }
 
     /* ─── Login section ─── */
-    #login-section { width: 100%; max-width: 480px; }
+    #login-section { width: 100%; max-width: 400px; }
 
-    .login-input-row {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 28px;
-    }
-    .login-input-row input {
-      flex: 1;
+    .login-name-row { margin-bottom: 12px; }
+    .login-name-row input {
+      width: 100%;
+      box-sizing: border-box;
       font-family: var(--font-display);
       font-size: var(--fs-lg);
       padding: 14px 18px;
@@ -198,12 +170,53 @@
       border-radius: var(--r-md);
       outline: none;
       transition: border-color var(--dur-base) var(--ease-out);
-      min-width: 0;
     }
-    .login-input-row input:focus { border-color: var(--color-blue); }
-    .login-input-row input::placeholder { color: var(--color-text-faint); }
+    .login-name-row input:focus { border-color: var(--color-blue); }
+    .login-name-row input::placeholder { color: var(--color-text-faint); }
+
+    .pin-label {
+      font-size: var(--fs-xs);
+      font-weight: var(--fw-semibold);
+      letter-spacing: var(--tr-wider);
+      text-transform: uppercase;
+      color: var(--color-text-faint);
+      margin: 0 0 10px;
+    }
+
+    .pin-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .pin-input {
+      width: 56px;
+      height: 60px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: var(--fw-bold);
+      font-family: var(--font-display);
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      border-radius: var(--r-md);
+      outline: none;
+      transition: border-color var(--dur-base) var(--ease-out);
+      -moz-appearance: textfield;
+    }
+    .pin-input:focus { border-color: var(--color-blue); }
+    .pin-input::-webkit-outer-spin-button,
+    .pin-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    .login-error {
+      color: var(--color-red);
+      font-size: var(--fs-sm);
+      margin: 0 0 14px;
+      min-height: 20px;
+    }
 
     .btn-primary {
+      width: 100%;
       background: var(--color-red);
       color: var(--color-text);
       border: 0;
@@ -213,50 +226,14 @@
       padding: 14px 22px;
       border-radius: var(--r-md);
       cursor: pointer;
-      white-space: nowrap;
       transition: background var(--dur-base) var(--ease-out);
     }
     .btn-primary:hover { background: var(--color-red-hover); }
 
-    .pill-label {
-      font-size: var(--fs-xs);
-      font-weight: var(--fw-semibold);
-      letter-spacing: var(--tr-wider);
-      text-transform: uppercase;
-      color: var(--color-text-faint);
-      margin: 0 0 14px;
-    }
-    .user-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .user-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 18px 6px 6px;
-      border-radius: var(--r-pill);
-      border: 1px solid var(--color-border);
-      background: var(--color-surface);
-      color: var(--color-text);
-      font-family: var(--font-display);
-      font-size: var(--fs-sm);
-      font-weight: var(--fw-medium);
-      cursor: pointer;
-      transition: border-color var(--dur-base), background var(--dur-base);
-    }
-    .user-pill:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
-
-    .avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: var(--color-red); color: var(--color-text);
-      font-size: 13px; font-weight: var(--fw-bold);
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .avatar-lg { width: 48px; height: 48px; font-size: 20px; }
-
     /* ─── Logged-in section ─── */
     #loggedin-section {
       width: 100%;
-      max-width: 480px;
+      max-width: 400px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -269,11 +246,19 @@
       margin-bottom: 32px;
     }
 
+    .avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--color-red); color: var(--color-text);
+      font-size: 20px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
     .loggedin-info { text-align: left; }
     .loggedin-greeting {
       font-size: var(--fs-xl);
       font-weight: var(--fw-semibold);
-      margin: 0 0 5px;
+      margin: 0 0 6px;
       color: var(--color-text);
     }
 
@@ -291,39 +276,20 @@
     .btn-switch:hover { color: var(--color-text-muted); }
     .btn-danger-text:hover { color: var(--color-red) !important; }
 
-    .apps-grid {
-      display: flex; flex-direction: column;
-      gap: 10px; width: 100%;
-    }
+    .apps-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
     .app-card {
       display: flex; align-items: center; justify-content: space-between;
       padding: 18px 20px;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
-      border-bottom: 1px solid var(--color-border);
       border-radius: var(--r-lg);
-      text-decoration: none; color: inherit;
+      text-decoration: none; color: inherit; border-bottom: 0;
       transition: border-color var(--dur-base), background var(--dur-base);
-      text-align: left;
-      gap: 16px;
+      text-align: left; gap: 16px;
     }
-    .app-card:hover {
-      border-color: var(--color-border-strong);
-      background: var(--color-surface-2);
-      color: inherit;
-    }
-    .app-card-name {
-      display: block;
-      font-size: var(--fs-md);
-      font-weight: var(--fw-semibold);
-      color: var(--color-text);
-    }
-    .app-card-desc {
-      display: block;
-      font-size: var(--fs-xs);
-      color: var(--color-text-muted);
-      margin-top: 3px;
-    }
+    .app-card:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); color: inherit; }
+    .app-card-name { display: block; font-size: var(--fs-md); font-weight: var(--fw-semibold); color: var(--color-text); }
+    .app-card-desc { display: block; font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: 3px; }
     .app-card-arrow { font-size: 18px; color: var(--color-text-faint); flex-shrink: 0; }
 
     /* ─── Mobile ─── */
@@ -332,10 +298,9 @@
       .hero { padding-top: var(--sp-6); }
     }
     @media (max-width: 540px) {
-      .login-input-row { flex-direction: column; }
-      .btn-primary { width: 100%; }
       .headline { font-size: 26px; }
       .menu { gap: var(--sp-4); }
+      .pin-input { width: 48px; height: 52px; font-size: 18px; }
     }
     @media (max-width: 400px) {
       .logo svg { height: 32px; }
@@ -388,20 +353,24 @@
 
       <!-- Not logged in -->
       <section id="login-section" aria-label="Logga in">
-        <div class="login-input-row">
+        <div class="login-name-row">
           <input type="text" id="name-input" placeholder="Ditt namn" maxlength="40" autocomplete="off" />
-          <button class="btn-primary" id="login-btn">Fortsätt →</button>
         </div>
-        <div id="existing-users-wrap" hidden>
-          <p class="pill-label">Eller fortsätt som</p>
-          <div id="existing-users" class="user-pills"></div>
+        <p class="pin-label">PIN-kod</p>
+        <div class="pin-row" aria-label="4-siffrig PIN-kod">
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
         </div>
+        <p class="login-error" id="login-error" hidden></p>
+        <button class="btn-primary" id="login-btn">Fortsätt →</button>
       </section>
 
       <!-- Logged in -->
       <section id="loggedin-section" hidden>
         <div class="loggedin-header">
-          <span class="avatar avatar-lg" id="user-avatar"></span>
+          <span class="avatar" id="user-avatar"></span>
           <div class="loggedin-info">
             <p class="loggedin-greeting">Hej, <strong id="user-name"></strong>!</p>
             <div class="loggedin-actions">
@@ -433,28 +402,66 @@
   </div>
 
   <script>
-    const ACTIVE_USER_KEY = 'ailabb_active_user';
-    const USERS_KEY = 'ailabb_users';
+    var ACTIVE_USER_KEY = 'ailabb_active_user';
+    var USERS_KEY = 'ailabb_users';
+
+    // ailabb_users is now an object: { [name]: pinString }
 
     function stor(key, fallback) {
-      try { const v = JSON.parse(localStorage.getItem(key)); return v !== null ? v : fallback; }
-      catch { return fallback; }
+      try { var v = JSON.parse(localStorage.getItem(key)); return v !== null ? v : fallback; }
+      catch (e) { return fallback; }
     }
     function storSet(key, val) {
-      try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
     }
 
     function getActiveUser() { return stor(ACTIVE_USER_KEY, null); }
-    function getUsers() { return stor(USERS_KEY, []); }
+    function getUsers() {
+      var v = stor(USERS_KEY, {});
+      // Migrate old array format to object
+      if (Array.isArray(v)) { storSet(USERS_KEY, {}); return {}; }
+      return v;
+    }
 
-    function login(name) {
-      name = (name || '').trim();
-      if (!name) return;
-      const users = getUsers();
-      if (!users.includes(name)) users.push(name);
-      storSet(USERS_KEY, users);
-      storSet(ACTIVE_USER_KEY, name);
-      render();
+    function showError(msg) {
+      var el = document.getElementById('login-error');
+      el.textContent = msg || '';
+      el.hidden = !msg;
+    }
+
+    function getPinValue() {
+      return Array.from(document.querySelectorAll('.pin-input'))
+        .map(function(i) { return i.value; }).join('');
+    }
+
+    function handleSubmit() {
+      var name = document.getElementById('name-input').value.trim();
+      var pin  = getPinValue();
+
+      if (!name) { showError('Ange ett namn.'); return; }
+      if (pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        showError('Ange en 4-siffrig PIN-kod.'); return;
+      }
+
+      var users = getUsers();
+
+      if (users.hasOwnProperty(name)) {
+        // Existing account — verify PIN
+        if (users[name] === pin) {
+          storSet(ACTIVE_USER_KEY, name);
+          showError('');
+          render();
+        } else {
+          showError('Fel PIN-kod.');
+        }
+      } else {
+        // New account — create it
+        users[name] = pin;
+        storSet(USERS_KEY, users);
+        storSet(ACTIVE_USER_KEY, name);
+        showError('');
+        render();
+      }
     }
 
     function logout() {
@@ -471,11 +478,10 @@
       if (!user) return;
       if (!window.confirm('Ta bort kontot "' + user + '" och all dess data?')) return;
 
-      // Remove from users list
-      var users = getUsers().filter(function(u) { return u !== user; });
+      var users = getUsers();
+      delete users[user];
       storSet(USERS_KEY, users);
 
-      // Remove all known data for this user
       localStorage.removeItem(ACTIVE_USER_KEY);
       localStorage.removeItem('ailabb_user_' + sanitize(user) + '_campaigns');
       localStorage.removeItem('ailabb_profile_id');
@@ -484,54 +490,62 @@
       render();
     }
 
+    function resetLoginForm() {
+      document.getElementById('name-input').value = '';
+      document.querySelectorAll('.pin-input').forEach(function(i) { i.value = ''; });
+      showError('');
+      setTimeout(function() { document.getElementById('name-input').focus(); }, 0);
+    }
+
     function render() {
-      const user = getActiveUser();
-      const users = getUsers();
-      const loginSec = document.getElementById('login-section');
-      const loggedSec = document.getElementById('loggedin-section');
+      var user = getActiveUser();
+      document.getElementById('login-section').hidden = !!user;
+      document.getElementById('loggedin-section').hidden = !user;
 
       if (user) {
-        loginSec.hidden = true;
-        loggedSec.hidden = false;
         document.getElementById('user-name').textContent = user;
         document.getElementById('user-avatar').textContent = user[0].toUpperCase();
       } else {
-        loginSec.hidden = false;
-        loggedSec.hidden = true;
-
-        const exWrap = document.getElementById('existing-users-wrap');
-        const pillsEl = document.getElementById('existing-users');
-        pillsEl.innerHTML = '';
-
-        if (users.length > 0) {
-          exWrap.hidden = false;
-          users.forEach(function(u) {
-            var btn = document.createElement('button');
-            btn.className = 'user-pill';
-            btn.addEventListener('click', function() { login(u); });
-            var av = document.createElement('span');
-            av.className = 'avatar';
-            av.textContent = u[0].toUpperCase();
-            btn.appendChild(av);
-            btn.appendChild(document.createTextNode(u));
-            pillsEl.appendChild(btn);
-          });
-        } else {
-          exWrap.hidden = true;
-        }
-
-        var input = document.getElementById('name-input');
-        input.value = '';
-        setTimeout(function() { input.focus(); }, 0);
+        resetLoginForm();
       }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      var input = document.getElementById('name-input');
-      document.getElementById('login-btn').addEventListener('click', function() { login(input.value); });
-      input.addEventListener('keydown', function(e) { if (e.key === 'Enter') login(input.value); });
+      var nameInput  = document.getElementById('name-input');
+      var pinInputs  = Array.from(document.querySelectorAll('.pin-input'));
+
+      // PIN box auto-advance and validation
+      pinInputs.forEach(function(input, i) {
+        input.addEventListener('input', function() {
+          input.value = input.value.replace(/[^0-9]/g, '').slice(-1);
+          if (input.value && i < pinInputs.length - 1) pinInputs[i + 1].focus();
+        });
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !input.value && i > 0) pinInputs[i - 1].focus();
+          if (e.key === 'Enter') handleSubmit();
+        });
+        // Paste support — paste up to 4 digits starting from this box
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var digits = (e.clipboardData || window.clipboardData)
+            .getData('text').replace(/[^0-9]/g, '').slice(0, 4);
+          digits.split('').forEach(function(d, j) {
+            if (pinInputs[i + j]) pinInputs[i + j].value = d;
+          });
+          var next = Math.min(i + digits.length, pinInputs.length - 1);
+          pinInputs[next].focus();
+        });
+      });
+
+      // Tab from name to first PIN box
+      nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); pinInputs[0].focus(); }
+      });
+
+      document.getElementById('login-btn').addEventListener('click', handleSubmit);
       document.getElementById('logout-btn').addEventListener('click', logout);
       document.getElementById('delete-btn').addEventListener('click', deleteAccount);
+
       render();
     });
   </script>
