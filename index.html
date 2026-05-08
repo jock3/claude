@@ -277,6 +277,8 @@
       color: var(--color-text);
     }
 
+    .loggedin-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-sep { color: var(--color-text-faint); font-size: var(--fs-xs); }
     .btn-switch {
       background: transparent; border: 0;
       color: var(--color-text-faint);
@@ -287,6 +289,7 @@
       transition: color var(--dur-fast) var(--ease-out);
     }
     .btn-switch:hover { color: var(--color-text-muted); }
+    .btn-danger-text:hover { color: var(--color-red) !important; }
 
     .apps-grid {
       display: flex; flex-direction: column;
@@ -401,7 +404,11 @@
           <span class="avatar avatar-lg" id="user-avatar"></span>
           <div class="loggedin-info">
             <p class="loggedin-greeting">Hej, <strong id="user-name"></strong>!</p>
-            <button class="btn-switch" id="logout-btn">Byt användare</button>
+            <div class="loggedin-actions">
+              <button class="btn-switch" id="logout-btn">Byt användare</button>
+              <span class="btn-sep">·</span>
+              <button class="btn-switch btn-danger-text" id="delete-btn">Ta bort konto</button>
+            </div>
           </div>
         </div>
         <div class="apps-grid">
@@ -455,6 +462,28 @@
       render();
     }
 
+    function sanitize(name) {
+      return name.replace(/[\s/\\'"]+/g, '_');
+    }
+
+    function deleteAccount() {
+      var user = getActiveUser();
+      if (!user) return;
+      if (!window.confirm('Ta bort kontot "' + user + '" och all dess data?')) return;
+
+      // Remove from users list
+      var users = getUsers().filter(function(u) { return u !== user; });
+      storSet(USERS_KEY, users);
+
+      // Remove all known data for this user
+      localStorage.removeItem(ACTIVE_USER_KEY);
+      localStorage.removeItem('ailabb_user_' + sanitize(user) + '_campaigns');
+      localStorage.removeItem('ailabb_profile_id');
+      localStorage.removeItem('ailabb_profile_name');
+
+      render();
+    }
+
     function render() {
       const user = getActiveUser();
       const users = getUsers();
@@ -502,6 +531,7 @@
       document.getElementById('login-btn').addEventListener('click', function() { login(input.value); });
       input.addEventListener('keydown', function(e) { if (e.key === 'Enter') login(input.value); });
       document.getElementById('logout-btn').addEventListener('click', logout);
+      document.getElementById('delete-btn').addEventListener('click', deleteAccount);
       render();
     });
   </script>
