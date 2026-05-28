@@ -89,29 +89,96 @@ function UserMenu({ activeUser, onSwitch }) {
 /* ─── Project Card ────────────────────────────────────────── */
 
 function ProjectCard({ project, onUpdate, onDelete }) {
-  const [noteText, setNoteText] = useState('');
-  const days = daysUntil(project.deadline);
+  const [newTodo,      setNewTodo]      = useState('');
+  const [subInputs,    setSubInputs]    = useState({});
+  const [subSubInputs, setSubSubInputs] = useState({});
+  const [openSub,      setOpenSub]      = useState(new Set());
+  const [openSubSub,   setOpenSubSub]   = useState(new Set());
 
-  const addNote = () => {
-    if (!noteText.trim()) return;
-    const newNote = {
-      id: Date.now().toString(),
-      text: noteText.trim(),
-      done: false,
-      createdAt: new Date().toISOString(),
-    };
-    onUpdate({ notes: [newNote, ...(project.notes || [])] });
-    setNoteText('');
+  const todos = project.todos || [];
+  const days  = daysUntil(project.deadline);
+
+  const uid = () => Date.now().toString() + Math.random().toString(36).slice(2, 6);
+  const ts  = () => new Date().toISOString();
+
+  /* ── Level 0 ── */
+  const addTodo = () => {
+    if (!newTodo.trim()) return;
+    onUpdate({ todos: [...todos, { id: uid(), text: newTodo.trim(), done: false, createdAt: ts(), children: [] }] });
+    setNewTodo('');
+  };
+  const toggleTodo = (id) =>
+    onUpdate({ todos: todos.map(t => t.id === id ? { ...t, done: !t.done } : t) });
+  const deleteTodo = (id) => {
+    onUpdate({ todos: todos.filter(t => t.id !== id) });
+    setOpenSub(s => { const n = new Set(s); n.delete(id); return n; });
+  };
+  const toggleSubOpen = (id) =>
+    setOpenSub(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  /* ── Level 1 ── */
+  const addSub = (pid) => {
+    const text = (subInputs[pid] || '').trim();
+    if (!text) return;
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: [...(t.children || []), { id: uid(), text, done: false, createdAt: ts(), children: [] }]
+      })
+    });
+    setSubInputs(p => ({ ...p, [pid]: '' }));
+  };
+  const toggleSub = (pid, cid) =>
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id === cid ? { ...c, done: !c.done } : c)
+      })
+    });
+  const deleteSub = (pid, cid) => {
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).filter(c => c.id !== cid)
+      })
+    });
+    const key = `${pid}/${cid}`;
+    setOpenSubSub(s => { const n = new Set(s); n.delete(key); return n; });
+  };
+  const toggleSubSubOpen = (pid, cid) => {
+    const key = `${pid}/${cid}`;
+    setOpenSubSub(s => { const n = new Set(s); n.has(key) ? n.delete(key) : n.add(key); return n; });
   };
 
-  const toggleNote = (id) =>
-    onUpdate({ notes: project.notes.map((n) => (n.id === id ? { ...n, done: !n.done } : n)) });
+  /* ── Level 2 ── */
+  const addSubSub = (pid, cid) => {
+    const key  = `${pid}/${cid}`;
+    const text = (subSubInputs[key] || '').trim();
+    if (!text) return;
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+          ...c, children: [...(c.children || []), { id: uid(), text, done: false, createdAt: ts() }]
+        })
+      })
+    });
+    setSubSubInputs(p => ({ ...p, [key]: '' }));
+  };
+  const toggleSubSub = (pid, cid, gid) =>
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+          ...c, children: (c.children || []).map(g => g.id === gid ? { ...g, done: !g.done } : g)
+        })
+      })
+    });
+  const deleteSubSub = (pid, cid, gid) =>
+    onUpdate({
+      todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+          ...c, children: (c.children || []).filter(g => g.id !== gid)
+        })
+      })
+    });
 
-  const deleteNote = (id) =>
-    onUpdate({ notes: project.notes.filter((n) => n.id !== id) });
-
-  let dlClass = '';
-  let dlText = '';
+  let dlClass = '', dlText = '';
   if (days < 0)        { dlClass = 'overdue'; dlText = `${Math.abs(days)} d försenad`; }
   else if (days === 0) { dlClass = 'urgent';  dlText = 'Idag'; }
   else if (days <= 7)  { dlClass = 'urgent';  dlText = `${days} d kvar`; }
@@ -151,37 +218,104 @@ function ProjectCard({ project, onUpdate, onDelete }) {
         })}
       </div>
 
-      <div className="tl-notes">
-        {!project.notes || project.notes.length === 0 ? (
-          <p className="tl-notes-empty">Inga anteckningar än.</p>
-        ) : (
-          project.notes.map((note) => (
-            <div key={note.id} className={`tl-note ${note.done ? 'done' : ''}`}>
-              <input
-                type="checkbox"
-                className="tl-note-checkbox"
-                checked={note.done}
-                onChange={() => toggleNote(note.id)}
-              />
-              <div className="tl-note-content">
-                <span className="tl-note-text">{note.text}</span>
-                <span className="tl-note-date">{formatDate(note.createdAt)}</span>
-              </div>
-              <button className="tl-icon-btn" onClick={() => deleteNote(note.id)} aria-label="Ta bort anteckning">
-                <X size={14} />
-              </button>
+      <div className="tl-todos">
+        {todos.length === 0 && <p className="tl-empty-hint">Inga todos ännu.</p>}
+
+        {todos.map((todo) => (
+          <div key={todo.id} className="tl-todo-block">
+            {/* Level 0 row */}
+            <div className={`tl-row l0 ${todo.done ? 'done' : ''}`}>
+              <input type="checkbox" className="tl-check" checked={todo.done} onChange={() => toggleTodo(todo.id)} />
+              <span className="tl-row-text">{todo.text}</span>
+              <button
+                className={`tl-add-child-btn ${openSub.has(todo.id) ? 'open' : ''}`}
+                onClick={() => toggleSubOpen(todo.id)}
+                title="Lägg till sub-todo"
+              ><Plus size={11} strokeWidth={2.5} /></button>
+              <button className="tl-icon-btn" onClick={() => deleteTodo(todo.id)} aria-label="Ta bort"><X size={14} /></button>
             </div>
-          ))
-        )}
+
+            {/* Level 1 children */}
+            {((todo.children || []).length > 0 || openSub.has(todo.id)) && (
+              <div className="tl-children">
+                {(todo.children || []).map((child) => (
+                  <div key={child.id} className="tl-todo-block">
+                    <div className={`tl-row l1 ${child.done ? 'done' : ''}`}>
+                      <input type="checkbox" className="tl-check sm" checked={child.done} onChange={() => toggleSub(todo.id, child.id)} />
+                      <span className="tl-row-text">{child.text}</span>
+                      <button
+                        className={`tl-add-child-btn sm ${openSubSub.has(`${todo.id}/${child.id}`) ? 'open' : ''}`}
+                        onClick={() => toggleSubSubOpen(todo.id, child.id)}
+                        title="Lägg till sub-sub-todo"
+                      ><Plus size={10} strokeWidth={2.5} /></button>
+                      <button className="tl-icon-btn" onClick={() => deleteSub(todo.id, child.id)} aria-label="Ta bort"><X size={13} /></button>
+                    </div>
+
+                    {/* Level 2 children */}
+                    {((child.children || []).length > 0 || openSubSub.has(`${todo.id}/${child.id}`)) && (
+                      <div className="tl-children sub">
+                        {(child.children || []).map((grand) => (
+                          <div key={grand.id} className={`tl-row l2 ${grand.done ? 'done' : ''}`}>
+                            <input type="checkbox" className="tl-check sm" checked={grand.done} onChange={() => toggleSubSub(todo.id, child.id, grand.id)} />
+                            <span className="tl-row-text">{grand.text}</span>
+                            <button className="tl-icon-btn" onClick={() => deleteSubSub(todo.id, child.id, grand.id)} aria-label="Ta bort"><X size={12} /></button>
+                          </div>
+                        ))}
+                        {openSubSub.has(`${todo.id}/${child.id}`) && (
+                          <div className="tl-inline-add">
+                            <input
+                              autoFocus
+                              type="text"
+                              placeholder="Sub-sub-todo…"
+                              value={subSubInputs[`${todo.id}/${child.id}`] || ''}
+                              onChange={(e) => setSubSubInputs(p => ({ ...p, [`${todo.id}/${child.id}`]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter')  addSubSub(todo.id, child.id);
+                                if (e.key === 'Escape') toggleSubSubOpen(todo.id, child.id);
+                              }}
+                            />
+                            <button onClick={() => addSubSub(todo.id, child.id)} disabled={!(subSubInputs[`${todo.id}/${child.id}`] || '').trim()}>
+                              <Plus size={12} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {openSub.has(todo.id) && (
+                  <div className="tl-inline-add">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Sub-todo…"
+                      value={subInputs[todo.id] || ''}
+                      onChange={(e) => setSubInputs(p => ({ ...p, [todo.id]: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter')  addSub(todo.id);
+                        if (e.key === 'Escape') toggleSubOpen(todo.id);
+                      }}
+                    />
+                    <button onClick={() => addSub(todo.id)} disabled={!(subInputs[todo.id] || '').trim()}>
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+
         <div className="tl-add-note">
           <input
             type="text"
-            placeholder="Lägg till anteckning…"
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addNote()}
+            placeholder="Lägg till todo…"
+            value={newTodo}
+            onChange={(e) => setNewTodo(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addTodo()}
           />
-          <button onClick={addNote} disabled={!noteText.trim()}>
+          <button onClick={addTodo} disabled={!newTodo.trim()}>
             <Plus size={14} strokeWidth={2.5} />
             Lägg till
           </button>
@@ -259,7 +393,7 @@ export default function TodoLabb() {
       name: name.trim(),
       checkpoint,
       deadline,
-      notes: [],
+      todos: [],
       created_at: new Date().toISOString(),
     };
     setProjects((prev) => [project, ...prev]);
@@ -613,28 +747,63 @@ function ScopedStyles() {
       .tl-progress-step:hover .tl-plabel { color: var(--color-text); }
       .tl-progress-line { flex: 1; height: 2px; background: var(--color-border); margin: 0 10px; min-width: 16px; transition: background 200ms; }
 
-      .tl-notes { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(0,0,0,0.025); }
-      .tl-notes-empty { font-size: 13px; color: var(--color-text-faint); margin: 4px 0 12px; font-style: italic; }
-      .tl-note { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
-      .tl-note:last-of-type { border-bottom: 0; }
-      .tl-note-checkbox {
+      /* ── Todos ── */
+      .tl-todos { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(0,0,0,0.025); }
+      .tl-empty-hint { font-size: 13px; color: var(--color-text-faint); margin: 4px 0 12px; font-style: italic; }
+
+      .tl-todo-block { margin-bottom: 1px; }
+
+      .tl-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; }
+      .tl-row.done .tl-row-text { text-decoration: line-through; color: var(--color-text-faint); }
+      .tl-row-text { flex: 1; word-break: break-word; padding-top: 1px; transition: color 200ms; }
+      .tl-row.l0 .tl-row-text { font-size: 15px; color: var(--color-text); }
+      .tl-row.l1 .tl-row-text { font-size: 14px; color: var(--color-text); }
+      .tl-row.l2 .tl-row-text { font-size: 13px; color: var(--color-text-muted); }
+
+      .tl-check {
         appearance: none; -webkit-appearance: none;
-        width: 18px; height: 18px; border: 2px solid var(--color-border-strong); border-radius: 4px;
-        background: var(--color-surface-2); cursor: pointer;
-        margin: 1px 0 0; flex-shrink: 0; position: relative; transition: all 200ms;
+        width: 16px; height: 16px; border: 2px solid var(--color-border-strong); border-radius: 4px;
+        background: var(--color-surface); cursor: pointer;
+        margin: 2px 0 0; flex-shrink: 0; position: relative; transition: all 200ms;
       }
-      .tl-note-checkbox:hover { border-color: var(--color-text-muted); }
-      .tl-note-checkbox:checked { background: var(--color-success); border-color: var(--color-success); }
-      .tl-note-checkbox:checked::after {
-        content: ''; position: absolute; left: 4px; top: 0;
-        width: 4px; height: 9px;
-        border: solid var(--color-bg); border-width: 0 2px 2px 0;
+      .tl-check.sm { width: 14px; height: 14px; margin-top: 3px; }
+      .tl-check:hover { border-color: var(--color-text-muted); }
+      .tl-check:checked { background: var(--color-success); border-color: var(--color-success); }
+      .tl-check:checked::after {
+        content: ''; position: absolute; left: 3px; top: 0;
+        width: 4px; height: 8px;
+        border: solid white; border-width: 0 2px 2px 0;
         transform: rotate(45deg);
       }
-      .tl-note-content { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-      .tl-note-text { font-size: 15px; color: var(--color-text); word-break: break-word; transition: color 200ms; }
-      .tl-note.done .tl-note-text { text-decoration: line-through; color: var(--color-text-faint); }
-      .tl-note-date { font-size: 11px; color: var(--color-text-faint); letter-spacing: 0.04em; }
+      .tl-check.sm:checked::after { left: 2px; width: 3px; height: 7px; }
+
+      .tl-children {
+        margin-left: 7px; padding-left: 16px;
+        border-left: 2px solid var(--color-border);
+        margin-top: 2px; margin-bottom: 4px;
+      }
+      .tl-children.sub { padding-left: 14px; }
+
+      .tl-add-child-btn {
+        background: transparent; border: 0;
+        color: var(--color-text-faint); padding: 3px 4px; border-radius: 4px;
+        cursor: pointer; display: inline-flex; align-items: center;
+        transition: color 150ms, background 150ms; flex-shrink: 0; margin-top: 2px;
+      }
+      .tl-add-child-btn:hover { color: var(--color-text-muted); background: var(--color-surface-2); }
+      .tl-add-child-btn.open { color: var(--color-text); background: var(--color-surface-3); }
+
+      .tl-inline-add { display: flex; gap: 6px; padding: 6px 0 4px; }
+      .tl-inline-add input { flex: 1; padding: 6px 10px; font-size: 13px; border-radius: 8px; }
+      .tl-inline-add button {
+        padding: 6px 10px; background: var(--color-surface-3);
+        border: 1px solid var(--color-border-strong); color: var(--color-text);
+        border-radius: 8px; font-family: inherit; font-size: 13px;
+        cursor: pointer; display: inline-flex; align-items: center;
+        transition: all 200ms;
+      }
+      .tl-inline-add button:hover:not(:disabled) { background: var(--color-border); }
+      .tl-inline-add button:disabled { opacity: 0.35; cursor: not-allowed; }
 
       .tl-add-note { display: flex; gap: 8px; margin-top: 12px; }
       .tl-add-note input { flex: 1; padding: 9px 12px; font-size: 14px; }
