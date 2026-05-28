@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from 'react';
-import { Plus, Trash2, X, Calendar, ChevronDown, LogOut } from 'lucide-react';
+import { Plus, Trash2, X, Check, Calendar, ChevronDown, LogOut } from 'lucide-react';
 import * as db from './db.js';
 
 /* ─── Constants ───────────────────────────────────────────── */
@@ -94,12 +94,39 @@ function ProjectCard({ project, onUpdate, onDelete }) {
   const [subSubInputs, setSubSubInputs] = useState({});
   const [openSub,      setOpenSub]      = useState(new Set());
   const [openSubSub,   setOpenSubSub]   = useState(new Set());
+  const [editingId,    setEditingId]    = useState(null);
+  const [editText,     setEditText]     = useState('');
 
   const todos = project.todos || [];
   const days  = daysUntil(project.deadline);
 
   const uid = () => Date.now().toString() + Math.random().toString(36).slice(2, 6);
   const ts  = () => new Date().toISOString();
+
+  /* ── Inline edit ── */
+  const startEdit = (key, text) => { setEditingId(key); setEditText(text); };
+  const commitEdit = () => {
+    if (!editingId) return;
+    const trimmed = editText.trim();
+    if (!trimmed) { setEditingId(null); return; }
+    const parts = editingId.split('/');
+    if (parts.length === 1) {
+      onUpdate({ todos: todos.map(t => t.id === parts[0] ? { ...t, text: trimmed } : t) });
+    } else if (parts.length === 2) {
+      const [pid, cid] = parts;
+      onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id === cid ? { ...c, text: trimmed } : c)
+      })});
+    } else {
+      const [pid, cid, gid] = parts;
+      onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+          ...c, children: (c.children || []).map(g => g.id === gid ? { ...g, text: trimmed } : g)
+        })
+      })});
+    }
+    setEditingId(null);
+  };
 
   /* ── Level 0 ── */
   const addTodo = () => {
@@ -128,19 +155,14 @@ function ProjectCard({ project, onUpdate, onDelete }) {
     setSubInputs(p => ({ ...p, [pid]: '' }));
   };
   const toggleSub = (pid, cid) =>
-    onUpdate({
-      todos: todos.map(t => t.id !== pid ? t : {
-        ...t, children: (t.children || []).map(c => c.id === cid ? { ...c, done: !c.done } : c)
-      })
-    });
+    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+      ...t, children: (t.children || []).map(c => c.id === cid ? { ...c, done: !c.done } : c)
+    })});
   const deleteSub = (pid, cid) => {
-    onUpdate({
-      todos: todos.map(t => t.id !== pid ? t : {
-        ...t, children: (t.children || []).filter(c => c.id !== cid)
-      })
-    });
-    const key = `${pid}/${cid}`;
-    setOpenSubSub(s => { const n = new Set(s); n.delete(key); return n; });
+    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+      ...t, children: (t.children || []).filter(c => c.id !== cid)
+    })});
+    setOpenSubSub(s => { const n = new Set(s); n.delete(`${pid}/${cid}`); return n; });
   };
   const toggleSubSubOpen = (pid, cid) => {
     const key = `${pid}/${cid}`;
@@ -152,37 +174,43 @@ function ProjectCard({ project, onUpdate, onDelete }) {
     const key  = `${pid}/${cid}`;
     const text = (subSubInputs[key] || '').trim();
     if (!text) return;
-    onUpdate({
-      todos: todos.map(t => t.id !== pid ? t : {
-        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
-          ...c, children: [...(c.children || []), { id: uid(), text, done: false, createdAt: ts() }]
-        })
+    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+      ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+        ...c, children: [...(c.children || []), { id: uid(), text, done: false, createdAt: ts() }]
       })
-    });
+    })});
     setSubSubInputs(p => ({ ...p, [key]: '' }));
   };
   const toggleSubSub = (pid, cid, gid) =>
-    onUpdate({
-      todos: todos.map(t => t.id !== pid ? t : {
-        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
-          ...c, children: (c.children || []).map(g => g.id === gid ? { ...g, done: !g.done } : g)
-        })
+    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+      ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+        ...c, children: (c.children || []).map(g => g.id === gid ? { ...g, done: !g.done } : g)
       })
-    });
+    })});
   const deleteSubSub = (pid, cid, gid) =>
-    onUpdate({
-      todos: todos.map(t => t.id !== pid ? t : {
-        ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
-          ...c, children: (c.children || []).filter(g => g.id !== gid)
-        })
+    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+      ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
+        ...c, children: (c.children || []).filter(g => g.id !== gid)
       })
-    });
+    })});
 
   let dlClass = '', dlText = '';
   if (days < 0)        { dlClass = 'overdue'; dlText = `${Math.abs(days)} d försenad`; }
   else if (days === 0) { dlClass = 'urgent';  dlText = 'Idag'; }
   else if (days <= 7)  { dlClass = 'urgent';  dlText = `${days} d kvar`; }
   else                 { dlText = `${days} d kvar`; }
+
+  const EditInput = ({ editKey, placeholder }) => (
+    <input
+      autoFocus
+      className="tl-edit-input"
+      value={editText}
+      placeholder={placeholder}
+      onChange={(e) => setEditText(e.target.value)}
+      onBlur={commitEdit}
+      onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+    />
+  );
 
   return (
     <div className="tl-project">
@@ -223,66 +251,83 @@ function ProjectCard({ project, onUpdate, onDelete }) {
 
         {todos.map((todo) => (
           <div key={todo.id} className="tl-todo-block">
-            {/* Level 0 row */}
+            {/* Level 0 */}
             <div className={`tl-row l0 ${todo.done ? 'done' : ''}`}>
-              <input type="checkbox" className="tl-check" checked={todo.done} onChange={() => toggleTodo(todo.id)} />
-              <span className="tl-row-text">{todo.text}</span>
-              <button
-                className={`tl-add-child-btn ${openSub.has(todo.id) ? 'open' : ''}`}
-                onClick={() => toggleSubOpen(todo.id)}
-                title="Lägg till sub-todo"
-              ><Plus size={11} strokeWidth={2.5} /></button>
+              <button className={`tl-circle-btn ${todo.done ? 'checked' : ''}`} onClick={() => toggleTodo(todo.id)} aria-label="Markera klar">
+                {todo.done && <Check size={10} strokeWidth={3} />}
+              </button>
+              {editingId === todo.id
+                ? <EditInput editKey={todo.id} placeholder={todo.text} />
+                : <span className="tl-row-text" onClick={() => startEdit(todo.id, todo.text)}>{todo.text}</span>
+              }
+              <button className={`tl-add-child-btn ${openSub.has(todo.id) ? 'open' : ''}`} onClick={() => toggleSubOpen(todo.id)} title="Lägg till sub-todo">
+                <Plus size={11} strokeWidth={2.5} />
+              </button>
               <button className="tl-icon-btn" onClick={() => deleteTodo(todo.id)} aria-label="Ta bort"><X size={14} /></button>
             </div>
 
-            {/* Level 1 children */}
+            {/* Level 1 */}
             {((todo.children || []).length > 0 || openSub.has(todo.id)) && (
               <div className="tl-children">
-                {(todo.children || []).map((child) => (
-                  <div key={child.id} className="tl-todo-block">
-                    <div className={`tl-row l1 ${child.done ? 'done' : ''}`}>
-                      <input type="checkbox" className="tl-check sm" checked={child.done} onChange={() => toggleSub(todo.id, child.id)} />
-                      <span className="tl-row-text">{child.text}</span>
-                      <button
-                        className={`tl-add-child-btn sm ${openSubSub.has(`${todo.id}/${child.id}`) ? 'open' : ''}`}
-                        onClick={() => toggleSubSubOpen(todo.id, child.id)}
-                        title="Lägg till sub-sub-todo"
-                      ><Plus size={10} strokeWidth={2.5} /></button>
-                      <button className="tl-icon-btn" onClick={() => deleteSub(todo.id, child.id)} aria-label="Ta bort"><X size={13} /></button>
-                    </div>
-
-                    {/* Level 2 children */}
-                    {((child.children || []).length > 0 || openSubSub.has(`${todo.id}/${child.id}`)) && (
-                      <div className="tl-children sub">
-                        {(child.children || []).map((grand) => (
-                          <div key={grand.id} className={`tl-row l2 ${grand.done ? 'done' : ''}`}>
-                            <input type="checkbox" className="tl-check sm" checked={grand.done} onChange={() => toggleSubSub(todo.id, child.id, grand.id)} />
-                            <span className="tl-row-text">{grand.text}</span>
-                            <button className="tl-icon-btn" onClick={() => deleteSubSub(todo.id, child.id, grand.id)} aria-label="Ta bort"><X size={12} /></button>
-                          </div>
-                        ))}
-                        {openSubSub.has(`${todo.id}/${child.id}`) && (
-                          <div className="tl-inline-add">
-                            <input
-                              autoFocus
-                              type="text"
-                              placeholder="Sub-sub-todo…"
-                              value={subSubInputs[`${todo.id}/${child.id}`] || ''}
-                              onChange={(e) => setSubSubInputs(p => ({ ...p, [`${todo.id}/${child.id}`]: e.target.value }))}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter')  addSubSub(todo.id, child.id);
-                                if (e.key === 'Escape') toggleSubSubOpen(todo.id, child.id);
-                              }}
-                            />
-                            <button onClick={() => addSubSub(todo.id, child.id)} disabled={!(subSubInputs[`${todo.id}/${child.id}`] || '').trim()}>
-                              <Plus size={12} />
-                            </button>
-                          </div>
-                        )}
+                {(todo.children || []).map((child) => {
+                  const childKey = `${todo.id}/${child.id}`;
+                  return (
+                    <div key={child.id} className="tl-todo-block">
+                      <div className={`tl-row l1 ${child.done ? 'done' : ''}`}>
+                        <button className={`tl-circle-btn sm ${child.done ? 'checked' : ''}`} onClick={() => toggleSub(todo.id, child.id)} aria-label="Markera klar">
+                          {child.done && <Check size={8} strokeWidth={3} />}
+                        </button>
+                        {editingId === childKey
+                          ? <EditInput editKey={childKey} placeholder={child.text} />
+                          : <span className="tl-row-text" onClick={() => startEdit(childKey, child.text)}>{child.text}</span>
+                        }
+                        <button className={`tl-add-child-btn sm ${openSubSub.has(childKey) ? 'open' : ''}`} onClick={() => toggleSubSubOpen(todo.id, child.id)} title="Lägg till sub-sub-todo">
+                          <Plus size={10} strokeWidth={2.5} />
+                        </button>
+                        <button className="tl-icon-btn" onClick={() => deleteSub(todo.id, child.id)} aria-label="Ta bort"><X size={13} /></button>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Level 2 */}
+                      {((child.children || []).length > 0 || openSubSub.has(childKey)) && (
+                        <div className="tl-children sub">
+                          {(child.children || []).map((grand) => {
+                            const grandKey = `${todo.id}/${child.id}/${grand.id}`;
+                            return (
+                              <div key={grand.id} className={`tl-row l2 ${grand.done ? 'done' : ''}`}>
+                                <button className={`tl-circle-btn sm ${grand.done ? 'checked' : ''}`} onClick={() => toggleSubSub(todo.id, child.id, grand.id)} aria-label="Markera klar">
+                                  {grand.done && <Check size={8} strokeWidth={3} />}
+                                </button>
+                                {editingId === grandKey
+                                  ? <EditInput editKey={grandKey} placeholder={grand.text} />
+                                  : <span className="tl-row-text" onClick={() => startEdit(grandKey, grand.text)}>{grand.text}</span>
+                                }
+                                <button className="tl-icon-btn" onClick={() => deleteSubSub(todo.id, child.id, grand.id)} aria-label="Ta bort"><X size={12} /></button>
+                              </div>
+                            );
+                          })}
+                          {openSubSub.has(childKey) && (
+                            <div className="tl-inline-add">
+                              <input
+                                autoFocus
+                                type="text"
+                                placeholder="Sub-sub-todo…"
+                                value={subSubInputs[childKey] || ''}
+                                onChange={(e) => setSubSubInputs(p => ({ ...p, [childKey]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter')  addSubSub(todo.id, child.id);
+                                  if (e.key === 'Escape') toggleSubSubOpen(todo.id, child.id);
+                                }}
+                              />
+                              <button onClick={() => addSubSub(todo.id, child.id)} disabled={!(subSubInputs[childKey] || '').trim()}>
+                                <Plus size={12} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {openSub.has(todo.id) && (
                   <div className="tl-inline-add">
@@ -755,27 +800,33 @@ function ScopedStyles() {
 
       .tl-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; }
       .tl-row.done .tl-row-text { text-decoration: line-through; color: var(--color-text-faint); }
-      .tl-row-text { flex: 1; word-break: break-word; padding-top: 1px; transition: color 200ms; }
+      .tl-row-text {
+        flex: 1; word-break: break-word; padding-top: 1px;
+        transition: color 200ms; cursor: text; border-radius: 4px;
+      }
+      .tl-row-text:hover { background: var(--color-surface-2); }
       .tl-row.l0 .tl-row-text { font-size: 15px; color: var(--color-text); }
       .tl-row.l1 .tl-row-text { font-size: 14px; color: var(--color-text); }
       .tl-row.l2 .tl-row-text { font-size: 13px; color: var(--color-text-muted); }
 
-      .tl-check {
-        appearance: none; -webkit-appearance: none;
-        width: 16px; height: 16px; border: 2px solid var(--color-border-strong); border-radius: 4px;
+      .tl-circle-btn {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 2px solid var(--color-border-strong);
         background: var(--color-surface); cursor: pointer;
-        margin: 2px 0 0; flex-shrink: 0; position: relative; transition: all 200ms;
+        flex-shrink: 0; margin-top: 2px; padding: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: all 150ms; color: transparent;
       }
-      .tl-check.sm { width: 14px; height: 14px; margin-top: 3px; }
-      .tl-check:hover { border-color: var(--color-text-muted); }
-      .tl-check:checked { background: var(--color-success); border-color: var(--color-success); }
-      .tl-check:checked::after {
-        content: ''; position: absolute; left: 3px; top: 0;
-        width: 4px; height: 8px;
-        border: solid white; border-width: 0 2px 2px 0;
-        transform: rotate(45deg);
+      .tl-circle-btn.sm { width: 15px; height: 15px; margin-top: 3px; }
+      .tl-circle-btn:hover { border-color: var(--color-success); background: rgba(31,122,58,0.08); color: var(--color-success); }
+      .tl-circle-btn.checked { background: var(--color-success); border-color: var(--color-success); color: white; }
+
+      .tl-edit-input {
+        flex: 1; background: var(--color-surface);
+        border: 1px solid var(--color-blue); border-radius: 6px;
+        color: var(--color-text); font-family: inherit; font-size: inherit;
+        padding: 1px 8px; outline: none; min-width: 0;
       }
-      .tl-check.sm:checked::after { left: 2px; width: 3px; height: 7px; }
 
       .tl-children {
         margin-left: 7px; padding-left: 16px;
