@@ -352,7 +352,7 @@ export default function TodoLabb() {
                     type="button"
                     className={`tl-cp-pill ${checkpoint === i ? 'active' : ''}`}
                     onClick={() => setCheckpoint(i)}
-                    style={checkpoint === i ? { borderColor: cp.color, background: `${cp.color}1F` } : {}}
+                    style={checkpoint === i ? { borderColor: cp.color, background: `${cp.color}20` } : {}}
                   >
                     <span className="tl-dot" style={{ background: cp.color }} />
                     {cp.label}
@@ -441,7 +441,7 @@ function ScopedStyles() {
         position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
         list-style: none; margin: 0; padding: 6px;
         background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+        border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
         opacity: 0; visibility: hidden; transform: translateY(-4px);
         transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
       }
@@ -560,7 +560,7 @@ function ScopedStyles() {
       .tl-app-root input[type="text"]:focus,
       .tl-app-root input[type="date"]:focus,
       .tl-welcome-root input[type="text"]:focus { border-color: var(--color-blue); }
-      .tl-app-root input[type="date"] { color-scheme: dark; }
+      .tl-app-root input[type="date"] { color-scheme: light; }
       .tl-app-root ::placeholder, .tl-welcome-root ::placeholder { color: var(--color-text-faint); }
 
       .tl-checkpoints { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -573,7 +573,7 @@ function ScopedStyles() {
       }
       .tl-cp-pill .tl-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
       .tl-cp-pill:hover { color: var(--color-text); border-color: var(--color-border-strong); }
-      .tl-cp-pill.active { color: var(--color-text); }
+      .tl-cp-pill.active { color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
       .tl-form-actions { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
 
       .tl-project { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
@@ -613,9 +613,9 @@ function ScopedStyles() {
       .tl-progress-step:hover .tl-plabel { color: var(--color-text); }
       .tl-progress-line { flex: 1; height: 2px; background: var(--color-border); margin: 0 10px; min-width: 16px; transition: background 200ms; }
 
-      .tl-notes { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(0,0,0,0.18); }
+      .tl-notes { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(0,0,0,0.025); }
       .tl-notes-empty { font-size: 13px; color: var(--color-text-faint); margin: 4px 0 12px; font-style: italic; }
-      .tl-note { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+      .tl-note { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
       .tl-note:last-of-type { border-bottom: 0; }
       .tl-note-checkbox {
         appearance: none; -webkit-appearance: none;

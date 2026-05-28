@@ -829,7 +829,7 @@ function ScopedStyles() {
         position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
         list-style: none; margin: 0; padding: 6px;
         background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+        border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
         opacity: 0; visibility: hidden; transform: translateY(-4px);
         transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
       }
@@ -988,7 +988,7 @@ function ScopedStyles() {
         transition: border-color 200ms;
       }
       .kl-app-root input:focus, .kl-welcome-root input:focus { border-color: var(--color-blue); }
-      .kl-app-root input[type="date"] { color-scheme: dark; }
+      .kl-app-root input[type="date"] { color-scheme: light; }
       .kl-app-root ::placeholder, .kl-welcome-root ::placeholder { color: var(--color-text-faint); }
       .kl-app-root input[type="number"] { -moz-appearance: textfield; }
       .kl-app-root input[type="number"]::-webkit-outer-spin-button,
@@ -1029,7 +1029,7 @@ function ScopedStyles() {
       /* Status segmented control */
       .kl-status-seg {
         display: inline-flex; gap: 4px;
-        background: var(--color-bg); padding: 3px;
+        background: var(--color-surface-2); padding: 3px;
         border: 1px solid var(--color-border); border-radius: 999px;
         flex-wrap: nowrap;
       }
@@ -1042,8 +1042,8 @@ function ScopedStyles() {
       }
       .kl-status-seg button:hover { color: var(--color-text); }
       .kl-status-seg button.active {
-        color: var(--color-text); background: var(--color-surface-2);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        color: var(--color-text); background: var(--color-surface);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
       }
       .kl-status-seg button .sdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
       .kl-status-seg.compact { padding: 2px; }
@@ -1067,7 +1067,7 @@ function ScopedStyles() {
         text-align: left; color: inherit; font-family: inherit;
         transition: background 150ms;
       }
-      .kl-campaign-header:hover { background: rgba(255,255,255,0.015); }
+      .kl-campaign-header:hover { background: rgba(0,0,0,0.02); }
       .kl-campaign-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
       .kl-campaign-client {
         font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
@@ -1098,7 +1098,7 @@ function ScopedStyles() {
 
       .kl-campaign-body {
         border-top: 1px solid var(--color-border);
-        background: rgba(0,0,0,0.18);
+        background: rgba(0,0,0,0.025);
         padding: 22px 20px 20px;
         display: flex; flex-direction: column; gap: 24px;
       }
@@ -1132,7 +1132,7 @@ function ScopedStyles() {
         width: 14px; height: 14px; border-radius: 50%;
         background: var(--color-text); border: 3px solid var(--color-bg);
         transform: translate(-50%, -50%);
-        box-shadow: 0 0 0 2px var(--color-success), 0 0 12px rgba(91,174,110,0.4);
+        box-shadow: 0 0 0 2px var(--color-success), 0 0 10px rgba(31,122,58,0.25);
       }
       .kl-timeline-today-label {
         position: absolute; top: 18px;
@@ -1180,7 +1180,7 @@ function ScopedStyles() {
       .kl-pl-dates-edit { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
       .kl-pl-dates-edit input[type="date"] {
         font-size: 12px; font-weight: 500; padding: 4px 8px;
-        width: auto; cursor: pointer; color-scheme: dark;
+        width: auto; cursor: pointer; color-scheme: light;
       }
       .kl-pl-dates-edit .dash { color: var(--color-text-faint); font-size: 12px; }
 
@@ -1258,7 +1258,7 @@ function ScopedStyles() {
         position: absolute; top: -22px; bottom: 0;
         width: 2px; background: var(--color-text);
         pointer-events: none; z-index: 2;
-        box-shadow: 0 0 8px rgba(240,239,232,0.5);
+        box-shadow: 0 0 6px rgba(0,0,0,0.15);
       }
 
       .kl-body-actions { display: flex; justify-content: flex-end; }
