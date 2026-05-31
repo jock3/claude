@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { Plus, Trash2, X, Check, Calendar, ChevronDown, LogOut } from 'lucide-react';
 import * as db from './db.js';
 
@@ -28,6 +28,23 @@ const daysUntil = (iso) => {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   const target = new Date(iso); target.setHours(0, 0, 0, 0);
   return Math.round((target - now) / 86400000);
+};
+
+const countTodos = (todos) => {
+  let done = 0, total = 0;
+  for (const t of (todos || [])) {
+    total++;
+    if (t.done) done++;
+    for (const c of (t.children || [])) {
+      total++;
+      if (c.done) done++;
+      for (const g of (c.children || [])) {
+        total++;
+        if (g.done) done++;
+      }
+    }
+  }
+  return { done, total };
 };
 
 /* ─── Logo ────────────────────────────────────────────────── */
@@ -86,9 +103,25 @@ function UserMenu({ activeUser, onSwitch }) {
   );
 }
 
+/* ─── EditInput ───────────────────────────────────────────── */
+
+function EditInput({ value, onChange, onBlur, onKeyDown, fontSize, fontWeight }) {
+  return (
+    <input
+      autoFocus
+      className="tl-edit-input"
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      style={fontSize ? { fontSize, fontWeight } : {}}
+    />
+  );
+}
+
 /* ─── Project Card ────────────────────────────────────────── */
 
-function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = false }) {
+function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = false, showToast }) {
   const [newTodo,      setNewTodo]      = useState('');
   const [subInputs,    setSubInputs]    = useState({});
   const [subSubInputs, setSubSubInputs] = useState({});
@@ -97,10 +130,17 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
   const [editingId,    setEditingId]    = useState(null);
   const [editText,     setEditText]     = useState('');
   const [collapsed,    setCollapsed]    = useState(isArchived);
+  const [editingDeadline, setEditingDeadline] = useState(false);
+  const [editingDesc,  setEditingDesc]  = useState(false);
+  const [descText,     setDescText]     = useState(project.description || '');
+
+  const lastDeletedTodos = useRef(null);
 
   const todos  = project.todos || [];
   const days   = daysUntil(project.deadline);
   const isDone = project.checkpoint === CHECKPOINTS.length - 1;
+
+  const { done: todoDone, total: todoTotal } = countTodos(todos);
 
   const uid = () => Date.now().toString() + Math.random().toString(36).slice(2, 6);
   const ts  = () => new Date().toISOString();
@@ -135,6 +175,18 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
     setEditingId(null);
   };
 
+  /* ── Deadline edit ── */
+  const commitDeadline = (val) => {
+    setEditingDeadline(false);
+    if (val) onUpdate({ deadline: val });
+  };
+
+  /* ── Description edit ── */
+  const commitDesc = () => {
+    setEditingDesc(false);
+    onUpdate({ description: descText.trim() });
+  };
+
   /* ── Level 0 ── */
   const addTodo = () => {
     if (!newTodo.trim()) return;
@@ -144,8 +196,11 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
   const toggleTodo = (id) =>
     onUpdate({ todos: todos.map(t => t.id === id ? { ...t, done: !t.done } : t) });
   const deleteTodo = (id) => {
-    onUpdate({ todos: todos.filter(t => t.id !== id) });
+    lastDeletedTodos.current = todos;
+    const newTodos = todos.filter(t => t.id !== id);
+    onUpdate({ todos: newTodos });
     setOpenSub(s => { const n = new Set(s); n.delete(id); return n; });
+    if (showToast) showToast('Todo raderad', () => onUpdate({ todos: lastDeletedTodos.current }));
   };
   const toggleSubOpen = (id) =>
     setOpenSub(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -166,10 +221,13 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
       ...t, children: (t.children || []).map(c => c.id === cid ? { ...c, done: !c.done } : c)
     })});
   const deleteSub = (pid, cid) => {
-    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+    lastDeletedTodos.current = todos;
+    const newTodos = todos.map(t => t.id !== pid ? t : {
       ...t, children: (t.children || []).filter(c => c.id !== cid)
-    })});
+    });
+    onUpdate({ todos: newTodos });
     setOpenSubSub(s => { const n = new Set(s); n.delete(`${pid}/${cid}`); return n; });
+    if (showToast) showToast('Todo raderad', () => onUpdate({ todos: lastDeletedTodos.current }));
   };
   const toggleSubSubOpen = (pid, cid) => {
     const key = `${pid}/${cid}`;
@@ -194,12 +252,16 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
         ...c, children: (c.children || []).map(g => g.id === gid ? { ...g, done: !g.done } : g)
       })
     })});
-  const deleteSubSub = (pid, cid, gid) =>
-    onUpdate({ todos: todos.map(t => t.id !== pid ? t : {
+  const deleteSubSub = (pid, cid, gid) => {
+    lastDeletedTodos.current = todos;
+    const newTodos = todos.map(t => t.id !== pid ? t : {
       ...t, children: (t.children || []).map(c => c.id !== cid ? c : {
         ...c, children: (c.children || []).filter(g => g.id !== gid)
       })
-    })});
+    });
+    onUpdate({ todos: newTodos });
+    if (showToast) showToast('Todo raderad', () => onUpdate({ todos: lastDeletedTodos.current }));
+  };
 
   let dlClass = '', dlText = '';
   if (days < 0)        { dlClass = 'overdue'; dlText = `${Math.abs(days)} d försenad`; }
@@ -207,17 +269,7 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
   else if (days <= 7)  { dlClass = 'urgent';  dlText = `${days} d kvar`; }
   else                 { dlText = `${days} d kvar`; }
 
-  const EditInput = ({ editKey, placeholder }) => (
-    <input
-      autoFocus
-      className="tl-edit-input"
-      value={editText}
-      placeholder={placeholder}
-      onChange={(e) => setEditText(e.target.value)}
-      onBlur={commitEdit}
-      onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
-    />
-  );
+  const progressPct = todoTotal > 0 ? Math.round((todoDone / todoTotal) * 100) : 0;
 
   return (
     <div className={`tl-project ${isArchived ? 'archived' : ''}`}>
@@ -233,14 +285,26 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
             />
           : <h3 className="tl-project-name" onClick={() => startEdit('__name__', project.name)}>{project.name}</h3>
         }
+        {todoTotal > 0 && (
+          <span className="tl-todo-counter">{todoDone}/{todoTotal} klara</span>
+        )}
         {isArchived && project.archived_at && (
           <span className="tl-archived-date">Arkiverad {formatDate(project.archived_at)}</span>
         )}
         {!isArchived && (
-          <div className={`tl-deadline-badge ${dlClass}`}>
-            <Calendar size={12} />
-            {dlText}
-          </div>
+          editingDeadline
+            ? <input
+                autoFocus
+                type="date"
+                className="tl-deadline-input"
+                defaultValue={project.deadline}
+                onBlur={(e) => commitDeadline(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') commitDeadline(e.target.value); if (e.key === 'Escape') setEditingDeadline(false); }}
+              />
+            : <div className={`tl-deadline-badge ${dlClass}`} style={{ cursor: 'pointer' }} onClick={() => setEditingDeadline(true)}>
+                <Calendar size={12} />
+                {dlText}
+              </div>
         )}
         {isDone && !isArchived && (
           <button className="tl-archive-btn" onClick={onArchive}>Arkivera</button>
@@ -249,6 +313,34 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
           <Trash2 size={16} />
         </button>
       </div>
+
+      {!collapsed && !isArchived && (
+        <div className="tl-project-desc-row">
+          {editingDesc
+            ? <input
+                autoFocus
+                className="tl-desc-input"
+                value={descText}
+                placeholder="Lägg till beskrivning…"
+                onChange={(e) => setDescText(e.target.value)}
+                onBlur={commitDesc}
+                onKeyDown={(e) => { if (e.key === 'Enter') commitDesc(); if (e.key === 'Escape') { setEditingDesc(false); setDescText(project.description || ''); } }}
+              />
+            : <span
+                className={`tl-project-desc ${!(project.description) ? 'empty' : ''}`}
+                onClick={() => { setDescText(project.description || ''); setEditingDesc(true); }}
+              >
+                {project.description || 'Lägg till beskrivning…'}
+              </span>
+          }
+        </div>
+      )}
+
+      {todoTotal > 0 && (
+        <div className="tl-project-progress-bar">
+          <div className="tl-project-progress-fill" style={{ width: `${progressPct}%` }} />
+        </div>
+      )}
 
       {!collapsed && (<>
       <div className="tl-progress">
@@ -283,7 +375,12 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
                 {todo.done && <Check size={10} strokeWidth={3} />}
               </button>
               {editingId === todo.id
-                ? <EditInput editKey={todo.id} placeholder={todo.text} />
+                ? <EditInput
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                  />
                 : <span className="tl-row-text" onClick={() => startEdit(todo.id, todo.text)}>{todo.text}</span>
               }
               <button className={`tl-add-child-btn ${openSub.has(todo.id) ? 'open' : ''}`} onClick={() => toggleSubOpen(todo.id)} title="Lägg till sub-todo">
@@ -304,7 +401,12 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
                           {child.done && <Check size={8} strokeWidth={3} />}
                         </button>
                         {editingId === childKey
-                          ? <EditInput editKey={childKey} placeholder={child.text} />
+                          ? <EditInput
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              onBlur={commitEdit}
+                              onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                            />
                           : <span className="tl-row-text" onClick={() => startEdit(childKey, child.text)}>{child.text}</span>
                         }
                         <button className={`tl-add-child-btn sm ${openSubSub.has(childKey) ? 'open' : ''}`} onClick={() => toggleSubSubOpen(todo.id, child.id)} title="Lägg till sub-sub-todo">
@@ -324,7 +426,12 @@ function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = fals
                                   {grand.done && <Check size={8} strokeWidth={3} />}
                                 </button>
                                 {editingId === grandKey
-                                  ? <EditInput editKey={grandKey} placeholder={grand.text} />
+                                  ? <EditInput
+                                      value={editText}
+                                      onChange={(e) => setEditText(e.target.value)}
+                                      onBlur={commitEdit}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+                                    />
                                   : <span className="tl-row-text" onClick={() => startEdit(grandKey, grand.text)}>{grand.text}</span>
                                 }
                                 <button className="tl-icon-btn" onClick={() => deleteSubSub(todo.id, child.id, grand.id)} aria-label="Ta bort"><X size={12} /></button>
@@ -404,11 +511,25 @@ export default function TodoLabb() {
   const [profileId, setProfileId] = useState(null);
   const [projects, setProjects]   = useState([]);
   const [loading, setLoading]     = useState(true);
+  const [toast, setToast]         = useState(null);
+  const toastTimerRef             = useRef(null);
+  const debounceTimers            = useRef({});
 
   const [showForm,   setShowForm]   = useState(false);
   const [name,       setName]       = useState('');
   const [checkpoint, setCheckpoint] = useState(0);
   const [deadline,   setDeadline]   = useState(getDefaultDeadline());
+
+  const showToast = (msg, undoFn) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ msg, undoFn: undoFn || null });
+    toastTimerRef.current = setTimeout(() => setToast(null), 4000);
+  };
+
+  const dismissToast = () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast(null);
+  };
 
   /* Restore session on mount — redirect home if not logged in */
   useEffect(() => {
@@ -465,17 +586,22 @@ export default function TodoLabb() {
       name: name.trim(),
       checkpoint,
       deadline,
+      description: '',
       todos: [],
       created_at: new Date().toISOString(),
     };
     setProjects((prev) => [project, ...prev]);
     resetForm();
     setShowForm(false);
-    await db.upsertProject(project);
+    try {
+      await db.upsertProject(project);
+    } catch (err) {
+      showToast('Kunde inte spara ändringarna');
+    }
   };
 
-  /* Update project */
-  const updateProject = async (id, updates) => {
+  /* Update project — immediate state, debounced DB write */
+  const updateProject = (id, updates) => {
     const current = projects.find((p) => p.id === id);
     if (!current) return;
     let merged = { ...current, ...updates };
@@ -484,7 +610,15 @@ export default function TodoLabb() {
       merged = { ...merged, archived: false, archived_at: null };
     }
     setProjects((prev) => prev.map((p) => (p.id === id ? merged : p)));
-    await db.upsertProject({ ...merged, profile_id: profileId });
+
+    if (debounceTimers.current[id]) clearTimeout(debounceTimers.current[id]);
+    debounceTimers.current[id] = setTimeout(async () => {
+      try {
+        await db.upsertProject({ ...merged, profile_id: profileId });
+      } catch (err) {
+        showToast('Kunde inte spara ändringarna');
+      }
+    }, 800);
   };
 
   /* Archive project */
@@ -500,10 +634,22 @@ export default function TodoLabb() {
 
   /* ─── Derived lists ─── */
 
-  const activeProjects = projects.filter((p) => !p.archived);
+  const allActive = projects.filter((p) => !p.archived);
+
+  // Sort: overdue first, then ≤7 days, then rest
+  const overdueProjects  = allActive.filter(p => daysUntil(p.deadline) < 0);
+  const urgentProjects   = allActive.filter(p => { const d = daysUntil(p.deadline); return d >= 0 && d <= 7; });
+  const normalProjects   = allActive.filter(p => daysUntil(p.deadline) > 7);
+  const activeProjects   = [...overdueProjects, ...urgentProjects, ...normalProjects];
+
   const archivedProjects = projects
     .filter((p) => p.archived)
     .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0));
+
+  // Summary bar counts
+  const overdueCount = overdueProjects.length;
+  const todayCount   = urgentProjects.filter(p => daysUntil(p.deadline) === 0).length;
+  const ongoingCount = urgentProjects.filter(p => daysUntil(p.deadline) > 0).length + normalProjects.length;
 
   /* ─── Render ─── */
 
@@ -597,6 +743,13 @@ export default function TodoLabb() {
         )}
 
         <section style={{ marginTop: 28 }}>
+          {activeProjects.length > 0 && (
+            <div className="tl-summary-bar">
+              {overdueCount > 0 && <span>{overdueCount} försenade</span>}
+              {todayCount > 0 && <span>{todayCount} idag</span>}
+              {ongoingCount > 0 && <span>{ongoingCount} pågående</span>}
+            </div>
+          )}
           {activeProjects.length === 0 && archivedProjects.length === 0 ? (
             <div className="tl-empty-state">
               <h3>Inga projekt ännu</h3>
@@ -615,6 +768,7 @@ export default function TodoLabb() {
                 onUpdate={(u) => updateProject(project.id, u)}
                 onDelete={() => deleteProject(project.id)}
                 onArchive={() => archiveProject(project.id)}
+                showToast={showToast}
               />
             ))
           )}
@@ -631,12 +785,24 @@ export default function TodoLabb() {
                 onUpdate={(u) => updateProject(project.id, u)}
                 onDelete={() => deleteProject(project.id)}
                 onArchive={() => archiveProject(project.id)}
+                showToast={showToast}
               />
             ))}
           </section>
         )}
 
       </div>
+
+      {toast && (
+        <div className="tl-toast">
+          <span>{toast.msg}</span>
+          {toast.undoFn && (
+            <button className="tl-toast-undo" onClick={() => { toast.undoFn(); dismissToast(); }}>
+              Ångra
+            </button>
+          )}
+        </div>
+      )}
     </>
   );
 }
@@ -712,7 +878,7 @@ function ScopedStyles() {
       .tl-user-chip .tl-user-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
       .tl-avatar {
         width: 26px; height: 26px; border-radius: 50%;
-        background: var(--color-red); color: var(--color-text);
+        background: var(--color-red); color: #FFFFFF;
         font-size: 12px; font-weight: 700;
         display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
       }
@@ -721,7 +887,7 @@ function ScopedStyles() {
         position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px;
         background: var(--color-surface); border: 1px solid var(--color-border);
         border-radius: 10px; padding: 6px;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.55); z-index: 20;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06); z-index: 20;
       }
       .tl-user-dropdown button {
         display: flex; align-items: center; gap: 10px; width: 100%;
@@ -819,6 +985,13 @@ function ScopedStyles() {
       .tl-cp-pill.active { color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
       .tl-form-actions { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
 
+      .tl-summary-bar {
+        font-size: 13px; color: var(--color-text-muted); margin-bottom: 12px;
+        display: flex; gap: 12px; flex-wrap: wrap;
+      }
+      .tl-summary-bar span::after { content: ' ·'; }
+      .tl-summary-bar span:last-child::after { content: ''; }
+
       .tl-project { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
       .tl-project.archived { background: var(--color-surface-2); border-color: var(--color-border); }
       .tl-project.archived .tl-project-name { opacity: 0.85; }
@@ -855,6 +1028,42 @@ function ScopedStyles() {
       }
       .tl-deadline-badge.urgent { color: var(--color-warn); border-color: rgba(224,169,59,0.3); }
       .tl-deadline-badge.overdue { background: rgba(214,59,59,0.12); color: var(--color-red); border-color: rgba(214,59,59,0.4); }
+      .tl-deadline-input {
+        font-size: 12px; font-weight: 500; color: var(--color-text);
+        padding: 4px 8px; border-radius: 999px; border: 1px solid var(--color-blue);
+        background: var(--color-surface); font-family: inherit; outline: none;
+        width: auto; white-space: nowrap; box-sizing: border-box;
+      }
+      .tl-todo-counter {
+        font-size: 12px; font-weight: 500; color: var(--color-text-faint);
+        white-space: nowrap; flex-shrink: 0;
+      }
+
+      .tl-project-desc-row {
+        padding: 0 24px 8px 52px;
+      }
+      .tl-project-desc {
+        font-size: 13px; color: var(--color-text-muted); cursor: text;
+        border-radius: 4px; padding: 2px 4px; display: inline-block;
+        transition: background 150ms;
+      }
+      .tl-project-desc.empty {
+        color: var(--color-text-faint); opacity: 0; transition: opacity 150ms;
+      }
+      .tl-project-desc-row:hover .tl-project-desc.empty { opacity: 1; }
+      .tl-desc-input {
+        font-size: 13px; color: var(--color-text); font-family: inherit;
+        background: var(--color-surface); border: 1px solid var(--color-blue);
+        border-radius: 6px; padding: 3px 8px; outline: none;
+        width: 100%; box-sizing: border-box;
+      }
+
+      .tl-project-progress-bar {
+        height: 3px; background: var(--color-border); width: 100%;
+      }
+      .tl-project-progress-fill {
+        height: 100%; background: var(--color-success); transition: width 300ms ease;
+      }
 
       .tl-icon-btn {
         background: transparent; border: 0; color: var(--color-text-faint);
@@ -966,6 +1175,26 @@ function ScopedStyles() {
       }
       .tl-empty-state h3 { color: var(--color-text); margin: 0 0 8px; font-weight: 600; }
       .tl-empty-state p { margin: 0; font-size: 14px; }
+
+      .tl-toast {
+        position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+        background: var(--color-text); color: var(--color-text-inverse);
+        padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 500;
+        box-shadow: var(--shadow-lg); z-index: 100; white-space: nowrap;
+        display: inline-flex; align-items: center; gap: 12px;
+        animation: tl-toast-in 200ms ease;
+      }
+      .tl-toast-undo {
+        background: transparent; border: 0; color: var(--color-text-inverse);
+        font-family: inherit; font-size: 14px; font-weight: 700;
+        cursor: pointer; padding: 0; text-decoration: underline; opacity: 0.85;
+        transition: opacity 150ms;
+      }
+      .tl-toast-undo:hover { opacity: 1; }
+      @keyframes tl-toast-in {
+        from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
 
       @media (max-width: 540px) {
         .tl-top-nav { margin-bottom: 32px; }
