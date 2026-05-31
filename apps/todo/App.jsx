@@ -601,7 +601,7 @@ function ScopedStyles() {
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
       }
-      .tl-app-root { max-width: 880px; padding: 32px 24px 96px; }
+      .tl-app-root { max-width: 75%; padding: 32px 24px 96px; }
       .tl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
 
       .tl-fullscreen-loader {
