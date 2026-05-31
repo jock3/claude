@@ -109,6 +109,11 @@ function ProjectCard({ project, onUpdate, onDelete }) {
     if (!editingId) return;
     const trimmed = editText.trim();
     if (!trimmed) { setEditingId(null); return; }
+    if (editingId === '__name__') {
+      onUpdate({ name: trimmed });
+      setEditingId(null);
+      return;
+    }
     const parts = editingId.split('/');
     if (parts.length === 1) {
       onUpdate({ todos: todos.map(t => t.id === parts[0] ? { ...t, text: trimmed } : t) });
@@ -215,7 +220,14 @@ function ProjectCard({ project, onUpdate, onDelete }) {
   return (
     <div className="tl-project">
       <div className="tl-project-header">
-        <h3 className="tl-project-name">{project.name}</h3>
+        {editingId === '__name__'
+          ? <input autoFocus className="tl-project-name-input" value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditingId(null); }}
+            />
+          : <h3 className="tl-project-name" onClick={() => startEdit('__name__', project.name)}>{project.name}</h3>
+        }
         <div className={`tl-deadline-badge ${dlClass}`}>
           <Calendar size={12} />
           {dlText}
@@ -757,7 +769,9 @@ function ScopedStyles() {
 
       .tl-project { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
       .tl-project-header { padding: 20px 24px 12px; display: flex; align-items: center; gap: 12px; }
-      .tl-project-name { font-size: 18px; font-weight: 600; margin: 0; flex: 1; word-break: break-word; }
+      .tl-project-name { font-size: 22px; font-weight: 700; margin: 0; flex: 1; word-break: break-word; cursor: text; border-radius: 6px; padding: 2px 4px; margin-left: -4px; transition: background 150ms; }
+      .tl-project-name:hover { background: var(--color-surface-2); }
+      .tl-project-name-input { flex: 1; font-size: 22px; font-weight: 700; background: var(--color-surface); border: 1px solid var(--color-blue); border-radius: 8px; padding: 2px 8px; outline: none; margin-left: -4px; color: var(--color-text); font-family: inherit; width: 0; }
       .tl-deadline-badge {
         display: inline-flex; align-items: center; gap: 6px;
         font-size: 12px; font-weight: 500; color: var(--color-text-muted);
@@ -805,9 +819,12 @@ function ScopedStyles() {
         transition: color 200ms; cursor: text; border-radius: 4px;
       }
       .tl-row-text:hover { background: var(--color-surface-2); }
-      .tl-row.l0 .tl-row-text { font-size: 15px; color: var(--color-text); }
-      .tl-row.l1 .tl-row-text { font-size: 14px; color: var(--color-text); }
-      .tl-row.l2 .tl-row-text { font-size: 13px; color: var(--color-text-muted); }
+      .tl-row.l0 .tl-row-text { font-size: 16px; font-weight: 500; color: var(--color-text); }
+      .tl-row.l1 .tl-row-text { font-size: 14px; font-weight: 400; color: var(--color-text); }
+      .tl-row.l2 .tl-row-text { font-size: 13px; font-weight: 400; color: var(--color-text-muted); }
+      .tl-row.l0 { padding: 6px 0; }
+      .tl-row.l1 { padding: 4px 0; }
+      .tl-row.l2 { padding: 3px 0; }
 
       .tl-circle-btn {
         width: 18px; height: 18px; border-radius: 50%;
