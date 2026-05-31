@@ -88,7 +88,7 @@ function UserMenu({ activeUser, onSwitch }) {
 
 /* ─── Project Card ────────────────────────────────────────── */
 
-function ProjectCard({ project, onUpdate, onDelete }) {
+function ProjectCard({ project, onUpdate, onDelete, onArchive, isArchived = false }) {
   const [newTodo,      setNewTodo]      = useState('');
   const [subInputs,    setSubInputs]    = useState({});
   const [subSubInputs, setSubSubInputs] = useState({});
@@ -96,9 +96,11 @@ function ProjectCard({ project, onUpdate, onDelete }) {
   const [openSubSub,   setOpenSubSub]   = useState(new Set());
   const [editingId,    setEditingId]    = useState(null);
   const [editText,     setEditText]     = useState('');
+  const [collapsed,    setCollapsed]    = useState(isArchived);
 
-  const todos = project.todos || [];
-  const days  = daysUntil(project.deadline);
+  const todos  = project.todos || [];
+  const days   = daysUntil(project.deadline);
+  const isDone = project.checkpoint === CHECKPOINTS.length - 1;
 
   const uid = () => Date.now().toString() + Math.random().toString(36).slice(2, 6);
   const ts  = () => new Date().toISOString();
@@ -218,8 +220,11 @@ function ProjectCard({ project, onUpdate, onDelete }) {
   );
 
   return (
-    <div className="tl-project">
+    <div className={`tl-project ${isArchived ? 'archived' : ''}`}>
       <div className="tl-project-header">
+        <button className="tl-collapse-btn" onClick={() => setCollapsed((c) => !c)} aria-label={collapsed ? 'Expandera' : 'Minimera'}>
+          <ChevronDown size={18} style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0)', transition: 'transform 200ms' }} />
+        </button>
         {editingId === '__name__'
           ? <input autoFocus className="tl-project-name-input" value={editText}
               onChange={(e) => setEditText(e.target.value)}
@@ -228,15 +233,24 @@ function ProjectCard({ project, onUpdate, onDelete }) {
             />
           : <h3 className="tl-project-name" onClick={() => startEdit('__name__', project.name)}>{project.name}</h3>
         }
-        <div className={`tl-deadline-badge ${dlClass}`}>
-          <Calendar size={12} />
-          {dlText}
-        </div>
+        {isArchived && project.archived_at && (
+          <span className="tl-archived-date">Arkiverad {formatDate(project.archived_at)}</span>
+        )}
+        {!isArchived && (
+          <div className={`tl-deadline-badge ${dlClass}`}>
+            <Calendar size={12} />
+            {dlText}
+          </div>
+        )}
+        {isDone && !isArchived && (
+          <button className="tl-archive-btn" onClick={onArchive}>Arkivera</button>
+        )}
         <button className="tl-icon-btn" onClick={onDelete} aria-label="Ta bort projekt">
           <Trash2 size={16} />
         </button>
       </div>
 
+      {!collapsed && (<>
       <div className="tl-progress">
         {CHECKPOINTS.map((c, i) => {
           const passed = i <= project.checkpoint;
@@ -378,6 +392,7 @@ function ProjectCard({ project, onUpdate, onDelete }) {
           </button>
         </div>
       </div>
+      </>)}
     </div>
   );
 }
@@ -461,12 +476,20 @@ export default function TodoLabb() {
 
   /* Update project */
   const updateProject = async (id, updates) => {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p))
-    );
-    const updated = projects.find((p) => p.id === id);
-    if (updated) await db.upsertProject({ ...updated, ...updates, profile_id: profileId });
+    const current = projects.find((p) => p.id === id);
+    if (!current) return;
+    let merged = { ...current, ...updates };
+    /* Un-archive if status drops below "Klar" */
+    if (updates.checkpoint !== undefined && updates.checkpoint < CHECKPOINTS.length - 1 && merged.archived) {
+      merged = { ...merged, archived: false, archived_at: null };
+    }
+    setProjects((prev) => prev.map((p) => (p.id === id ? merged : p)));
+    await db.upsertProject({ ...merged, profile_id: profileId });
   };
+
+  /* Archive project */
+  const archiveProject = (id) =>
+    updateProject(id, { archived: true, archived_at: new Date().toISOString() });
 
   /* Delete project */
   const deleteProject = async (id) => {
@@ -474,6 +497,13 @@ export default function TodoLabb() {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     await db.deleteProject(id);
   };
+
+  /* ─── Derived lists ─── */
+
+  const activeProjects = projects.filter((p) => !p.archived);
+  const archivedProjects = projects
+    .filter((p) => p.archived)
+    .sort((a, b) => new Date(b.archived_at || 0) - new Date(a.archived_at || 0));
 
   /* ─── Render ─── */
 
@@ -567,22 +597,44 @@ export default function TodoLabb() {
         )}
 
         <section style={{ marginTop: 28 }}>
-          {projects.length === 0 ? (
+          {activeProjects.length === 0 && archivedProjects.length === 0 ? (
             <div className="tl-empty-state">
               <h3>Inga projekt ännu</h3>
               <p>Skapa ditt första projekt för att komma igång.</p>
             </div>
+          ) : activeProjects.length === 0 ? (
+            <div className="tl-empty-state">
+              <h3>Inga aktiva projekt</h3>
+              <p>Alla projekt är arkiverade. Skapa ett nytt eller återställ ett nedan.</p>
+            </div>
           ) : (
-            projects.map((project) => (
+            activeProjects.map((project) => (
               <ProjectCard
                 key={project.id}
                 project={project}
                 onUpdate={(u) => updateProject(project.id, u)}
                 onDelete={() => deleteProject(project.id)}
+                onArchive={() => archiveProject(project.id)}
               />
             ))
           )}
         </section>
+
+        {archivedProjects.length > 0 && (
+          <section className="tl-archive-section">
+            <h2 className="tl-archive-heading">Arkiverade projekt</h2>
+            {archivedProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                isArchived
+                onUpdate={(u) => updateProject(project.id, u)}
+                onDelete={() => deleteProject(project.id)}
+                onArchive={() => archiveProject(project.id)}
+              />
+            ))}
+          </section>
+        )}
 
       </div>
     </>
@@ -768,7 +820,30 @@ function ScopedStyles() {
       .tl-form-actions { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
 
       .tl-project { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+      .tl-project.archived { background: var(--color-surface-2); border-color: var(--color-border); }
+      .tl-project.archived .tl-project-name { opacity: 0.85; }
       .tl-project-header { padding: 20px 24px 12px; display: flex; align-items: center; gap: 12px; }
+      .tl-collapse-btn {
+        background: transparent; border: 0; color: var(--color-text-faint);
+        padding: 2px; margin-left: -4px; border-radius: 6px; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        transition: color 200ms, background 200ms;
+      }
+      .tl-collapse-btn:hover { color: var(--color-text); background: var(--color-surface-2); }
+      .tl-archive-btn {
+        background: transparent; border: 1px solid var(--color-border-strong);
+        color: var(--color-text-muted); padding: 6px 14px; border-radius: 999px;
+        font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+        white-space: nowrap; transition: all 200ms;
+      }
+      .tl-archive-btn:hover { background: var(--color-success); border-color: var(--color-success); color: #FFFFFF; }
+      .tl-archived-date { font-size: 12px; font-weight: 500; color: var(--color-text-faint); white-space: nowrap; }
+      .tl-archive-section { margin-top: 48px; }
+      .tl-archive-heading {
+        font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--color-text-faint); margin: 0 0 16px; padding-bottom: 12px;
+        border-bottom: 1px solid var(--color-border);
+      }
       .tl-project-name { font-size: 22px; font-weight: 700; margin: 0; flex: 1; word-break: break-word; cursor: text; border-radius: 6px; padding: 2px 4px; margin-left: -4px; transition: background 150ms; }
       .tl-project-name:hover { background: var(--color-surface-2); }
       .tl-project-name-input { flex: 1; font-size: 22px; font-weight: 700; background: var(--color-surface); border: 1px solid var(--color-blue); border-radius: 8px; padding: 2px 8px; outline: none; margin-left: -4px; color: var(--color-text); font-family: inherit; width: 0; }
