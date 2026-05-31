@@ -140,6 +140,30 @@ const Logo = () => (
   </a>
 );
 
+/* ─── Theme Toggle ────────────────────────────────────────── */
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState(() =>
+    document.documentElement.getAttribute('data-theme') || 'dark'
+  );
+
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('ailabb_theme', next);
+    setTheme(next);
+  };
+
+  return (
+    <button className="kl-theme-toggle" onClick={toggle} aria-label="Byt tema">
+      {theme === 'dark'
+        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      }
+    </button>
+  );
+}
+
 /* ─── User Menu ───────────────────────────────────────────── */
 
 function UserMenu({ activeUser, onSwitch }) {
@@ -670,6 +694,7 @@ export default function KampanjLabb() {
                 </ul>
               </li>
             </ul>
+            <ThemeToggle />
             <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
           </div>
         </nav>
@@ -858,7 +883,7 @@ function ScopedStyles() {
       .kl-user-chip .kl-user-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
       .kl-avatar {
         width: 26px; height: 26px; border-radius: 50%;
-        background: var(--color-red); color: var(--color-text);
+        background: var(--color-red); color: #FFFFFF;
         font-size: 12px; font-weight: 700;
         display: inline-flex; align-items: center; justify-content: center;
         flex-shrink: 0;
@@ -868,7 +893,7 @@ function ScopedStyles() {
         position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px;
         background: var(--color-surface); border: 1px solid var(--color-border);
         border-radius: 10px; padding: 6px;
-        box-shadow: 0 16px 40px rgba(0,0,0,0.55); z-index: 20;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06); z-index: 20;
       }
       .kl-user-dropdown button {
         display: flex; align-items: center; gap: 10px; width: 100%;
@@ -929,7 +954,7 @@ function ScopedStyles() {
 
       /* Buttons */
       .kl-new-btn, .kl-btn-primary {
-        background: var(--color-red); color: var(--color-text); border: 0;
+        background: var(--color-red); color: var(--color-text-inverse); border: 0;
         font-family: inherit; font-weight: 600; font-size: 14px;
         cursor: pointer; transition: background 200ms, transform 100ms;
         display: inline-flex; align-items: center; gap: 8px;
@@ -988,7 +1013,7 @@ function ScopedStyles() {
         transition: border-color 200ms;
       }
       .kl-app-root input:focus, .kl-welcome-root input:focus { border-color: var(--color-blue); }
-      .kl-app-root input[type="date"] { color-scheme: light; }
+      .kl-app-root input[type="date"] { color-scheme: light dark; }
       .kl-app-root ::placeholder, .kl-welcome-root ::placeholder { color: var(--color-text-faint); }
       .kl-app-root input[type="number"] { -moz-appearance: textfield; }
       .kl-app-root input[type="number"]::-webkit-outer-spin-button,
@@ -1025,6 +1050,14 @@ function ScopedStyles() {
       .kl-icon-btn:hover { color: var(--color-text); background: var(--color-surface-2); }
       .kl-icon-btn.danger:hover { color: var(--color-red); background: rgba(214,59,59,0.1); }
       .kl-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+      .kl-theme-toggle {
+        background: transparent; border: 0; color: var(--color-text-muted);
+        padding: 6px; border-radius: 8px; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: color 200ms, background 200ms;
+      }
+      .kl-theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); }
 
       /* Status segmented control */
       .kl-status-seg {
@@ -1067,7 +1100,7 @@ function ScopedStyles() {
         text-align: left; color: inherit; font-family: inherit;
         transition: background 150ms;
       }
-      .kl-campaign-header:hover { background: rgba(0,0,0,0.02); }
+      .kl-campaign-header:hover { background: rgba(128,128,128,0.04); }
       .kl-campaign-title { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
       .kl-campaign-client {
         font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
@@ -1098,7 +1131,7 @@ function ScopedStyles() {
 
       .kl-campaign-body {
         border-top: 1px solid var(--color-border);
-        background: rgba(0,0,0,0.025);
+        background: rgba(128,128,128,0.04);
         padding: 22px 20px 20px;
         display: flex; flex-direction: column; gap: 24px;
       }
@@ -1180,7 +1213,7 @@ function ScopedStyles() {
       .kl-pl-dates-edit { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
       .kl-pl-dates-edit input[type="date"] {
         font-size: 12px; font-weight: 500; padding: 4px 8px;
-        width: auto; cursor: pointer; color-scheme: light;
+        width: auto; cursor: pointer; color-scheme: light dark;
       }
       .kl-pl-dates-edit .dash { color: var(--color-text-faint); font-size: 12px; }
 

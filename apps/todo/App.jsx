@@ -72,6 +72,30 @@ const Logo = () => (
   </a>
 );
 
+/* ─── Theme Toggle ────────────────────────────────────────── */
+
+function ThemeToggle() {
+  const [theme, setTheme] = useState(() =>
+    document.documentElement.getAttribute('data-theme') || 'dark'
+  );
+
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('ailabb_theme', next);
+    setTheme(next);
+  };
+
+  return (
+    <button className="tl-theme-toggle" onClick={toggle} aria-label="Byt tema">
+      {theme === 'dark'
+        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      }
+    </button>
+  );
+}
+
 /* ─── User Menu ───────────────────────────────────────────── */
 
 function UserMenu({ activeUser, onSwitch }) {
@@ -682,6 +706,7 @@ export default function TodoLabb() {
                 </ul>
               </li>
             </ul>
+            <ThemeToggle />
             <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
           </div>
         </nav>
@@ -936,7 +961,7 @@ function ScopedStyles() {
       .tl-hero p { color: var(--color-text-muted); font-size: 17px; line-height: 1.6; margin: 0; max-width: 60ch; }
 
       .tl-new-btn, .tl-btn-primary {
-        background: var(--color-red); color: var(--color-text); border: 0;
+        background: var(--color-red); color: var(--color-text-inverse); border: 0;
         font-family: inherit; font-weight: 600; font-size: 14px;
         cursor: pointer; transition: background 200ms, transform 100ms;
         display: inline-flex; align-items: center; gap: 8px;
@@ -969,7 +994,7 @@ function ScopedStyles() {
       .tl-app-root input[type="text"]:focus,
       .tl-app-root input[type="date"]:focus,
       .tl-welcome-root input[type="text"]:focus { border-color: var(--color-blue); }
-      .tl-app-root input[type="date"] { color-scheme: light; }
+      .tl-app-root input[type="date"] { color-scheme: light dark; }
       .tl-app-root ::placeholder, .tl-welcome-root ::placeholder { color: var(--color-text-faint); }
 
       .tl-checkpoints { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1073,6 +1098,14 @@ function ScopedStyles() {
       }
       .tl-icon-btn:hover { color: var(--color-text); background: var(--color-surface-2); }
 
+      .tl-theme-toggle {
+        background: transparent; border: 0; color: var(--color-text-muted);
+        padding: 6px; border-radius: 8px; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        transition: color 200ms, background 200ms;
+      }
+      .tl-theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); }
+
       .tl-progress { padding: 4px 24px 20px; display: flex; align-items: center; overflow-x: auto; }
       .tl-progress::-webkit-scrollbar { display: none; }
       .tl-progress-step {
@@ -1091,7 +1124,7 @@ function ScopedStyles() {
       .tl-progress-line { flex: 1; height: 2px; background: var(--color-border); margin: 0 10px; min-width: 16px; transition: background 200ms; }
 
       /* ── Todos ── */
-      .tl-todos { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(0,0,0,0.025); }
+      .tl-todos { border-top: 1px solid var(--color-border); padding: 14px 24px 18px; background: rgba(128,128,128,0.04); }
       .tl-empty-hint { font-size: 13px; color: var(--color-text-faint); margin: 4px 0 12px; font-style: italic; }
 
       .tl-todo-block { margin-bottom: 1px; }
