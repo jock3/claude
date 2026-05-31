@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Iconography</title>
+<link rel="stylesheet" href="_card.css" />
+<script src="https://unpkg.com/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+<style>
+  .card { padding: 24px 28px; gap: 16px; }
+  .row-i { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .role { font-family: var(--font-mono); font-size: 11px; color: var(--fg3); letter-spacing: 0.06em; min-width: 90px; }
+  .icon-set { display: flex; gap: 18px; align-items: center; color: var(--fg1); }
+  .icon-set i { display: inline-flex; }
+  .info { font-size: 12px; color: var(--fg2); line-height: 1.5; max-width: 540px; }
+  .info code { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: 4px; padding: 1px 6px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Iconography · Lucide @ 1.75 stroke</span>
+
+  <div class="row-i">
+    <span class="role">20px / ui</span>
+    <div class="icon-set" style="--lucide-stroke:1.75;">
+      <i data-lucide="arrow-right" data-stroke="1.75"></i>
+      <i data-lucide="mail" data-stroke="1.75"></i>
+      <i data-lucide="file-text" data-stroke="1.75"></i>
+      <i data-lucide="github" data-stroke="1.75"></i>
+      <i data-lucide="linkedin" data-stroke="1.75"></i>
+      <i data-lucide="search" data-stroke="1.75"></i>
+      <i data-lucide="menu" data-stroke="1.75"></i>
+      <i data-lucide="x" data-stroke="1.75"></i>
+      <i data-lucide="check" data-stroke="1.75"></i>
+      <i data-lucide="external-link" data-stroke="1.75"></i>
+    </div>
+  </div>
+
+  <div class="row-i">
+    <span class="role">24px / hero</span>
+    <div class="icon-set" style="font-size:24px;">
+      <i data-lucide="paintbrush" data-stroke="1.75" style="width:28px;height:28px;color:var(--color-red);"></i>
+      <i data-lucide="code" data-stroke="1.75" style="width:24px;height:24px;"></i>
+      <i data-lucide="figma" data-stroke="1.75" style="width:24px;height:24px;"></i>
+      <i data-lucide="sparkles" data-stroke="1.75" style="width:24px;height:24px;"></i>
+    </div>
+  </div>
+
+  <div class="info">
+    Lucide via CDN, default stroke <code>1.75</code>, color inherits <code>currentColor</code>.
+    No emoji as UI. Brand brushstroke comes from the logo asset, not an icon.
+    <strong style="color:var(--fg1)">⚠ Substitution:</strong> no icon set was specified.
+  </div>
+</div>
+<script>
+  lucide.createIcons({ attrs: { 'stroke-width': 1.75, width: 20, height: 20 }});
+  // Override per-icon if data-stroke set
+  document.querySelectorAll('[data-stroke]').forEach(el=>{
+    const s = el.getAttribute('data-stroke');
+    if (el.querySelector('svg')) el.querySelector('svg').setAttribute('stroke-width', s);
+  });
+</script>
+</body>
+</html>

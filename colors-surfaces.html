@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Buttons</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .card { padding: 24px 28px; gap: 16px; }
+  .group { display: flex; flex-direction: column; gap: 10px; }
+  .row-b { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .role { font-family: var(--font-mono); font-size: 11px; color: var(--fg3); letter-spacing: 0.06em; min-width: 90px; }
+  .btn {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.22,1,0.36,1);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+  }
+  .btn-primary { background: var(--color-red); color: var(--color-text); }
+  .btn-secondary { background: var(--color-surface-2); color: var(--color-text); border-color: var(--color-border); }
+  .btn-ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+  .btn-link { background: transparent; color: var(--color-blue); padding: 6px 0; }
+  .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .btn .arrow { transition: transform 200ms cubic-bezier(0.22,1,0.36,1); }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Buttons</span>
+  <div class="group">
+    <div class="row-b"><span class="role">primary</span>
+      <button class="btn btn-primary">Get in touch <span class="arrow">→</span></button>
+      <button class="btn btn-primary" style="background:#E55050;">hover</button>
+      <button class="btn btn-primary" disabled>Disabled</button>
+    </div>
+    <div class="row-b"><span class="role">secondary</span>
+      <button class="btn btn-secondary">View work</button>
+      <button class="btn btn-secondary" style="background:#26262A;">hover</button>
+    </div>
+    <div class="row-b"><span class="role">ghost</span>
+      <button class="btn btn-ghost">Cancel</button>
+      <button class="btn btn-ghost">Read more</button>
+    </div>
+    <div class="row-b"><span class="role">link</span>
+      <button class="btn btn-link">Read the case study →</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

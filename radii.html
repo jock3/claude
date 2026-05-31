@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Logo construction</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .card { padding: 28px 32px; gap: 20px; }
+  .top { display: flex; gap: 32px; align-items: center; }
+  .brushwrap {
+    width: 120px; height: 120px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    display: grid; place-items: center;
+    flex-shrink: 0;
+  }
+  .brushwrap img { width: 76px; height: 76px; object-fit: contain; }
+  .meta { display: flex; flex-direction: column; gap: 6px; }
+  .meta .glyph {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 44px;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .meta .binary {
+    font-family: var(--font-mono);
+    color: var(--fg2);
+    font-size: 14px;
+    letter-spacing: 0.12em;
+  }
+  .meta .desc {
+    font-size: 13px;
+    color: var(--fg2);
+    max-width: 340px;
+    line-height: 1.5;
+  }
+  .meta .desc strong { color: var(--fg1); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top">
+    <div class="brushwrap">
+      <img src="../assets/logo-white.png" alt="" style="filter:none;" />
+    </div>
+    <div class="meta">
+      <span class="eyebrow">Construction</span>
+      <span class="glyph">0100&nbsp;0111</span>
+      <span class="binary">= ASCII 0x47 → "G"</span>
+      <span class="desc"><strong>Brushstroke</strong> + <strong>binary G</strong>. The brush sets the warm, hand-made tone; the binary sets the technical one. They sit at the same x-height.</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

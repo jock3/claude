@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Accent colors</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; flex: 1; }
+  .accent {
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .swatch-block { width: 88px; height: 88px; border-radius: 10px; flex-shrink: 0; }
+  .meta { display: flex; flex-direction: column; gap: 4px; }
+  .meta .role { font-size: 11px; color: var(--fg3); letter-spacing: 0.1em; text-transform: uppercase; }
+  .meta .name { font-size: 18px; font-weight: 700; }
+  .meta .hex { font-family: var(--font-mono); font-size: 12px; color: var(--fg2); }
+  .meta .use { font-size: 12px; color: var(--fg2); margin-top: 4px; max-width: 190px; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Accents — Ember</span>
+  <div class="grid">
+    <div class="accent">
+      <div class="swatch-block" style="background:var(--color-accent);"></div>
+      <div class="meta">
+        <span class="role">brand · brush</span>
+        <span class="name" style="color:var(--color-accent)">Coral</span>
+        <span class="hex">#FF582D</span>
+        <span class="use">Pantone 17-1363 TSX. CTAs, brush-mark, active nav.</span>
+      </div>
+    </div>
+    <div class="accent">
+      <div class="swatch-block" style="background:var(--color-link);"></div>
+      <div class="meta">
+        <span class="role">link · focus</span>
+        <span class="name" style="color:var(--color-link)">Teal</span>
+        <span class="hex">#3AA59C</span>
+        <span class="use">Inline links and focus rings only.</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

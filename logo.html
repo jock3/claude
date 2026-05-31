@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Surface colors</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; }
+  .swatch {
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    aspect-ratio: 1.4 / 1;
+    color: var(--color-text);
+  }
+  .swatch .name { font-size: 13px; font-weight: 600; }
+  .swatch .hex { font-family: var(--font-mono); font-size: 11px; opacity: 0.7; }
+  .swatch .role { font-size: 11px; opacity: 0.6; letter-spacing: 0.08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Surfaces — Ember · Dark</span>
+  <div class="grid">
+    <div class="swatch" style="background:var(--color-bg);">
+      <span class="role">Page</span>
+      <div><div class="name">bg</div><div class="hex">#242425</div></div>
+    </div>
+    <div class="swatch" style="background:var(--color-surface);">
+      <span class="role">Card</span>
+      <div><div class="name">surface</div><div class="hex">#2E2E30</div></div>
+    </div>
+    <div class="swatch" style="background:var(--color-surface-2);">
+      <span class="role">Raised</span>
+      <div><div class="name">surface-2</div><div class="hex">#38383A</div></div>
+    </div>
+    <div class="swatch" style="background:var(--color-surface-3);">
+      <span class="role">Hover</span>
+      <div><div class="name">surface-3</div><div class="hex">#424244</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
