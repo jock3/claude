@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Tags & pills</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .card { padding: 24px 28px; gap: 14px; }
+  .group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .role { font-family: var(--font-mono); font-size: 11px; color: var(--fg3); letter-spacing: 0.06em; min-width: 90px; }
+  .pill {
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--fg2);
+    letter-spacing: 0.02em;
+  }
+  .pill.solid { background: var(--color-surface-2); color: var(--fg1); }
+  .pill.active { background: var(--color-red); border-color: var(--color-red); color: var(--color-text); }
+  .pill.dot::before { content: "●"; color: var(--color-red); margin-right: 6px; font-size: 9px; vertical-align: middle; }
+  .pill.blue { color: var(--color-blue); border-color: rgba(46,111,212,0.4); }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Tags · filters · status</span>
+  <div class="row" style="gap:14px;">
+    <span class="role">filters</span>
+    <div class="group">
+      <span class="pill active">All</span>
+      <span class="pill">Brand</span>
+      <span class="pill">Product</span>
+      <span class="pill">Web</span>
+      <span class="pill">Side projects</span>
+    </div>
+  </div>
+  <div class="row" style="gap:14px;">
+    <span class="role">tags</span>
+    <div class="group">
+      <span class="pill solid">2026</span>
+      <span class="pill solid">Figma</span>
+      <span class="pill solid">React</span>
+      <span class="pill solid">Type design</span>
+      <span class="pill blue">Available</span>
+    </div>
+  </div>
+  <div class="row" style="gap:14px;">
+    <span class="role">status</span>
+    <div class="group">
+      <span class="pill dot">In progress</span>
+      <span class="pill">Shipped</span>
+      <span class="pill">Archived</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

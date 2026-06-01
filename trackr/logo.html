@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Foreground colors</title>
+<link rel="stylesheet" href="_card.css" />
+<style>
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; }
+  .swatch {
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    aspect-ratio: 1.4 / 1;
+  }
+  .dot { width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--color-border); }
+  .name { font-size: 13px; font-weight: 600; color: var(--fg1); }
+  .hex { font-family: var(--font-mono); font-size: 11px; color: var(--fg2); }
+  .role { font-size: 11px; color: var(--fg3); letter-spacing: 0.08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="card">
+  <span class="eyebrow">Foreground · Text — Ember · Dark</span>
+  <div class="grid">
+    <div class="swatch">
+      <div class="dot" style="background:var(--color-text);"></div>
+      <div><div class="role">fg1</div><div class="name">text</div><div class="hex">#F2F1EF</div></div>
+    </div>
+    <div class="swatch">
+      <div class="dot" style="background:var(--color-text-muted);"></div>
+      <div><div class="role">fg2</div><div class="name" style="color:var(--color-text-muted)">muted</div><div class="hex">#B3B1AD</div></div>
+    </div>
+    <div class="swatch">
+      <div class="dot" style="background:var(--color-text-faint);"></div>
+      <div><div class="role">fg3</div><div class="name" style="color:var(--color-text-faint)">faint</div><div class="hex">#828079</div></div>
+    </div>
+    <div class="swatch">
+      <div class="dot" style="background:var(--color-bg); border-color:var(--color-border-strong);"></div>
+      <div><div class="role">on accent</div><div class="name">inverse</div><div class="hex">#242425</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

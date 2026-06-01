@@ -1,0 +1,57 @@
+/* WorkGrid.jsx */
+const { useState: useStateW } = React;
+
+const WORK = [
+  { id: 1, title: "Northwind identity refresh", year: "2026", tag: "Brand", desc: "A six-week sprint to redo a 12-year-old wordmark and the systems around it.", tone: "red" },
+  { id: 2, title: "Atlas — checkout v3", year: "2025", tag: "Product", desc: "Rebuilt the checkout from scratch. Conversion up 11%, support tickets down by half.", tone: "blue" },
+  { id: 3, title: "Lantern — reading app", year: "2025", tag: "Product", desc: "An e-reader that respects margins. Side project, shipped to the App Store.", tone: "default" },
+  { id: 4, title: "Sjö — type specimen", year: "2024", tag: "Web", desc: "A one-page specimen for a Swedish foundry. All HTML, no images.", tone: "default" },
+];
+
+function WorkGrid({ onOpen }) {
+  const [filter, setFilter] = useStateW("All");
+  const filters = ["All", "Brand", "Product", "Web", "Side projects"];
+  const list = filter === "All"
+    ? WORK
+    : filter === "Side projects"
+      ? WORK.filter(w => w.title.includes("Lantern"))
+      : WORK.filter(w => w.tag === filter);
+
+  return (
+    <section id="work" className="section">
+      <div className="shell">
+        <div className="section-head">
+          <div>
+            <span className="eyebrow">Selected work · 2024 → now</span>
+            <h2 style={{ marginTop: 8 }}>A few projects I'm proud of.</h2>
+          </div>
+        </div>
+
+        <div className="filter-row">
+          {filters.map(f => (
+            <button key={f} className={`pill ${filter === f ? "active" : ""}`} onClick={() => setFilter(f)}>
+              {f}
+            </button>
+          ))}
+        </div>
+
+        <div className="work-grid">
+          {list.map(w => (
+            <a key={w.id} className="work-card" href={`#case-${w.id}`} onClick={(e) => { e.preventDefault(); onOpen && onOpen(w); }}>
+              <div className={`thumb ${w.tone}`}>{w.tag.toLowerCase()} · {w.year}</div>
+              <span className="meta">{w.year} · {w.tag}</span>
+              <h3>{w.title}</h3>
+              <p>{w.desc}</p>
+              <div className="footer">
+                <span className="meta">04 min read</span>
+                <span className="read">Read the case study →</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+window.WorkGrid = WorkGrid;
