@@ -30,6 +30,19 @@ create table if not exists public.track3r_days (
 create index if not exists track3r_days_profile_date_idx
   on public.track3r_days (profile_id, date);
 
--- Match the access model of the existing tables (anon key, RLS not enabled).
+-- Match the access model of the existing tables (anon key, public hub).
 grant all on table public.track3r_goals to anon, authenticated;
 grant all on table public.track3r_days  to anon, authenticated;
+
+-- This Supabase project has RLS enabled on new tables by default, so the
+-- anon key needs explicit policies (grants alone aren't enough — RLS
+-- defaults to deny-all). Permissive policies match the profiles/projects
+-- tables the other apps use: data is separated per profile, not per row.
+alter table public.track3r_goals enable row level security;
+alter table public.track3r_days  enable row level security;
+
+create policy "track3r_goals public access" on public.track3r_goals
+  for all to anon, authenticated using (true) with check (true);
+
+create policy "track3r_days public access" on public.track3r_days
+  for all to anon, authenticated using (true) with check (true);
