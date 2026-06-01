@@ -703,6 +703,7 @@ export default function TodoLabb() {
                 <ul className="tl-dropdown" role="menu">
                   <li role="none"><a href="../todo/" role="menuitem" className="active">Todo</a></li>
                   <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
+                  <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
                 </ul>
               </li>
             </ul>

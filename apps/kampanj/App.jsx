@@ -691,6 +691,7 @@ export default function KampanjLabb() {
                 <ul className="kl-dropdown" role="menu">
                   <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
                   <li role="none"><a href="../kampanj/" role="menuitem" className="active">Kampanjplanerare</a></li>
+                  <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
                 </ul>
               </li>
             </ul>
