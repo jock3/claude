@@ -1,6 +1,7 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download } from 'lucide-react';
+import * as db from './db.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
 function ScopedStyles() {
@@ -144,7 +145,7 @@ const ICON_MAP = {
   'sun': Sun, 'moon': Moon, 'utensils': Utensils, 'dumbbell': Dumbbell,
   'check': Check, 'trash-2': Trash2, 'pencil': Pencil, 'plus': Plus,
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
-  'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut,
+  'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -224,116 +225,13 @@ function avgOf(arr) {
   return vals.reduce((a,b) => a+b, 0) / vals.length;
 }
 
-/* ── Seed data ────────────────────────────────────────────────────────────── */
-const MEAL_POOL = {
-  Breakfast: [
-    { name: 'Havregrynsgröt, banan & vassle', kcal: 420, protein: 24, carbs: 60, fat: 9 },
-    { name: 'Ägg, avokado & toast',           kcal: 460, protein: 26, carbs: 34, fat: 24 },
-    { name: 'Skyr, granola & bär',            kcal: 360, protein: 28, carbs: 46, fat: 7 },
-    { name: 'Proteinpannkakor',               kcal: 480, protein: 34, carbs: 52, fat: 12 },
-  ],
-  Lunch: [
-    { name: 'Kyckling & risbowl',             kcal: 560, protein: 38, carbs: 58, fat: 14 },
-    { name: 'Lax, quinoa & grönt',            kcal: 600, protein: 40, carbs: 44, fat: 26 },
-    { name: 'Nötfärs burrito bowl',           kcal: 680, protein: 42, carbs: 66, fat: 24 },
-    { name: 'Tonfiskpastasallad',             kcal: 520, protein: 36, carbs: 56, fat: 14 },
-  ],
-  Snack: [
-    { name: 'Grekisk yoghurt & bär',          kcal: 220, protein: 18, carbs: 22, fat: 6 },
-    { name: 'Keso & nötter',                  kcal: 260, protein: 22, carbs: 10, fat: 16 },
-    { name: 'Proteinbar',                     kcal: 210, protein: 20, carbs: 22, fat: 7 },
-    { name: 'Äpple & jordnötssmör',          kcal: 240, protein: 8,  carbs: 28, fat: 12 },
-  ],
-  Dinner: [
-    { name: 'Pasta bolognese',                kcal: 640, protein: 12, carbs: 40, fat: 19 },
-    { name: 'Wok kyckling & nudlar',          kcal: 620, protein: 44, carbs: 62, fat: 18 },
-    { name: 'Biff, potatis & sallad',         kcal: 720, protein: 48, carbs: 48, fat: 32 },
-    { name: 'Torsk, ris & grönsaker',         kcal: 540, protein: 42, carbs: 52, fat: 12 },
-  ],
-};
-
-const WORKOUT_CYCLE = ['Push', 'Pull', 'Legs', 'Rest', 'Run', 'Push', 'Rest'];
-const WORKOUT_META = {
-  Push: { name: 'Push-dag · bröst + axlar', kind: 'Strength', durationMin: 52, kcal: 340, tags: ['Chest', 'Shoulders'] },
-  Pull: { name: 'Pull-dag · rygg + biceps', kind: 'Strength', durationMin: 48, kcal: 320, tags: ['Back', 'Arms'] },
-  Legs: { name: 'Bendag · knäböj fokus',    kind: 'Strength', durationMin: 58, kcal: 410, tags: ['Legs'] },
-  Run:  { name: 'Zon 2 löpning · 8 km',     kind: 'Cardio',   durationMin: 44, kcal: 460, tags: ['Run'] },
-};
-
-function rng(seed) {
-  let a = seed >>> 0;
-  return function() {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function seedState() {
-  const goals = { kcal: 2400, protein: 160, carbs: 240, fat: 70, steps: 10000, weight: 75 };
-  const days = {};
-  const SPAN = 74;
-  const start = addDays(todayKey(), -(SPAN-1));
-  for (let i = 0; i < SPAN; i++) {
-    const k = addDays(start, i);
-    const d = parseKey(k);
-    const r = rng(i * 2654435761 + 12345);
-    const dow = d.getDay();
-    const trend = 76.0 - (1.7 * i) / (SPAN-1);
-    const weight = +(trend + (r() - 0.5) * 0.5).toFixed(1);
-    const base = (dow === 0 || dow === 6) ? 6500 : 9200;
-    const steps = Math.round(base + (r() - 0.4) * 4200);
-    const cyc = WORKOUT_CYCLE[i % WORKOUT_CYCLE.length];
-    const workouts = [];
-    if (cyc !== 'Rest' && r() > 0.12) {
-      const m = WORKOUT_META[cyc];
-      workouts.push({ id: uid('w'), kind: m.kind, name: m.name, durationMin: m.durationMin + Math.round((r()-0.5)*10), kcal: m.kcal + Math.round((r()-0.5)*60), tags: m.tags.slice() });
-    }
-    const meals = [];
-    const slots = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
-    const skipSnack = r() > 0.5;
-    slots.forEach(slot => {
-      if (slot === 'Snack' && skipSnack) return;
-      const pool = MEAL_POOL[slot];
-      const pick = pool[Math.floor(r() * pool.length) % pool.length];
-      const times = { Breakfast: '07:40', Lunch: '12:30', Snack: '15:50', Dinner: '19:20' };
-      meals.push({ id: uid('m'), slot, name: pick.name, time: times[slot], ...pick });
-    });
-    if (r() < 0.17 && i < SPAN-6) {
-      meals.push({ id: uid('m'), slot: 'Dinner', name: 'Pizza & öl-kväll', time: '20:10', kcal: 980, protein: 34, carbs: 96, fat: 44 });
-    }
-    days[k] = { meals, workouts, steps, weight };
-  }
-  return { goals, days };
-}
-
-/* ── Persistence ──────────────────────────────────────────────────────────── */
-function makeStoreKey(user) { return `track3r.hub.v1.${user}`; }
-
-function loadState(user) {
-  try {
-    const raw = localStorage.getItem(makeStoreKey(user));
-    if (raw) {
-      const p = JSON.parse(raw);
-      if (p && p.goals && p.days) return p;
-    }
-  } catch (_) {}
-  return seedState();
-}
-function saveState(state, user) {
-  try { localStorage.setItem(makeStoreKey(user), JSON.stringify(state)); } catch (_) {}
-}
-
-/* ── Auth helpers ─────────────────────────────────────────────────────────── */
-const AUTH_KEY = 'ailabb_users';
+/* ── Defaults & session (Supabase-backed) ────────────────────────────── */
+const DEFAULT_GOALS = { kcal: 2400, protein: 160, carbs: 240, fat: 70, steps: 10000, weight: 75 };
 const ACTIVE_KEY = 'ailabb_active_user';
+const PROFILE_ID_KEY = 'ailabb_profile_id';
+const PROFILE_NAME_KEY = 'ailabb_profile_name';
 
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem(AUTH_KEY) || '{}'); } catch (_) { return {}; }
-}
-function saveUsers(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
-function getActiveUser() {
+function getActiveUserName() {
   try {
     const v = JSON.parse(localStorage.getItem(ACTIVE_KEY));
     if (!v) return null;
@@ -341,21 +239,73 @@ function getActiveUser() {
     return typeof v === 'string' ? v : (v.name || null);
   } catch (_) { return null; }
 }
-function setActiveUser(name) { localStorage.setItem(ACTIVE_KEY, JSON.stringify(name)); }
 
-/* ── useStore hook ────────────────────────────────────────────────────────── */
-function useStore(user) {
-  const [state, setState] = useState(() => loadState(user));
-  useEffect(() => { saveState(state, user); }, [state, user]);
+function rowsToDays(rows) {
+  const days = {};
+  (rows || []).forEach(r => {
+    days[r.date] = {
+      meals: r.meals || [],
+      workouts: r.workouts || [],
+      steps: r.steps,
+      weight: r.weight,
+    };
+  });
+  return days;
+}
+
+/* ── useStore hook (async, per profile) ───────────────────────────── */
+function useStore(profileId) {
+  const [state, setState] = useState({ goals: DEFAULT_GOALS, days: {} });
+  const [loading, setLoading] = useState(true);
+  const dayTimers = useRef({});
+  const goalTimer = useRef(null);
+
+  useEffect(() => {
+    if (!profileId) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const [goals, rows] = await Promise.all([
+        db.getGoals(profileId),
+        db.getDays(profileId),
+      ]);
+      if (cancelled) return;
+      setState({
+        goals: goals
+          ? { kcal: goals.kcal, protein: goals.protein, carbs: goals.carbs, fat: goals.fat, steps: goals.steps, weight: goals.weight }
+          : DEFAULT_GOALS,
+        days: rowsToDays(rows),
+      });
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [profileId]);
+
+  const persistDay = (key, day) => {
+    if (!profileId) return;
+    clearTimeout(dayTimers.current[key]);
+    dayTimers.current[key] = setTimeout(() => { db.upsertDay(profileId, key, day); }, 500);
+  };
+  const persistGoals = (goals) => {
+    if (!profileId) return;
+    clearTimeout(goalTimer.current);
+    goalTimer.current = setTimeout(() => { db.upsertGoals(profileId, goals); }, 500);
+  };
 
   const mutateDay = (key, fn) => setState(s => {
     const day = s.days[key] || emptyDay();
-    return { ...s, days: { ...s.days, [key]: fn({ ...day, meals: day.meals.slice(), workouts: day.workouts.slice() }) } };
+    const next = fn({ ...day, meals: day.meals.slice(), workouts: day.workouts.slice() });
+    persistDay(key, next);
+    return { ...s, days: { ...s.days, [key]: next } };
   });
 
   return {
-    state, setState,
-    setGoal: (k, v) => setState(s => ({ ...s, goals: { ...s.goals, [k]: v } })),
+    state, loading,
+    setGoal: (k, v) => setState(s => {
+      const goals = { ...s.goals, [k]: v };
+      persistGoals(goals);
+      return { ...s, goals };
+    }),
     addMeal: (key, m) => mutateDay(key, d => ({ ...d, meals: [...d.meals, m] })),
     updateMeal: (key, m) => mutateDay(key, d => ({ ...d, meals: d.meals.map(x => x.id === m.id ? m : x) })),
     deleteMeal: (key, id) => mutateDay(key, d => ({ ...d, meals: d.meals.filter(x => x.id !== id) })),
@@ -364,7 +314,6 @@ function useStore(user) {
     deleteWorkout: (key, id) => mutateDay(key, d => ({ ...d, workouts: d.workouts.filter(x => x.id !== id) })),
     setSteps: (key, v) => mutateDay(key, d => ({ ...d, steps: v })),
     setWeight: (key, v) => mutateDay(key, d => ({ ...d, weight: v })),
-    reset: (u) => setState(loadState(u)),
   };
 }
 
@@ -983,7 +932,7 @@ function BrandMark() {
   );
 }
 
-function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName }) {
+function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, onExport, onLogout }) {
   const C = useC();
   const rel = fmtRelative(selectedKey);
   const d = parseKey(selectedKey);
@@ -1014,8 +963,10 @@ function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName }
             style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
         </div>
         {!isToday && <Button variant="secondary" size="sm" onClick={onToday}>Idag</Button>}
+        <Button variant="secondary" size="sm" icon="download" onClick={onExport}>Exportera</Button>
         <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label="Växla tema" onClick={onToggleTheme} size={36} />
-        <span className="t3-avatar">{userName.slice(0,2).toUpperCase()}</span>
+        <IconButton icon="log-out" label="Byt användare" onClick={onLogout} size={36} />
+        <span className="t3-avatar" title={userName}>{(userName || '?').slice(0,2).toUpperCase()}</span>
       </div>
     </header>
   );
@@ -1071,65 +1022,135 @@ function Summary({ day, goals, selectedKey, days, units, store }) {
   );
 }
 
-/* ── Login screen ─────────────────────────────────────────────────────────── */
-function LoginScreen({ onLogin }) {
+/* ── CSV export ───────────────────────────────────────────────────────────── */
+function csvCell(v) {
+  if (v == null) return '';
+  const s = String(v);
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Build a daily-summary CSV string for every date in [fromKey, toKey].
+function buildDailyCSV(days, fromKey, toKey) {
+  const headers = [
+    'Datum', 'Veckodag', 'Kalorier (kcal)', 'Protein (g)', 'Kolhydrater (g)', 'Fett (g)',
+    'Steg', 'Vikt (kg)', 'Antal pass', 'Aktiv tid (min)', 'Förbränt (kcal)', 'Antal måltider',
+  ];
+  const rows = [headers.join(',')];
+  for (let k = fromKey; k <= toKey; k = addDays(k, 1)) {
+    const day = days[k];
+    const t = day ? dayTotals(day) : { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    const workouts = day ? day.workouts : [];
+    const activeMin = workouts.reduce((a, w) => a + (w.durationMin || 0), 0);
+    const burned = workouts.reduce((a, w) => a + (w.kcal || 0), 0);
+    const d = parseKey(k);
+    rows.push([
+      k,
+      WD_SHORT[d.getDay()],
+      Math.round(t.kcal),
+      Math.round(t.protein),
+      Math.round(t.carbs),
+      Math.round(t.fat),
+      day && day.steps != null ? day.steps : '',
+      day && day.weight != null ? day.weight : '',
+      workouts.length,
+      activeMin,
+      burned,
+      day ? day.meals.length : 0,
+    ].map(csvCell).join(','));
+  }
+  return '﻿' + rows.join('\r\n'); // BOM so Excel reads UTF-8 (åäö) correctly
+}
+
+function downloadCSV(filename, text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ── Export modal ─────────────────────────────────────────────────────────── */
+function ExportModal({ profileId, onClose, onDone }) {
   const C = useC();
-  const [mode, setMode] = useState('login');
-  const [name, setName] = useState('');
-  const [pin, setPin] = useState('');
+  const [preset, setPreset] = useState(30);
+  const [from, setFrom] = useState(addDays(todayKey(), -29));
+  const [to, setTo] = useState(todayKey());
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = e => {
-    e.preventDefault();
-    if (!name.trim()) { setError('Ange ett namn.'); return; }
-    if (!/^\d{4}$/.test(pin)) { setError('PIN måste vara 4 siffror.'); return; }
-    const users = getUsers();
-    const uname = name.trim();
-    if (mode === 'register') {
-      if (users[uname]) { setError('Det namnet är taget.'); return; }
-      users[uname] = pin;
-      saveUsers(users);
-      setActiveUser(uname);
-      onLogin(uname);
-    } else {
-      if (!users[uname] || users[uname] !== pin) { setError('Fel namn eller PIN.'); return; }
-      setActiveUser(uname);
-      onLogin(uname);
+  const applyPreset = n => {
+    setPreset(n);
+    if (n !== 'custom') { setFrom(addDays(todayKey(), -(n - 1))); setTo(todayKey()); }
+  };
+
+  const fromKey = preset === 'custom' ? from : addDays(todayKey(), -(preset - 1));
+  const toKey = preset === 'custom' ? to : todayKey();
+  const invalidRange = fromKey > toKey;
+
+  const run = async () => {
+    if (invalidRange) { setError('Startdatum måste vara före slutdatum.'); return; }
+    setBusy(true); setError('');
+    try {
+      const rows = await db.getDays(profileId, fromKey, toKey);
+      const days = rowsToDays(rows);
+      const csv = buildDailyCSV(days, fromKey, toKey);
+      downloadCSV(`track3r-export_${fromKey}_till_${toKey}.csv`, csv);
+      onDone();
+    } catch (_) {
+      setError('Kunde inte hämta data. Försök igen.');
+      setBusy(false);
     }
   };
 
+  const presets = [{ v: 30, l: '30 dagar' }, { v: 60, l: '60 dagar' }, { v: 90, l: '90 dagar' }, { v: 'custom', l: 'Anpassad' }];
+
+  return (
+    <Modal eyebrow="Exportera" title="Exportera till CSV" onClose={onClose}
+      footer={<>
+        <Button variant="ghost" onClick={onClose}>Avbryt</Button>
+        <Button variant="primary" icon="download" onClick={run} disabled={busy || invalidRange}>
+          {busy ? 'Hämtar…' : 'Ladda ner CSV'}
+        </Button>
+      </>}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Field label="Period">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {presets.map(p => (
+              <button key={p.v} type="button" className={`t3-tag${preset === p.v ? ' on' : ''}`} onClick={() => applyPreset(p.v)}>{p.l}</button>
+            ))}
+          </div>
+        </Field>
+        {preset === 'custom' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <Field label="Från">
+              <TextInput type="date" max={to} value={from} onChange={e => setFrom(e.target.value)} style={{ colorScheme: 'dark light' }} />
+            </Field>
+            <Field label="Till">
+              <TextInput type="date" max={todayKey()} value={to} onChange={e => setTo(e.target.value)} style={{ colorScheme: 'dark light' }} />
+            </Field>
+          </div>
+        )}
+        <span style={{ fontSize: 12, color: C.ink3 }}>
+          {invalidRange ? 'Ogiltigt intervall.' : `Exporterar dagliga summeringar för ${fromKey} – ${toKey}.`}
+        </span>
+        {error && <span style={{ fontSize: 12, color: '#e05c5c', fontWeight: 600 }}>{error}</span>}
+      </div>
+    </Modal>
+  );
+}
+
+/* ── Loading screen ───────────────────────────────────────────────────────── */
+function LoadingScreen() {
+  const C = useC();
   return (
     <div className="t3-login">
-      <div className="t3-login-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <BrandMark />
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: '-0.02em', color: C.ink }}>Track<span style={{ color: C.teal }}>3</span>r</div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.ink3 }}>Tracking hub</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 0, border: `1px solid ${C.line}`, borderRadius: 9, overflow: 'hidden' }}>
-          {['login','register'].map(m => (
-            <button key={m} onClick={() => { setMode(m); setError(''); }}
-              style={{ flex: 1, padding: '9px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer', border: 'none', background: mode === m ? C.ink : 'transparent', color: mode === m ? (C.ink === '#F2F1EF' ? '#242425' : '#fff') : C.ink3, transition: 'all 140ms', fontFamily: 'inherit' }}>
-              {m === 'login' ? 'Logga in' : 'Skapa konto'}
-            </button>
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Field label="Namn">
-            <TextInput value={name} onChange={e => { setName(e.target.value); setError(''); }} placeholder="Gustav" autoFocus />
-          </Field>
-          <Field label="PIN (4 siffror)">
-            <TextInput type="password" inputMode="numeric" maxLength={4} value={pin} onChange={e => { setPin(e.target.value.replace(/\D/g,'').slice(0,4)); setError(''); }} placeholder="••••" />
-          </Field>
-          {error && <span style={{ fontSize: 12, color: '#e05c5c', fontWeight: 600 }}>{error}</span>}
-          <Button variant="primary" onClick={() => {}} style={{ width: '100%', justifyContent: 'center', marginTop: 4 }}>
-            {mode === 'login' ? 'Logga in' : 'Skapa konto'}
-          </Button>
-        </form>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, color: C.ink3 }}>
+        <BrandMark />
+        <span style={{ fontSize: 13, fontWeight: 600 }}>Laddar din data…</span>
       </div>
     </div>
   );
@@ -1139,7 +1160,9 @@ function LoginScreen({ onLogin }) {
 export default function TrackrApp() {
   const savedTheme = localStorage.getItem('ailabb_theme') || 'dark';
   const [theme, setTheme] = useState(savedTheme);
-  const [user, setUser] = useState(() => getActiveUser());
+  const [userName, setUserName] = useState(null);
+  const [profileId, setProfileId] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [selectedKey, setSelectedKey] = useState(todayKey());
   const [tab, setTab] = useState('food');
   const [modal, setModal] = useState(null);
@@ -1147,13 +1170,58 @@ export default function TrackrApp() {
   const [units] = useState('kg');
 
   const C = mkC(theme === 'dark');
-  const store = useStore(user || '__guest__');
-  const { state } = store;
+  const store = useStore(profileId);
+  const { state, loading } = store;
   const day = state.days[selectedKey] || emptyDay();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  /* Restore session on mount — redirect to the hub if not logged in (like todo). */
+  useEffect(() => {
+    let cancelled = false;
+    // Drop legacy localStorage-based data from the pre-Supabase version.
+    try {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('track3r.hub.v1.'))
+        .forEach(k => localStorage.removeItem(k));
+    } catch (_) {}
+    (async () => {
+      const name = getActiveUserName();
+      if (!name) { window.location.replace('../../'); return; }
+      if (cancelled) return;
+      setUserName(name);
+
+      const cachedId = localStorage.getItem(PROFILE_ID_KEY);
+      const cachedName = localStorage.getItem(PROFILE_NAME_KEY);
+      let pid;
+      if (cachedId && cachedName === name) {
+        pid = cachedId;
+      } else {
+        try {
+          const profile = await db.getOrCreateProfile(name);
+          if (!profile) { window.location.replace('../../'); return; }
+          pid = profile.id;
+          localStorage.setItem(PROFILE_ID_KEY, pid);
+          localStorage.setItem(PROFILE_NAME_KEY, name);
+        } catch (_) {
+          window.location.replace('../../'); return;
+        }
+      }
+      if (cancelled) return;
+      setProfileId(pid);
+      setAuthReady(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const logout = () => {
+    localStorage.removeItem('ailabb_active_user');
+    localStorage.removeItem(PROFILE_ID_KEY);
+    localStorage.removeItem(PROFILE_NAME_KEY);
+    window.location.replace('../../');
+  };
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -1187,12 +1255,12 @@ export default function TrackrApp() {
     if (parseKey(next) <= parseKey(todayKey())) setSelectedKey(next);
   };
 
-  if (!user) {
+  if (!authReady || loading) {
     return (
       <CC.Provider value={C}>
         <div className="t3-root">
           <ScopedStyles />
-          <LoginScreen onLogin={setUser} />
+          <LoadingScreen />
         </div>
       </CC.Provider>
     );
@@ -1204,7 +1272,8 @@ export default function TrackrApp() {
         <ScopedStyles />
         <div className="t3-stage">
           <Header selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
-            theme={theme} onToggleTheme={toggleTheme} userName={user} />
+            theme={theme} onToggleTheme={toggleTheme} userName={userName}
+            onExport={() => setModal({ type: 'export' })} onLogout={logout} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 
@@ -1239,6 +1308,7 @@ export default function TrackrApp() {
 
         {modal?.type === 'meal' && <MealModal initial={modal.data} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
+        {modal?.type === 'export' && <ExportModal profileId={profileId} onClose={() => setModal(null)} onDone={() => { setModal(null); flash('Export nedladdad', 'download'); }} />}
 
         <Toast toast={toast} />
       </div>
