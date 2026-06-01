@@ -1,4 +1,4 @@
-import { supabase } from './supabase.js';
+import { supabase } from '../shared/supabase.js';
 
 export async function getOrCreateProfile(name) {
   const { data: existing } = await supabase
