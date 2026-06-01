@@ -334,9 +334,14 @@ function getUsers() {
 }
 function saveUsers(u) { localStorage.setItem(AUTH_KEY, JSON.stringify(u)); }
 function getActiveUser() {
-  try { return JSON.parse(localStorage.getItem(ACTIVE_KEY)); } catch (_) { return null; }
+  try {
+    const v = JSON.parse(localStorage.getItem(ACTIVE_KEY));
+    if (!v) return null;
+    // The main hub stores a plain string name; tolerate a legacy { name } object too.
+    return typeof v === 'string' ? v : (v.name || null);
+  } catch (_) { return null; }
 }
-function setActiveUser(u) { localStorage.setItem(ACTIVE_KEY, JSON.stringify(u)); }
+function setActiveUser(name) { localStorage.setItem(ACTIVE_KEY, JSON.stringify(name)); }
 
 /* ── useStore hook ────────────────────────────────────────────────────────── */
 function useStore(user) {
@@ -1079,18 +1084,17 @@ function LoginScreen({ onLogin }) {
     if (!name.trim()) { setError('Ange ett namn.'); return; }
     if (!/^\d{4}$/.test(pin)) { setError('PIN måste vara 4 siffror.'); return; }
     const users = getUsers();
+    const uname = name.trim();
     if (mode === 'register') {
-      if (users[name.trim()]) { setError('Det namnet är taget.'); return; }
-      users[name.trim()] = pin;
+      if (users[uname]) { setError('Det namnet är taget.'); return; }
+      users[uname] = pin;
       saveUsers(users);
-      const u = { name: name.trim() };
-      setActiveUser(u);
-      onLogin(u);
+      setActiveUser(uname);
+      onLogin(uname);
     } else {
-      if (!users[name.trim()] || users[name.trim()] !== pin) { setError('Fel namn eller PIN.'); return; }
-      const u = { name: name.trim() };
-      setActiveUser(u);
-      onLogin(u);
+      if (!users[uname] || users[uname] !== pin) { setError('Fel namn eller PIN.'); return; }
+      setActiveUser(uname);
+      onLogin(uname);
     }
   };
 
@@ -1143,7 +1147,7 @@ export default function TrackrApp() {
   const [units] = useState('kg');
 
   const C = mkC(theme === 'dark');
-  const store = useStore(user?.name || '__guest__');
+  const store = useStore(user || '__guest__');
   const { state } = store;
   const day = state.days[selectedKey] || emptyDay();
 
@@ -1200,7 +1204,7 @@ export default function TrackrApp() {
         <ScopedStyles />
         <div className="t3-stage">
           <Header selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
-            theme={theme} onToggleTheme={toggleTheme} userName={user.name} />
+            theme={theme} onToggleTheme={toggleTheme} userName={user} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 
