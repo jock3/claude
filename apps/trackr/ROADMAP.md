@@ -53,8 +53,8 @@ Strategiska beslut som styr allt annat. **Besluten är tagna — se nedan.**
 
 - [x] **Open Food Facts-sök** — sökfält i `MealModal` (debounce 380 ms + abort) som autofyller kcal/P/K/F per 100 g; vald produkt visar ett "Mängd (g)"-fält som skalar makrona. Klient i `off.js`. *(Ej live-testad från sandbox — egress-allowlist; behöver browser-smoke-test.)*
 - [x] **Streckkodsskanning** — "Skanna streckkod"-knapp → kamera + `BarcodeDetector` (EAN-13/8, UPC-A/E, Code-128) → uppslag via `getProductByBarcode` i OFF → samma autofyll. Använder `barcode-detector`-ponyfillen (zxing-wasm) så det funkar på iOS Safari också, lazy-laddad (egen chunk ~15 KB gzip + 939 KB wasm vid första skan). *(Kräver HTTPS + riktig enhet för test.)*
-- [ ] **Kopiera gårdagen** — en knapp som klonar gårdagens måltider till idag. Billigaste högvärdesfunktionen som finns. `S`
-- [ ] **Senast använda livsmedel** — auto-lista de N senaste loggade posterna för ett-klicks-återanvändning. `S`
+- [x] **Kopiera gårdagen** — knapp i `FoodPanel` (i tom-läget + i footern när dagen har måltider) som klonar gårdagens måltider till idag med nya id:n. Visas bara när gårdagen har loggade måltider.
+- [x] **Senast använda livsmedel** — `MealModal` visar "Senast använda"-chips (de 8 senaste distinkta livsmedlen, nyast först, dedupade på namn) när sökrutan är tom. Ett klick fyller formuläret med de loggade makrona.
 - [ ] **Sparade måltider / favoriter** — ny tabell `track3r_favorites`. "Mina måltider" + "lägg till senaste" så återkommande mat loggas med ett klick. `M`
 - [ ] **Onboarding-flöde** — första gången: kort guide som förifyller rimliga mål. Gör defaulterna meningsfulla med en TDEE-uppskattning (Mifflin-St Jeor) från längd/vikt/aktivitet istället för godtyckliga 2400/160/240/70 (`DEFAULT_GOALS` rad 226). `M`
 

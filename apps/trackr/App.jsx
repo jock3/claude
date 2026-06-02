@@ -212,6 +212,25 @@ function kcalInGoal(day, goals) {
 }
 function stepsHit(day, goals) { return !!day && day.steps != null && day.steps >= goals.steps; }
 function dayLogged(day) { return !!day && day.meals.length > 0; }
+// Most-recently-logged distinct foods (by name) across all days, newest first,
+// for one-click re-adding. Carries the logged macros as absolute values.
+function recentFoodsFrom(days, limit = 8) {
+  const keys = Object.keys(days).sort().reverse(); // date desc
+  const seen = new Set();
+  const out = [];
+  for (const k of keys) {
+    const meals = (days[k] && days[k].meals) || [];
+    for (let i = meals.length - 1; i >= 0; i--) {
+      const m = meals[i];
+      const id = (m.name || '').trim().toLowerCase();
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      out.push({ name: m.name, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}
 function calcStreak(days) {
   // Streak rewards the habit of logging consistently, not hitting an exact
   // calorie number. An honest over-goal day still counts; only a day with no
@@ -573,7 +592,7 @@ function BarcodeScanner({ onDetect, onClose }) {
   );
 }
 
-function MealModal({ initial, onSave, onClose, onDelete }) {
+function MealModal({ initial, recent = [], onSave, onClose, onDelete }) {
   const editing = !!(initial && initial.id);
   const [f, setF] = useState(() => ({
     slot: (initial && initial.slot) || 'Breakfast',
@@ -641,6 +660,18 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
       fat: String(prod.per100.fat),
     }));
     setQuery(''); setResults([]); setShowResults(false); setLookupMsg(null);
+  };
+
+  // Re-add a previously logged food. Its macros are absolute (already-logged
+  // totals), so we clear the per-100g/grams scaling state.
+  const pickRecent = (food) => {
+    setPicked(null); setGrams(''); setLookupMsg(null);
+    setF(s => ({ ...s, name: food.name,
+      kcal: String(food.kcal ?? ''),
+      protein: String(food.protein ?? ''),
+      carbs: String(food.carbs ?? ''),
+      fat: String(food.fat ?? ''),
+    }));
   };
 
   const onBarcodeDetected = async (code) => {
@@ -715,6 +746,18 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
         </button>
         </div>
       </Field>
+      {!editing && recent.length > 0 && query.trim().length < 2 && (
+        <div style={{ marginTop: 10 }}>
+          <span className="t3-label" style={{ display: 'block', marginBottom: 7 }}>Senast använda</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {recent.map((food, i) => (
+              <button type="button" key={`${food.name}-${i}`} className="t3-tag" onClick={() => pickRecent(food)} title={`${food.kcal} kcal`}>
+                {food.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {lookupMsg && (
         <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: 12.5, fontWeight: 600 }}>{lookupMsg}</div>
       )}
@@ -795,7 +838,7 @@ function Macro({ name, value, goal, color }) {
   );
 }
 
-function FoodPanel({ day, goals, onAddMeal, onEditMeal }) {
+function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterdayCount }) {
   const C = useC();
   const totals = dayTotals(day);
   const left = Math.max(0, goals.kcal - totals.kcal);
@@ -823,12 +866,20 @@ function FoodPanel({ day, goals, onAddMeal, onEditMeal }) {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '32px 0', color: C.ink3, minHeight: 120 }}>
             <Icon name="utensils" size={26} color={C.ink4} stroke={1.5} />
             <span style={{ fontSize: 13 }}>Inga måltider loggade för den här dagen.</span>
+            {yesterdayCount > 0 && (
+              <Button variant="secondary" size="sm" icon="rotate-ccw" onClick={onCopyYesterday} style={{ marginTop: 4 }}>
+                Kopiera gårdagen ({yesterdayCount})
+              </Button>
+            )}
           </div>
         ) : meals.map(m => <MealRow key={m.id} meal={m} onClick={() => onEditMeal(m)} />)}
       </div>
 
-      <div style={{ paddingTop: 12 }}>
-        <Button variant="dark" icon="plus" onClick={onAddMeal}>Lägg till måltid</Button>
+      <div style={{ paddingTop: 12, display: 'flex', gap: 10 }}>
+        <Button variant="dark" icon="plus" onClick={onAddMeal} style={{ flex: 1 }}>Lägg till måltid</Button>
+        {meals.length > 0 && yesterdayCount > 0 && (
+          <Button variant="secondary" icon="rotate-ccw" onClick={onCopyYesterday} title="Kopiera gårdagens måltider">Kopiera gårdagen</Button>
+        )}
       </div>
     </>
   );
@@ -1454,6 +1505,14 @@ export default function TrackrApp() {
     setModal(null);
   };
   const removeMeal = id => { store.deleteMeal(selectedKey, id); setModal(null); flash('Måltid borttagen', 'trash-2'); };
+
+  const yesterdayMeals = (state.days[addDays(selectedKey, -1)] || {}).meals || [];
+  const copyYesterday = () => {
+    if (!yesterdayMeals.length) return;
+    yesterdayMeals.forEach(m => store.addMeal(selectedKey, { ...m, id: uid('m') }));
+    flash(`${yesterdayMeals.length} måltid${yesterdayMeals.length === 1 ? '' : 'er'} kopierade`, 'rotate-ccw');
+  };
+  const recentFoods = recentFoodsFrom(state.days);
   const saveWorkout = w => {
     if (state.days[selectedKey]?.workouts.some(x => x.id === w.id)) {
       store.updateWorkout(selectedKey, w); flash('Pass uppdaterat');
@@ -1503,7 +1562,7 @@ export default function TrackrApp() {
                 </span>
               </div>
               {tab === 'food'
-                ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} />
+                ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} />
                 : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
             </Panel>
 
@@ -1518,7 +1577,7 @@ export default function TrackrApp() {
           </div>
         </div>
 
-        {modal?.type === 'meal' && <MealModal initial={modal.data} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
+        {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
         {modal?.type === 'export' && <ExportModal profileId={profileId} onClose={() => setModal(null)} onDone={() => { setModal(null); flash('Export nedladdad', 'download'); }} />}
 
