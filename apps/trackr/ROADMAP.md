@@ -12,7 +12,9 @@
 
 ### SÄKERHETSGRIND — läs innan du följer faserna
 
-Nuvarande läge (verifierat): Supabase-policyn är `using(true) with check(true)` (se `schema.sql`) med den publika anon-nyckeln liggande i JS-bundlen, och hubbens inloggning kontrolleras bara i webbläsaren. Det betyder att databasen i praktiken är **både läs- och skrivbar för vem som helst på internet** — inte bara noll integritet, utan vem som helst som öppnar källkoden kan radera *allas* data.
+> **Status 2026-06-02 — MEDVETET UPPSKJUTEN.** Beslut: fortsätt bygga Fas 1 medan det bara är Gustav som loggar; ta grinden (riktig auth + RLS) **precis innan appen delas med en verklig användare eller Fas 3 påbörjas**. Grinden är inte struken — den är schemalagd till sista möjliga säkra ögonblick. Inget av det vi byggt hittills (OFF-sök, streckkod) ändrar risken; den lever helt i databaspolicyerna nedan.
+
+Nuvarande läge (verifierat): Supabase-policyn är `using(true) with check(true)` (se `schema.sql`) med den publika anon-nyckeln liggande i JS-bundlen, och hubbens inloggning kontrolleras bara i webbläsaren (namn i localStorage, inget `auth.uid()`, inget lösenord). Det betyder att databasen i praktiken är **både läs- och skrivbar för vem som helst på internet** — inte bara noll integritet, utan vem som helst som öppnar källkoden kan radera *allas* data. **Gäller även `profiles` som delas med todo + kampanj — grinden är ett cross-app-jobb, inte bara trackr.**
 
 - **För dig ensam i utveckling:** spelar ingen roll. Bygg på.
 - **Men du får inte passera den här grinden utan att fixa det:**
