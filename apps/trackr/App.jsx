@@ -1,6 +1,6 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target } from 'lucide-react';
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
@@ -158,7 +158,7 @@ const ICON_MAP = {
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
   'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader, 'barcode': Barcode,
-  'star': Star, 'x': X,
+  'star': Star, 'x': X, 'target': Target,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -574,9 +574,11 @@ function Toast({ toast }) {
 /* ── Food panel ───────────────────────────────────────────────────────────── */
 const MEAL_SLOTS = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
 
-function OnboardingModal({ onSave, onSkip }) {
+function GoalsModal({ mode = 'onboard', currentGoals, onSave, onClose }) {
   const C = useC();
-  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: '78', activity: 1.55, aim: 'maintain' });
+  const isEdit = mode === 'edit';
+  const initWeight = currentGoals && currentGoals.weight ? String(Math.round(currentGoals.weight)) : '78';
+  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: initWeight, activity: 1.55, aim: 'maintain' });
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const valid = parseFloat(f.age) > 0 && parseFloat(f.height) > 0 && parseFloat(f.weight) > 0;
   const preview = valid ? goalsFromProfile({
@@ -584,11 +586,12 @@ function OnboardingModal({ onSave, onSkip }) {
   }) : null;
 
   return (
-    <Modal eyebrow="Välkommen till Track3r" title="Kom igång med dina mål"
-      onClose={onSkip}
+    <Modal eyebrow={isEdit ? 'Skräddarsy dina mål' : 'Välkommen till Track3r'}
+      title={isEdit ? 'Uppdatera mål' : 'Kom igång med dina mål'}
+      onClose={onClose}
       footer={<>
-        <Button variant="ghost" onClick={onSkip} style={{ marginRight: 'auto' }}>Hoppa över</Button>
-        <Button variant="primary" icon="check" disabled={!valid} onClick={() => preview && onSave(preview)}>Sätt mina mål</Button>
+        <Button variant="ghost" onClick={onClose} style={{ marginRight: 'auto' }}>{isEdit ? 'Avbryt' : 'Hoppa över'}</Button>
+        <Button variant="primary" icon="check" disabled={!valid} onClick={() => preview && onSave(preview)}>{isEdit ? 'Uppdatera mål' : 'Sätt mina mål'}</Button>
       </>}>
       <p style={{ margin: '0 0 16px', fontSize: 13.5, color: C.ink3, lineHeight: 1.5 }}>
         Vi räknar ut ett rimligt kalori- och makromål åt dig med Mifflin-St Jeor-formeln. Du kan alltid justera siffrorna direkt i appen efteråt.
@@ -1337,7 +1340,7 @@ function BrandMark() {
   );
 }
 
-function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, onExport, onLogout }) {
+function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, onExport, onUpdateGoals, onLogout }) {
   const C = useC();
   const rel = fmtRelative(selectedKey);
   const d = parseKey(selectedKey);
@@ -1368,6 +1371,7 @@ function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, 
             style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
         </div>
         {!isToday && <Button variant="secondary" size="sm" onClick={onToday}>Idag</Button>}
+        <Button variant="secondary" size="sm" icon="target" onClick={onUpdateGoals}>Uppdatera mål</Button>
         <Button variant="secondary" size="sm" icon="download" onClick={onExport}>Exportera</Button>
         <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label="Växla tema" onClick={onToggleTheme} size={36} />
         <IconButton icon="log-out" label="Byt användare" onClick={onLogout} size={36} />
@@ -1686,7 +1690,7 @@ export default function TrackrApp() {
         <div className="t3-stage">
           <Header selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
             theme={theme} onToggleTheme={toggleTheme} userName={userName}
-            onExport={() => setModal({ type: 'export' })} onLogout={logout} />
+            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} onLogout={logout} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 
@@ -1720,9 +1724,15 @@ export default function TrackrApp() {
         </div>
 
         {!state.goalsSet && (
-          <OnboardingModal
+          <GoalsModal mode="onboard"
             onSave={g => { store.setAllGoals(g); flash('Dina mål är satta', 'check'); }}
-            onSkip={() => store.setAllGoals(state.goals)}
+            onClose={() => store.setAllGoals(state.goals)}
+          />
+        )}
+        {state.goalsSet && modal?.type === 'goals' && (
+          <GoalsModal mode="edit" currentGoals={state.goals}
+            onSave={g => { store.setAllGoals(g); setModal(null); flash('Dina mål är uppdaterade', 'check'); }}
+            onClose={() => setModal(null)}
           />
         )}
 
