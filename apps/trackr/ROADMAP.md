@@ -47,15 +47,17 @@ Strategiska beslut som styr allt annat. **Besluten är tagna — se nedan.**
 
 ---
 
-## Fas 1 — Ta bort inmatningsfriktionen (högst ROI)
+## Fas 1 — Ta bort inmatningsfriktionen (högst ROI) ✅ KOMPLETT (kod) 2026-06-02
 
 > **Omprioriterad efter Fas 0-beslutet (bred nutritionsspårare).** En sökbar matdatabas är nu *kärnan* i Fas 1, inte ett sent tillägg — utan den kan appen inte konkurrera i den valda positioneringen. De billiga återanvändnings-vinsterna byggs parallellt eftersom de är `S` och löser den repetitiva delen av loggningen nästan gratis.
+>
+> **Alla poster byggda.** Återstår: (1) browser-smoke-test på riktig enhet av OFF-sök + streckkod (sandbox blockerar både API och kamera), (2) kör uppdaterade `schema.sql` i Supabase för `track3r_favorites`.
 
 - [x] **Open Food Facts-sök** — sökfält i `MealModal` (debounce 380 ms + abort) som autofyller kcal/P/K/F per 100 g; vald produkt visar ett "Mängd (g)"-fält som skalar makrona. Klient i `off.js`. *(Ej live-testad från sandbox — egress-allowlist; behöver browser-smoke-test.)*
 - [x] **Streckkodsskanning** — "Skanna streckkod"-knapp → kamera + `BarcodeDetector` (EAN-13/8, UPC-A/E, Code-128) → uppslag via `getProductByBarcode` i OFF → samma autofyll. Använder `barcode-detector`-ponyfillen (zxing-wasm) så det funkar på iOS Safari också, lazy-laddad (egen chunk ~15 KB gzip + 939 KB wasm vid första skan). *(Kräver HTTPS + riktig enhet för test.)*
 - [x] **Kopiera gårdagen** — knapp i `FoodPanel` (i tom-läget + i footern när dagen har måltider) som klonar gårdagens måltider till idag med nya id:n. Visas bara när gårdagen har loggade måltider.
 - [x] **Senast använda livsmedel** — `MealModal` visar "Senast använda"-chips (de 8 senaste distinkta livsmedlen, nyast först, dedupade på namn) när sökrutan är tom. Ett klick fyller formuläret med de loggade makrona.
-- [ ] **Sparade måltider / favoriter** — ny tabell `track3r_favorites`. "Mina måltider" + "lägg till senaste" så återkommande mat loggas med ett klick. `M`
+- [x] **Sparade måltider / favoriter** — ny tabell `track3r_favorites` (+ RLS-policy). `MealModal` har en "Favorit"-knapp (stjärna) som sparar aktuell måltid, och en "Favoriter"-chip-rad (ovanför "Senast använda") där ett klick fyller formuläret och ett × tar bort. Optimistisk store (`addFavorite`/`removeFavorite`). **OBS: kör uppdaterade `schema.sql` i Supabase innan favoriter kan sparas.**
 - [x] **Onboarding-flöde** — `OnboardingModal` visas första gången (när ingen mål-rad finns, `goalsSet`-flagga i storen). Samlar kön/ålder/längd/vikt/aktivitet/mål och räknar ut kcal + makron via Mifflin-St Jeor (`goalsFromProfile`) med live-förhandsvisning. Protein 1,8 g/kg, fett ~27,5 %, kolhydrater som rest. "Hoppa över" behåller defaulterna utan att nagga igen.
 
 > **Not om matinmatning:** Open Food Facts + streckkod löser *förpackad* mat. AI-naturligt-språk (Fas 6) löser *hemlagad / restaurang / vag* mat. Med positioneringen "bred nutritionsspårare" behövs **båda** — OFF/streckkod är basen (förväntas av varje MyFitnessPal-jämförelse), AI-NL är differentieraren ovanpå. OFF byggs först eftersom det är bordsinsats; AI-NL (Fas 6) blir nästa stora lyft.

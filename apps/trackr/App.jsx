@@ -1,6 +1,6 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X } from 'lucide-react';
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
@@ -158,6 +158,7 @@ const ICON_MAP = {
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
   'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader, 'barcode': Barcode,
+  'star': Star, 'x': X,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -314,7 +315,7 @@ function rowsToDays(rows) {
 
 /* ── useStore hook (async, per profile) ───────────────────────────── */
 function useStore(profileId) {
-  const [state, setState] = useState({ goals: DEFAULT_GOALS, days: {}, goalsSet: false });
+  const [state, setState] = useState({ goals: DEFAULT_GOALS, days: {}, goalsSet: false, favorites: [] });
   const [loading, setLoading] = useState(true);
   const dayTimers = useRef({});
   const goalTimer = useRef(null);
@@ -324,9 +325,10 @@ function useStore(profileId) {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      const [goals, rows] = await Promise.all([
+      const [goals, rows, favorites] = await Promise.all([
         db.getGoals(profileId),
         db.getDays(profileId),
+        db.getFavorites(profileId),
       ]);
       if (cancelled) return;
       setState({
@@ -335,6 +337,7 @@ function useStore(profileId) {
           : DEFAULT_GOALS,
         days: rowsToDays(rows),
         goalsSet: !!goals,
+        favorites: favorites || [],
       });
       setLoading(false);
     })();
@@ -378,6 +381,20 @@ function useStore(profileId) {
     deleteWorkout: (key, id) => mutateDay(key, d => ({ ...d, workouts: d.workouts.filter(x => x.id !== id) })),
     setSteps: (key, v) => mutateDay(key, d => ({ ...d, steps: v })),
     setWeight: (key, v) => mutateDay(key, d => ({ ...d, weight: v })),
+    addFavorite: (food) => {
+      const fav = {
+        id: (crypto.randomUUID ? crypto.randomUUID() : uid('fav')),
+        profile_id: profileId,
+        name: food.name, kcal: food.kcal || 0, protein: food.protein || 0,
+        carbs: food.carbs || 0, fat: food.fat || 0,
+      };
+      setState(s => ({ ...s, favorites: [...s.favorites, fav] }));
+      db.addFavorite(fav);
+    },
+    removeFavorite: (id) => {
+      setState(s => ({ ...s, favorites: s.favorites.filter(f => f.id !== id) }));
+      db.deleteFavorite(id);
+    },
   };
 }
 
@@ -680,7 +697,7 @@ function BarcodeScanner({ onDetect, onClose }) {
   );
 }
 
-function MealModal({ initial, recent = [], onSave, onClose, onDelete }) {
+function MealModal({ initial, recent = [], favorites = [], onAddFavorite, onRemoveFavorite, onSave, onClose, onDelete }) {
   const editing = !!(initial && initial.id);
   const [f, setF] = useState(() => ({
     slot: (initial && initial.slot) || 'Breakfast',
@@ -762,6 +779,19 @@ function MealModal({ initial, recent = [], onSave, onClose, onDelete }) {
     }));
   };
 
+  const trimmedName = f.name.trim();
+  const alreadyFav = !!trimmedName && favorites.some(fav => fav.name.trim().toLowerCase() === trimmedName.toLowerCase());
+  const saveFavorite = () => {
+    if (!trimmedName || !(parseFloat(f.kcal) > 0) || alreadyFav) return;
+    onAddFavorite && onAddFavorite({
+      name: trimmedName,
+      kcal: Math.round(parseFloat(f.kcal)),
+      protein: Math.round(parseFloat(f.protein) || 0),
+      carbs: Math.round(parseFloat(f.carbs) || 0),
+      fat: Math.round(parseFloat(f.fat) || 0),
+    });
+  };
+
   const onBarcodeDetected = async (code) => {
     setScanning(false);
     setLookupMsg(`Slår upp streckkod ${code}…`);
@@ -792,6 +822,12 @@ function MealModal({ initial, recent = [], onSave, onClose, onDelete }) {
       title={editing ? 'Redigera måltid' : 'Lägg till måltid'} onClose={onClose}
       footer={<>
         {editing && <Button variant="danger" icon="trash-2" onClick={() => onDelete(initial.id)} style={{ marginRight: 'auto' }}>Ta bort</Button>}
+        <Button variant="secondary" size="sm" icon="star" onClick={saveFavorite}
+          disabled={!trimmedName || !(parseFloat(f.kcal) > 0) || alreadyFav}
+          style={{ marginRight: editing ? undefined : 'auto' }}
+          title={alreadyFav ? 'Redan sparad som favorit' : 'Spara som favorit'}>
+          {alreadyFav ? 'Sparad' : 'Favorit'}
+        </Button>
         <Button variant="ghost" onClick={onClose}>Avbryt</Button>
         <Button variant="primary" icon="check" onClick={submit}>{editing ? 'Spara' : 'Lägg till'}</Button>
       </>}>
@@ -834,6 +870,24 @@ function MealModal({ initial, recent = [], onSave, onClose, onDelete }) {
         </button>
         </div>
       </Field>
+      {!editing && favorites.length > 0 && query.trim().length < 2 && (
+        <div style={{ marginTop: 10 }}>
+          <span className="t3-label" style={{ display: 'block', marginBottom: 7 }}>Favoriter</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {favorites.map(fav => (
+              <span key={fav.id} className="t3-tag" style={{ paddingRight: 5, gap: 4 }} title={`${fav.kcal} kcal`}>
+                <button type="button" onClick={() => pickRecent(fav)} style={{ border: 'none', background: 'transparent', font: 'inherit', color: 'inherit', cursor: 'pointer', padding: 0 }}>
+                  {fav.name}
+                </button>
+                <button type="button" onClick={() => onRemoveFavorite && onRemoveFavorite(fav.id)} title="Ta bort favorit"
+                  style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 0, opacity: 0.5 }}>
+                  <Icon name="x" size={13} stroke={2.5} />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       {!editing && recent.length > 0 && query.trim().length < 2 && (
         <div style={{ marginTop: 10 }}>
           <span className="t3-label" style={{ display: 'block', marginBottom: 7 }}>Senast använda</span>
@@ -1672,7 +1726,7 @@ export default function TrackrApp() {
           />
         )}
 
-        {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
+        {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} favorites={state.favorites} onAddFavorite={f => { store.addFavorite(f); flash('Sparad som favorit', 'star'); }} onRemoveFavorite={store.removeFavorite} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
         {modal?.type === 'export' && <ExportModal profileId={profileId} onClose={() => setModal(null)} onDone={() => { setModal(null); flash('Export nedladdad', 'download'); }} />}
 

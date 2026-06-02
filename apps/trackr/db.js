@@ -34,6 +34,24 @@ export async function upsertGoals(profileId, goals) {
   );
 }
 
+/* ── Favorites (saved meals, many per profile) ─────────────────────────────── */
+export async function getFavorites(profileId) {
+  const { data } = await supabase
+    .from('track3r_favorites')
+    .select('*')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: true });
+  return data || [];
+}
+
+export async function addFavorite(fav) {
+  await supabase.from('track3r_favorites').insert(fav);
+}
+
+export async function deleteFavorite(id) {
+  await supabase.from('track3r_favorites').delete().eq('id', id);
+}
+
 /* ── Days (one row per profile per date) ───────────────────────────────────── */
 export async function getDays(profileId, fromKey, toKey) {
   let q = supabase.from('track3r_days').select('*').eq('profile_id', profileId);
