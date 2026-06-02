@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
-import { searchExercises } from './wger.js';
+import { searchExercises } from './exercises.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
 function ScopedStyles() {
@@ -1150,31 +1150,11 @@ function WorkoutModal({ initial, onSave, onClose, onDelete }) {
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const toggleTag = t => setF(s => ({ ...s, tags: s.tags.includes(t) ? s.tags.filter(x => x !== t) : [...s.tags, t] }));
 
-  // ── wger exercise search (strength sessions) ────────────────────────────
+  // ── Exercise search (local bundled library, instant, no network) ──────────
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [wgerError, setWgerError] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const isStrength = f.kind === 'Strength';
-
-  useEffect(() => {
-    const q = query.trim();
-    if (!isStrength || q.length < 2) { setResults([]); setSearching(false); setWgerError(false); return; }
-    setSearching(true); setWgerError(false);
-    const ctrl = new AbortController();
-    const t = setTimeout(async () => {
-      try {
-        const hits = await searchExercises(q, { signal: ctrl.signal });
-        setResults(hits); setShowResults(true);
-      } catch (e) {
-        if (e.name !== 'AbortError') { setWgerError(true); setResults([]); setShowResults(true); }
-      } finally {
-        setSearching(false);
-      }
-    }, 380);
-    return () => { clearTimeout(t); ctrl.abort(); };
-  }, [query, isStrength]);
+  const results = isStrength && query.trim().length >= 2 ? searchExercises(query) : [];
+  const showResults = isStrength && query.trim().length >= 2;
 
   const addExercise = (name, exId) => {
     setF(s => ({ ...s, exercises: [...s.exercises, { id: uid('ex'), exId: exId ?? null, name, sets: [{ reps: '', weight: '' }] }] }));
@@ -1234,38 +1214,30 @@ function WorkoutModal({ initial, onSave, onClose, onDelete }) {
 
       {isStrength && (
         <div style={{ marginTop: 14 }}>
-          <Field label="Lägg till övning" hint="wger-databasen">
+          <Field label="Lägg till övning" hint="120+ övningar — skriv namn eller muskelgrupp">
             <div className="t3-search-wrap">
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
-                  <Icon name={searching ? 'loader' : 'search'} size={15} stroke={2} style={searching ? { animation: 't3-spin 800ms linear infinite' } : undefined} />
+                  <Icon name="search" size={15} stroke={2} />
                 </span>
                 <TextInput
                   value={query}
                   placeholder="ex. bänkpress, marklyft, knäböj…"
                   style={{ paddingLeft: 34 }}
                   onChange={e => setQuery(e.target.value)}
-                  onFocus={() => { if (results.length || wgerError) setShowResults(true); }}
                 />
               </div>
-              {showResults && (query.trim().length >= 2) && (
+              {showResults && (
                 <div className="t3-search-results">
-                  {wgerError ? (
+                  {results.length === 0 ? (
                     <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
                       <span className="t3-search-name">Lägg till "{query.trim()}"</span>
-                      <span className="t3-search-meta">Kunde inte nå wger — lägg till manuellt</span>
+                      <span className="t3-search-meta">Inga träffar — lägg till som egen övning</span>
                     </button>
-                  ) : results.length === 0 ? (
-                    searching ? <div className="t3-search-empty">Söker…</div> : (
-                      <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
-                        <span className="t3-search-name">Lägg till "{query.trim()}"</span>
-                        <span className="t3-search-meta">Inga träffar — lägg till egen övning</span>
-                      </button>
-                    )
                   ) : results.map(r => (
-                    <button type="button" key={r.exId || r.name} className="t3-search-item" onClick={() => addExercise(r.name, r.exId)}>
+                    <button type="button" key={r.id} className="t3-search-item" onClick={() => addExercise(r.name, r.id)}>
                       <span className="t3-search-name">{r.name}</span>
-                      {r.category && <span className="t3-search-meta">{r.category}</span>}
+                      <span className="t3-search-meta">{r.category}{r.muscles ? ` · ${r.muscles}` : ''}</span>
                     </button>
                   ))}
                 </div>
