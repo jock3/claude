@@ -213,6 +213,15 @@ function kcalInGoal(day, goals) {
 }
 function stepsHit(day, goals) { return !!day && day.steps != null && day.steps >= goals.steps; }
 function dayLogged(day) { return !!day && day.meals.length > 0; }
+// Most recently logged body weight (kg), for seeding the TDEE calculation.
+function latestLoggedWeight(days) {
+  const keys = Object.keys(days).sort().reverse();
+  for (const k of keys) {
+    const w = days[k] && days[k].weight;
+    if (w != null) return w;
+  }
+  return null;
+}
 // Most-recently-logged distinct foods (by name) across all days, newest first,
 // for one-click re-adding. Carries the logged macros as absolute values.
 function recentFoodsFrom(days, limit = 8) {
@@ -273,16 +282,20 @@ const ACTIVITY_LEVELS = [
   { value: 1.725, label: 'Mycket aktiv (6–7 pass/vecka)' },
   { value: 1.9,   label: 'Extremt aktiv (fysiskt jobb / 2 pass/dag)' },
 ];
+// Energy + macro targets from CURRENT body weight (the weight you are now is
+// what drives TDEE — not your goal weight). Returns only the kcal/macro fields;
+// the steps and goal-weight targets are handled separately by the caller so
+// they're never clobbered by the calorie calc.
 function goalsFromProfile({ sex, age, height, weight, activity, aim }) {
   // Mifflin-St Jeor BMR, then activity factor for TDEE.
   const bmr = 10 * weight + 6.25 * height - 5 * age + (sex === 'female' ? -161 : 5);
   const tdee = bmr * activity;
   const adj = aim === 'lose' ? -500 : aim === 'gain' ? 300 : 0;
   const kcal = Math.max(1200, Math.round((tdee + adj) / 10) * 10);
-  const protein = Math.round(1.8 * weight);          // 1.8 g/kg — solid for most goals
+  const protein = Math.round(1.8 * weight);          // 1.8 g/kg of current weight
   const fat = Math.round((kcal * 0.275) / 9);         // ~27.5% of energy from fat
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)); // remainder
-  return { kcal, protein, carbs, fat, steps: 10000, weight };
+  return { kcal, protein, carbs, fat };
 }
 const ACTIVE_KEY = 'ailabb_active_user';
 const PROFILE_ID_KEY = 'ailabb_profile_id';
@@ -574,16 +587,32 @@ function Toast({ toast }) {
 /* ── Food panel ───────────────────────────────────────────────────────────── */
 const MEAL_SLOTS = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
 
-function GoalsModal({ mode = 'onboard', currentGoals, onSave, onClose }) {
+function GoalsModal({ mode = 'onboard', currentGoals, latestWeight, onSave, onClose }) {
   const C = useC();
   const isEdit = mode === 'edit';
-  const initWeight = currentGoals && currentGoals.weight ? String(Math.round(currentGoals.weight)) : '78';
-  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: initWeight, activity: 1.55, aim: 'maintain' });
+  const base = currentGoals || DEFAULT_GOALS;
+  // Seed with the user's CURRENT weight — most recent logged value first, then
+  // any existing goal weight, then a neutral default. This is the weight that
+  // drives the calorie calc, not the goal/target weight.
+  const seedWeight = latestWeight != null ? latestWeight : (base.weight != null ? base.weight : 78);
+  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: String(Math.round(seedWeight)), activity: 1.55, aim: 'maintain' });
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const valid = parseFloat(f.age) > 0 && parseFloat(f.height) > 0 && parseFloat(f.weight) > 0;
   const preview = valid ? goalsFromProfile({
     sex: f.sex, age: +f.age, height: +f.height, weight: +f.weight, activity: +f.activity, aim: f.aim,
   }) : null;
+
+  const handleSave = () => {
+    if (!preview) return;
+    // Preserve steps + the goal-weight target. In edit mode keep the existing
+    // target weight; in onboarding seed it from the entered current weight.
+    onSave({
+      ...base,
+      ...preview,
+      steps: base.steps != null ? base.steps : DEFAULT_GOALS.steps,
+      weight: isEdit ? base.weight : +f.weight,
+    });
+  };
 
   return (
     <Modal eyebrow={isEdit ? 'Skräddarsy dina mål' : 'Välkommen till Track3r'}
@@ -591,7 +620,7 @@ function GoalsModal({ mode = 'onboard', currentGoals, onSave, onClose }) {
       onClose={onClose}
       footer={<>
         <Button variant="ghost" onClick={onClose} style={{ marginRight: 'auto' }}>{isEdit ? 'Avbryt' : 'Hoppa över'}</Button>
-        <Button variant="primary" icon="check" disabled={!valid} onClick={() => preview && onSave(preview)}>{isEdit ? 'Uppdatera mål' : 'Sätt mina mål'}</Button>
+        <Button variant="primary" icon="check" disabled={!valid} onClick={handleSave}>{isEdit ? 'Uppdatera mål' : 'Sätt mina mål'}</Button>
       </>}>
       <p style={{ margin: '0 0 16px', fontSize: 13.5, color: C.ink3, lineHeight: 1.5 }}>
         Vi räknar ut ett rimligt kalori- och makromål åt dig med Mifflin-St Jeor-formeln. Du kan alltid justera siffrorna direkt i appen efteråt.
@@ -609,7 +638,7 @@ function GoalsModal({ mode = 'onboard', currentGoals, onSave, onClose }) {
         <Field label="Längd (cm)">
           <TextInput type="number" inputMode="numeric" min="0" value={f.height} onChange={e => set('height', e.target.value)} />
         </Field>
-        <Field label="Vikt (kg)">
+        <Field label="Nuvarande vikt (kg)" hint="för kaloriberäkningen">
           <TextInput type="number" inputMode="decimal" min="0" value={f.weight} onChange={e => set('weight', e.target.value)} />
         </Field>
         <Field label="Aktivitetsnivå" span={2}>
@@ -1724,13 +1753,13 @@ export default function TrackrApp() {
         </div>
 
         {!state.goalsSet && (
-          <GoalsModal mode="onboard"
+          <GoalsModal mode="onboard" currentGoals={state.goals} latestWeight={latestLoggedWeight(state.days)}
             onSave={g => { store.setAllGoals(g); flash('Dina mål är satta', 'check'); }}
             onClose={() => store.setAllGoals(state.goals)}
           />
         )}
         {state.goalsSet && modal?.type === 'goals' && (
-          <GoalsModal mode="edit" currentGoals={state.goals}
+          <GoalsModal mode="edit" currentGoals={state.goals} latestWeight={latestLoggedWeight(state.days)}
             onSave={g => { store.setAllGoals(g); setModal(null); flash('Dina mål är uppdaterade', 'check'); }}
             onClose={() => setModal(null)}
           />
