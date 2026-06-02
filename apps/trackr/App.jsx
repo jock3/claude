@@ -37,6 +37,9 @@ function ScopedStyles() {
       .t3-input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; color: var(--color-text); padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); outline: none; transition: border-color 140ms, box-shadow 140ms; }
       .t3-input:focus { border-color: var(--color-link); box-shadow: 0 0 0 3px rgba(58,165,156,0.14); }
       select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23888787' d='M0 0h10L5 6z'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-color: var(--color-bg); }
+      /* iOS Safari auto-zooms when a focused field is < 16px. Bump to 16px on
+         touch devices to stop the zoom; desktop keeps the denser 14px. */
+      @media (pointer: coarse) { .t3-input { font-size: 16px; } }
 
       .t3-editnum { outline: none; border-bottom: 1px dashed transparent; border-radius: 3px; padding: 0 2px; margin: 0 -2px; transition: background 120ms, border-color 120ms; font-variant-numeric: tabular-nums; display: inline; cursor: text; }
       .t3-editnum:hover { border-bottom-color: var(--color-border); }
