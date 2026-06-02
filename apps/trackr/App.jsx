@@ -1,8 +1,9 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode } from 'lucide-react';
+import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
-import { searchFoods } from './off.js';
+import { searchFoods, getProductByBarcode } from './off.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
 function ScopedStyles() {
@@ -156,7 +157,7 @@ const ICON_MAP = {
   'check': Check, 'trash-2': Trash2, 'pencil': Pencil, 'plus': Plus,
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
-  'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader,
+  'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader, 'barcode': Barcode,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -362,11 +363,15 @@ function Panel({ children }) {
   return <section className="t3-panel">{children}</section>;
 }
 
+// Tracks modal nesting so Escape only closes the topmost modal (e.g. the
+// barcode scanner stacked on the meal modal), not every open one at once.
+let _modalDepth = 0;
 function Modal({ eyebrow, title, onClose, footer, children }) {
   useEffect(() => {
-    const onKey = e => { if (e.key === 'Escape') onClose(); };
+    const myDepth = ++_modalDepth;
+    const onKey = e => { if (e.key === 'Escape' && myDepth === _modalDepth) onClose(); };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return () => { _modalDepth--; document.removeEventListener('keydown', onKey); };
   }, [onClose]);
   return (
     <div className="t3-modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -508,6 +513,66 @@ function Toast({ toast }) {
 /* ── Food panel ───────────────────────────────────────────────────────────── */
 const MEAL_SLOTS = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
 
+function BarcodeScanner({ onDetect, onClose }) {
+  const videoRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [status, setStatus] = useState('Startar kamera…');
+
+  useEffect(() => {
+    let stream = null, raf = 0, stopped = false;
+    const formats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'];
+    (async () => {
+      try {
+        // Lazy-load the ~16 KB-gzip ponyfill (and its WASM) only when the user
+        // actually opens the scanner, keeping the main bundle lean.
+        const { BarcodeDetector, setZXingModuleOverrides } = await import('barcode-detector/pure');
+        setZXingModuleOverrides({ locateFile: (path) => (path.endsWith('.wasm') ? zxingReaderWasm : path) });
+        const detector = new BarcodeDetector({ formats });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+        const v = videoRef.current;
+        if (!v) return;
+        v.srcObject = stream;
+        await v.play();
+        setStatus('Rikta kameran mot streckkoden');
+        const tick = async () => {
+          if (stopped) return;
+          try {
+            const codes = await detector.detect(v);
+            if (codes && codes.length && codes[0].rawValue) {
+              stopped = true;
+              onDetect(codes[0].rawValue);
+              return;
+            }
+          } catch (_) { /* transient decode errors are expected between frames */ }
+          raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+      } catch (e) {
+        setError(e && e.name === 'NotAllowedError'
+          ? 'Kameraåtkomst nekades. Tillåt kameran i webbläsaren och försök igen.'
+          : 'Kunde inte starta kameran på den här enheten.');
+      }
+    })();
+    return () => { stopped = true; if (raf) cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(t => t.stop()); };
+  }, [onDetect]);
+
+  return (
+    <Modal eyebrow="Lägg till måltid" title="Skanna streckkod" onClose={onClose}
+      footer={<Button variant="ghost" onClick={onClose}>Avbryt</Button>}>
+      {error ? (
+        <div style={{ padding: '10px 12px', borderRadius: 8, background: 'rgba(224,92,92,0.12)', border: '1px solid rgba(224,92,92,0.35)', color: '#e05c5c', fontSize: 13, fontWeight: 600 }}>{error}</div>
+      ) : (
+        <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', background: '#000', aspectRatio: '4 / 3' }}>
+          <video ref={videoRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <div style={{ position: 'absolute', inset: '22% 12%', border: '2px solid rgba(255,255,255,0.9)', borderRadius: 10, boxShadow: '0 0 0 9999px rgba(0,0,0,0.28)' }} />
+          <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, textAlign: 'center', color: '#fff', fontSize: 12.5, fontWeight: 700, textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>{status}</div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 function MealModal({ initial, onSave, onClose, onDelete }) {
   const editing = !!(initial && initial.id);
   const [f, setF] = useState(() => ({
@@ -531,6 +596,8 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
   const [showResults, setShowResults] = useState(false);
   const [picked, setPicked] = useState(null); // per-100g base of the chosen food
   const [grams, setGrams] = useState('');     // portion size in grams when picked
+  const [scanning, setScanning] = useState(false);
+  const [lookupMsg, setLookupMsg] = useState(null);
 
   useEffect(() => {
     const q = query.trim();
@@ -573,7 +640,19 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
       carbs: String(prod.per100.carbs),
       fat: String(prod.per100.fat),
     }));
-    setQuery(''); setResults([]); setShowResults(false);
+    setQuery(''); setResults([]); setShowResults(false); setLookupMsg(null);
+  };
+
+  const onBarcodeDetected = async (code) => {
+    setScanning(false);
+    setLookupMsg(`Slår upp streckkod ${code}…`);
+    try {
+      const prod = await getProductByBarcode(code);
+      if (prod && prod.per100.kcal > 0) pickFood(prod);
+      else setLookupMsg(`Ingen produkt hittades för streckkod ${code}. Skriv in manuellt nedan.`);
+    } catch (_) {
+      setLookupMsg('Kunde inte nå Open Food Facts. Skriv in manuellt nedan.');
+    }
   };
 
   // Atwater sanity check: protein·4 + carbs·4 + fat·9 should roughly match the
@@ -598,7 +677,8 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
         <Button variant="primary" icon="check" onClick={submit}>{editing ? 'Spara' : 'Lägg till'}</Button>
       </>}>
       <Field label="Sök livsmedel" hint="Open Food Facts">
-        <div className="t3-search-wrap">
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+        <div className="t3-search-wrap" style={{ flex: 1 }}>
           <div style={{ position: 'relative' }}>
             <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
               <Icon name={searching ? 'loader' : 'search'} size={15} stroke={2} style={searching ? { animation: 't3-spin 800ms linear infinite' } : undefined} />
@@ -628,7 +708,17 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
             </div>
           )}
         </div>
+        <button type="button" className="t3-btn" onClick={() => { setLookupMsg(null); setScanning(true); }}
+          title="Skanna streckkod"
+          style={{ flexShrink: 0, padding: '0 13px', border: '1px solid var(--color-border)', background: 'var(--color-bg)', color: 'var(--color-text)' }}>
+          <Icon name="barcode" size={17} stroke={2} />
+        </button>
+        </div>
       </Field>
+      {lookupMsg && (
+        <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 8, background: 'var(--color-bg)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontSize: 12.5, fontWeight: 600 }}>{lookupMsg}</div>
+      )}
+      {scanning && <BarcodeScanner onDetect={onBarcodeDetected} onClose={() => setScanning(false)} />}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
         <Field label="Mål">
           <select className="t3-input" value={f.slot} onChange={e => set('slot', e.target.value)}>

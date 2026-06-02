@@ -30,6 +30,22 @@ function normalizeProduct(p) {
   };
 }
 
+// Look up a single product by barcode (EAN/UPC). Returns a normalised product,
+// or null if the barcode isn't in the database / has no usable energy value.
+export async function getProductByBarcode(code, { signal } = {}) {
+  const c = String(code || '').trim();
+  if (!c) return null;
+  const url =
+    `${BASE}/api/v2/product/${encodeURIComponent(c)}.json` +
+    `?fields=code,product_name,generic_name,brands,nutriments`;
+  const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`OFF lookup failed (${res.status})`);
+  const data = await res.json();
+  if (!data || data.status !== 1 || !data.product) return null;
+  return normalizeProduct(data.product);
+}
+
 // Search by free text. Returns up to ~20 normalised products with valid kcal.
 export async function searchFoods(query, { signal } = {}) {
   const q = (query || '').trim();
