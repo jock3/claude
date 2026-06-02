@@ -49,8 +49,8 @@ Strategiska beslut som styr allt annat. **Besluten är tagna — se nedan.**
 
 > **Omprioriterad efter Fas 0-beslutet (bred nutritionsspårare).** En sökbar matdatabas är nu *kärnan* i Fas 1, inte ett sent tillägg — utan den kan appen inte konkurrera i den valda positioneringen. De billiga återanvändnings-vinsterna byggs parallellt eftersom de är `S` och löser den repetitiva delen av loggningen nästan gratis.
 
-- [ ] **Open Food Facts-sök** *(uppflyttad — kärna för bred nutritionsspårare)* — öppna API:t (gratis, 3M+ produkter, svenska livsmedel). Sökfält i `MealModal` som autofyller kcal/P/C/F. Detta är den enskilt viktigaste Fas 1-funktionen givet positioneringen. `L`
-- [ ] **Streckkodsskanning** *(följer direkt på OFF)* — `BarcodeDetector` via webbkameran → uppslag i Open Food Facts. Fallback för iOS Safari (saknar API:t — t.ex. ZXing eller Quagga). `L`
+- [x] **Open Food Facts-sök** — sökfält i `MealModal` (debounce 380 ms + abort) som autofyller kcal/P/K/F per 100 g; vald produkt visar ett "Mängd (g)"-fält som skalar makrona. Klient i `off.js`. *(Ej live-testad från sandbox — egress-allowlist; behöver browser-smoke-test.)*
+- [x] **Streckkodsskanning** — "Skanna streckkod"-knapp → kamera + `BarcodeDetector` (EAN-13/8, UPC-A/E, Code-128) → uppslag via `getProductByBarcode` i OFF → samma autofyll. Använder `barcode-detector`-ponyfillen (zxing-wasm) så det funkar på iOS Safari också, lazy-laddad (egen chunk ~15 KB gzip + 939 KB wasm vid första skan). *(Kräver HTTPS + riktig enhet för test.)*
 - [ ] **Kopiera gårdagen** — en knapp som klonar gårdagens måltider till idag. Billigaste högvärdesfunktionen som finns. `S`
 - [ ] **Senast använda livsmedel** — auto-lista de N senaste loggade posterna för ett-klicks-återanvändning. `S`
 - [ ] **Sparade måltider / favoriter** — ny tabell `track3r_favorites`. "Mina måltider" + "lägg till senaste" så återkommande mat loggas med ett klick. `M`
