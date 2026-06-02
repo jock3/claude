@@ -92,11 +92,18 @@ Allt detta är ren aggregering av data som redan finns i Supabase.
 
 Halvdan träningsspårning är värre än ingen. Bestäm i Fas 0-andan.
 
-- [ ] **VÄG A — Riktig träningslogg:** övningsdatabas, set/reps/vikt, progressiv överbelastning ("+5 kg sedan förra veckan"). `XL`
-- [ ] **VÄG B — Förenkla:** reducera till "tränade X min / typ" och lägg all energi på nutrition. `S`
-- [ ] *(Beslut loggas här när det är taget — bygg inte båda.)*
+- [x] **VÄG A — Riktig träningslogg:** övningsdatabas (wger), set/reps/vikt, volymberäkning. `XL`
+  - [x] `wger.js`-klient — sök övningar mot wger.de (öppet API, ingen nyckel, CORS).
+  - [x] Utökad workout-modell: `exercises: [{ id, exId, name, sets: [{reps, weight}] }]`.
+  - [x] Övningssök + set-editor i `WorkoutModal` (visas för Strength-pass).
+  - [x] Volym (reps×vikt) summeras per övning/pass och visas i rad + panel + veckodiagram.
+  - [ ] *Kvar:* progressiv överbelastning ("+5 kg sedan förra veckan"), förra-passet-autoifyll, övningshistorik per övning.
+- [ ] ~~VÄG B — Förenkla~~ — valdes bort. Väg A vald.
 
-> **Lutning: Väg B.** Målanvändaren har ett *fast* schema — inte en progressiv-överbelastnings-optimerare (det är en Strong/Hevy-användare, en annan produkt). Lägg energin på nutrition där friktionen faktiskt sitter. Välj Väg A bara om detaljerad styrkeprogression är ett uttalat personligt mål för dig.
+> **Beslut: Väg A.** Användaren frågade efter en övningsdatabas i stil med Open
+> Food Facts → wger valdes (det öppna, gratis, gemenskapsdrivna alternativet).
+> Grundloggning (övningar, set/reps/vikt, volym) är byggd. Progression och
+> per-övningshistorik är nästa steg ovan.
 
 ---
 

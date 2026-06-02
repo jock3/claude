@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
+import { searchExercises } from './wger.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
 function ScopedStyles() {
@@ -1080,6 +1081,61 @@ function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterd
 const WORKOUT_KINDS = ['Strength', 'Cardio', 'Mobility', 'Sport'];
 const TAG_POOL = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Run', 'Bike', 'Swim', 'HIIT'];
 
+// Training-volume helpers (reps × weight, summed). Used for strength sessions.
+function setsVolume(sets) {
+  return (sets || []).reduce((a, s) => a + (Number(s.reps) || 0) * (Number(s.weight) || 0), 0);
+}
+function workoutVolume(w) {
+  return (w.exercises || []).reduce((a, e) => a + setsVolume(e.sets), 0);
+}
+function workoutSetCount(w) {
+  return (w.exercises || []).reduce((a, e) => a + (e.sets ? e.sets.length : 0), 0);
+}
+
+// In-modal editor for a single strength exercise (its set list).
+function ExerciseCard({ ex, onChange, onRemove }) {
+  const C = useC();
+  const sets = ex.sets || [];
+  const setRow = (i, k, v) => onChange({ ...ex, sets: sets.map((s, j) => j === i ? { ...s, [k]: v } : s) });
+  const addSet = () => {
+    const last = sets[sets.length - 1] || { reps: '', weight: '' };
+    onChange({ ...ex, sets: [...sets, { reps: last.reps, weight: last.weight }] });
+  };
+  const delSet = i => onChange({ ...ex, sets: sets.filter((_, j) => j !== i) });
+  const vol = setsVolume(sets);
+
+  return (
+    <div style={{ border: `0.5px solid ${C.line}`, borderRadius: 10, padding: '11px 12px', background: C.bgSoft }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: sets.length ? 9 : 0 }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
+        {vol > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: C.ink3, whiteSpace: 'nowrap' }}>{grp(vol)} kg vol</span>}
+        <button type="button" onClick={onRemove} title="Ta bort övning"
+          style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 2 }}>
+          <Icon name="x" size={15} stroke={2.25} />
+        </button>
+      </div>
+      {sets.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {sets.map((s, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 1fr 28px', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.ink3, textAlign: 'center' }}>{i + 1}</span>
+              <TextInput type="number" inputMode="numeric" min="0" value={s.reps} placeholder="reps" onChange={e => setRow(i, 'reps', e.target.value)} />
+              <TextInput type="number" inputMode="decimal" min="0" value={s.weight} placeholder="kg" onChange={e => setRow(i, 'weight', e.target.value)} />
+              <button type="button" onClick={() => delSet(i)} title="Ta bort set"
+                style={{ display: 'inline-flex', justifyContent: 'center', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 2 }}>
+                <Icon name="minus" size={15} stroke={2.25} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <button type="button" className="t3-tag" onClick={addSet} style={{ marginTop: 9, gap: 5 }}>
+        <Icon name="plus" size={13} stroke={2.5} /> Lägg till set
+      </button>
+    </div>
+  );
+}
+
 function WorkoutModal({ initial, onSave, onClose, onDelete }) {
   const editing = !!(initial && initial.id);
   const [f, setF] = useState(() => ({
@@ -1088,16 +1144,70 @@ function WorkoutModal({ initial, onSave, onClose, onDelete }) {
     durationMin: initial && initial.durationMin != null ? String(initial.durationMin) : '',
     kcal: initial && initial.kcal != null ? String(initial.kcal) : '',
     tags: (initial && initial.tags) ? initial.tags.slice() : [],
+    exercises: (initial && initial.exercises) ? initial.exercises.map(e => ({ ...e, sets: (e.sets || []).slice() })) : [],
   }));
   const [tried, setTried] = useState(false);
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const toggleTag = t => setF(s => ({ ...s, tags: s.tags.includes(t) ? s.tags.filter(x => x !== t) : [...s.tags, t] }));
-  const nameBad = !f.name.trim(), durBad = !(parseFloat(f.durationMin) > 0);
+
+  // ── wger exercise search (strength sessions) ────────────────────────────
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [wgerError, setWgerError] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const isStrength = f.kind === 'Strength';
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!isStrength || q.length < 2) { setResults([]); setSearching(false); setWgerError(false); return; }
+    setSearching(true); setWgerError(false);
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const hits = await searchExercises(q, { signal: ctrl.signal });
+        setResults(hits); setShowResults(true);
+      } catch (e) {
+        if (e.name !== 'AbortError') { setWgerError(true); setResults([]); setShowResults(true); }
+      } finally {
+        setSearching(false);
+      }
+    }, 380);
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [query, isStrength]);
+
+  const addExercise = (name, exId) => {
+    setF(s => ({ ...s, exercises: [...s.exercises, { id: uid('ex'), exId: exId ?? null, name, sets: [{ reps: '', weight: '' }] }] }));
+    setQuery(''); setResults([]); setShowResults(false);
+  };
+  const updateExercise = (id, next) => setF(s => ({ ...s, exercises: s.exercises.map(e => e.id === id ? next : e) }));
+  const removeExercise = id => setF(s => ({ ...s, exercises: s.exercises.filter(e => e.id !== id) }));
+
+  const hasExercises = f.exercises.length > 0;
+  // With logged exercises a strength session can stand on its own — name and
+  // duration become optional (we default the name to "Styrkepass").
+  const nameBad = !f.name.trim() && !(isStrength && hasExercises);
+  const durBad = !(parseFloat(f.durationMin) > 0) && !(isStrength && hasExercises);
+  const totalVol = f.exercises.reduce((a, e) => a + setsVolume(e.sets), 0);
+  const totalSets = f.exercises.reduce((a, e) => a + e.sets.length, 0);
 
   const submit = () => {
     setTried(true);
     if (nameBad || durBad) return;
-    onSave({ id: editing ? initial.id : uid('w'), kind: f.kind, name: f.name.trim(), durationMin: Math.round(parseFloat(f.durationMin)), kcal: Math.round(parseFloat(f.kcal)||0), tags: f.tags });
+    const name = f.name.trim() || (isStrength && hasExercises ? 'Styrkepass' : '');
+    const exercises = isStrength
+      ? f.exercises.map(e => ({
+          id: e.id, exId: e.exId, name: e.name,
+          sets: e.sets
+            .filter(s => Number(s.reps) > 0 || Number(s.weight) > 0)
+            .map(s => ({ reps: Math.round(Number(s.reps) || 0), weight: Number(s.weight) || 0 })),
+        }))
+      : [];
+    onSave({
+      id: editing ? initial.id : uid('w'), kind: f.kind, name,
+      durationMin: Math.round(parseFloat(f.durationMin) || 0),
+      kcal: Math.round(parseFloat(f.kcal) || 0), tags: f.tags, exercises,
+    });
   };
 
   return (
@@ -1114,16 +1224,76 @@ function WorkoutModal({ initial, onSave, onClose, onDelete }) {
             {WORKOUT_KINDS.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </Field>
-        <Field label="Tid" hint="min — obligatoriskt">
+        <Field label="Tid" hint={isStrength && hasExercises ? 'min — valfritt' : 'min — obligatoriskt'}>
           <TextInput type="number" inputMode="numeric" min="0" value={f.durationMin} placeholder="0" invalid={tried && durBad} onChange={e => set('durationMin', e.target.value)} />
         </Field>
-        <Field label="Namn på passet" span={2}>
-          <TextInput value={f.name} placeholder="ex. Push-dag · bröst + axlar" invalid={tried && nameBad} onChange={e => set('name', e.target.value)} autoFocus />
+        <Field label="Namn på passet" hint={isStrength && hasExercises ? 'valfritt' : undefined} span={2}>
+          <TextInput value={f.name} placeholder={isStrength ? 'ex. Push-dag · bröst + axlar' : 'ex. Löprunda i skogen'} invalid={tried && nameBad} onChange={e => set('name', e.target.value)} autoFocus />
         </Field>
-        <Field label="Förbränning" hint="kcal — valfritt" span={2}>
+      </div>
+
+      {isStrength && (
+        <div style={{ marginTop: 14 }}>
+          <Field label="Lägg till övning" hint="wger-databasen">
+            <div className="t3-search-wrap">
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
+                  <Icon name={searching ? 'loader' : 'search'} size={15} stroke={2} style={searching ? { animation: 't3-spin 800ms linear infinite' } : undefined} />
+                </span>
+                <TextInput
+                  value={query}
+                  placeholder="ex. bänkpress, marklyft, knäböj…"
+                  style={{ paddingLeft: 34 }}
+                  onChange={e => setQuery(e.target.value)}
+                  onFocus={() => { if (results.length || wgerError) setShowResults(true); }}
+                />
+              </div>
+              {showResults && (query.trim().length >= 2) && (
+                <div className="t3-search-results">
+                  {wgerError ? (
+                    <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
+                      <span className="t3-search-name">Lägg till "{query.trim()}"</span>
+                      <span className="t3-search-meta">Kunde inte nå wger — lägg till manuellt</span>
+                    </button>
+                  ) : results.length === 0 ? (
+                    searching ? <div className="t3-search-empty">Söker…</div> : (
+                      <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
+                        <span className="t3-search-name">Lägg till "{query.trim()}"</span>
+                        <span className="t3-search-meta">Inga träffar — lägg till egen övning</span>
+                      </button>
+                    )
+                  ) : results.map(r => (
+                    <button type="button" key={r.exId || r.name} className="t3-search-item" onClick={() => addExercise(r.name, r.exId)}>
+                      <span className="t3-search-name">{r.name}</span>
+                      {r.category && <span className="t3-search-meta">{r.category}</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Field>
+
+          {hasExercises && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginTop: 12 }}>
+              {f.exercises.map(ex => (
+                <ExerciseCard key={ex.id} ex={ex} onChange={next => updateExercise(ex.id, next)} onRemove={() => removeExercise(ex.id)} />
+              ))}
+              {totalVol > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 14, fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', paddingRight: 2 }}>
+                  <span>{f.exercises.length} övn · {totalSets} set</span>
+                  <span>Volym {grp(totalVol)} kg</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginTop: 14 }}>
+        <Field label="Förbränning" hint="kcal — valfritt">
           <TextInput type="number" inputMode="numeric" min="0" value={f.kcal} placeholder="0" onChange={e => set('kcal', e.target.value)} />
         </Field>
-        <Field label="Taggar" span={2}>
+        <Field label="Taggar">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {TAG_POOL.map(t => (
               <button key={t} type="button" className={`t3-tag${f.tags.includes(t) ? ' on' : ''}`} onClick={() => toggleTag(t)}>{t}</button>
@@ -1141,6 +1311,14 @@ function kindIcon(kind) {
 
 function WorkoutRow({ w, onClick }) {
   const C = useC();
+  const exCount = (w.exercises || []).length;
+  const sets = workoutSetCount(w);
+  const vol = workoutVolume(w);
+  const parts = [w.kind];
+  if (exCount > 0) parts.push(`${exCount} övn · ${sets} set`);
+  else if (w.durationMin) parts.push(`${w.durationMin} min`);
+  if (vol > 0) parts.push(`${grp(vol)} kg vol`);
+  else if (w.kcal) parts.push(`${grp(w.kcal)} kcal`);
   return (
     <button onClick={onClick} className="t3-row"
       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 8px', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderTop: `0.5px solid ${C.line2}`, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -1149,7 +1327,7 @@ function WorkoutRow({ w, onClick }) {
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</span>
-        <span style={{ display: 'block', fontSize: 12, color: C.ink3, marginTop: 1 }}>{w.kind} · {w.durationMin} min{w.kcal ? ` · ${grp(w.kcal)} kcal` : ''}</span>
+        <span style={{ display: 'block', fontSize: 12, color: C.ink3, marginTop: 1 }}>{parts.join(' · ')}</span>
       </span>
       <Icon name="pencil" size={13} color={C.ink4} stroke={2} style={{ opacity: 0.5 }} />
     </button>
@@ -1161,6 +1339,7 @@ function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout }) 
   const workouts = day.workouts;
   const totalMin = workouts.reduce((a,w) => a + (w.durationMin||0), 0);
   const totalKcal = workouts.reduce((a,w) => a + (w.kcal||0), 0);
+  const totalVol = workouts.reduce((a,w) => a + workoutVolume(w), 0);
   const sel = parseKey(selectedKey);
   const dow = (sel.getDay() + 6) % 7;
   const monKey = addDays(selectedKey, -dow);
@@ -1168,7 +1347,11 @@ function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout }) 
   for (let i = 0; i < 7; i++) {
     const k = addDays(monKey, i);
     const dd = days[k];
-    const mins = dd ? dd.workouts.reduce((a,w) => a + (w.durationMin||0), 0) : 0;
+    const sessions = dd ? dd.workouts.length : 0;
+    const realMin = dd ? dd.workouts.reduce((a,w) => a + (w.durationMin||0), 0) : 0;
+    // Strength sessions often carry no duration — keep their bar visible with a
+    // nominal load so the week chart still reflects that a session happened.
+    const mins = realMin || (sessions > 0 ? 30 : 0);
     week.push({ k, mins, today: k === selectedKey });
   }
   const weekSessions = week.reduce((a,w) => a + (days[w.k] ? days[w.k].workouts.length : 0), 0);
@@ -1180,7 +1363,9 @@ function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout }) 
         {[
           { v: workouts.length, u: '', l: 'pass' },
           { v: grp(totalMin), u: 'min', l: 'aktiv tid' },
-          { v: grp(totalKcal), u: 'kcal', l: 'förbränt' },
+          totalVol > 0
+            ? { v: grp(totalVol), u: 'kg', l: 'volym' }
+            : { v: grp(totalKcal), u: 'kcal', l: 'förbränt' },
         ].map((s, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <span style={{ fontSize: 24, fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1, color: C.ink }}>
