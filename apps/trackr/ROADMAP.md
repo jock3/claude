@@ -99,7 +99,7 @@ Halvdan träningsspårning är värre än ingen. Bestäm i Fas 0-andan.
   - [x] Startväljare: **Styrka / Cardio / Mina mallar**.
   - [x] **Cardio** — Apple Fitness-modellerade former (löpning, cykel, rodd, crosstrainer, trappmaskin, HIIT, vandring, simning…) + live-klocka, distans, kcal, puls.
   - [x] **Styrka** — Hevy-stil: löpande timer, set-rader `[# · tidigare · kg · reps · ✓]`, **"tidigare"-kolumn** från historik, **vilotimer** vid avbockat set, anteckning per övning.
-  - [x] **Skräddarsydda pass / mallar** — spara ett styrkepass som mall, starta framtida pass från det (`localStorage`).
+  - [x] **Skräddarsydda pass / mallar** — dedikerad "Mina pass"-vy (skapa/redigera/radera/starta färdiga pass i förväg, Hevy-stil) + snabbspar från ett aktivt pass (`localStorage`).
   - [x] **Finish-summering** → loggas till dagen; volym/set/distans visas i rad + panel + veckodiagram.
   - [ ] *Kvar:* progressiv-överbelastning-tips ("+5 kg sedan förra veckan"), superset, PR-detektering, mallar synkade till Supabase (nu per-enhet).
 - [x] ~~VÄG B — Förenkla~~ — valdes bort. Väg A vald.

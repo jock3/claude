@@ -105,6 +105,8 @@ function ScopedStyles() {
       .t3-active-head { display: flex; align-items: center; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 12px 12px; border-bottom: 0.5px solid var(--color-border); flex-shrink: 0; }
       .t3-start-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; padding: 22px 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); color: var(--color-text); cursor: pointer; font-family: inherit; transition: all 130ms; }
       .t3-start-card:hover { border-color: var(--color-text-muted); transform: translateY(-1px); }
+      .t3-routine-act { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 8px; border: none; background: transparent; color: var(--color-text); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 120ms; }
+      .t3-routine-act:hover { background: var(--color-bg); }
 
       .t3-tag { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); transition: all 120ms; }
       .t3-tag.on { border-color: var(--color-link); background: rgba(58,165,156,0.12); color: var(--color-link); }
@@ -1779,7 +1781,183 @@ function ActiveWorkout({ session, days, routines, onUpdate, onFinish, onCancel, 
   );
 }
 
-function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout, onStartSession }) {
+/* ── Routines / custom workouts ("Mina pass") ─────────────────────────────────
+   Build a strength workout once (name + exercises + target sets), reuse it any
+   day without re-entering it — the Hevy/Strong "Routines" concept. */
+
+function RoutineEditor({ initial, onSave, onCancel }) {
+  const C = useC();
+  const [name, setName] = useState(initial ? initial.name : '');
+  const [exercises, setExercises] = useState(() =>
+    (initial && initial.exercises ? initial.exercises : []).map(e => ({
+      id: uid('ex'), exId: e.exId ?? null, name: e.name,
+      sets: (e.sets && e.sets.length ? e.sets : [{ reps: '', weight: '' }]).map(s => ({ reps: s.reps ?? '', weight: s.weight ?? '' })),
+    })));
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState('');
+  const [tried, setTried] = useState(false);
+  const results = query.trim().length >= 2 ? searchExercises(query) : [];
+
+  const addExercise = (nm, exId) => {
+    setExercises(xs => [...xs, { id: uid('ex'), exId: exId ?? null, name: nm, sets: [{ reps: '', weight: '' }] }]);
+    setPicking(false); setQuery('');
+  };
+  const updateExercise = (id, next) => setExercises(xs => xs.map(e => e.id === id ? next : e));
+  const removeExercise = id => setExercises(xs => xs.filter(e => e.id !== id));
+
+  const nameBad = !name.trim();
+  const noExercises = exercises.length === 0;
+  const save = () => {
+    setTried(true);
+    if (nameBad || noExercises) return;
+    onSave({
+      id: initial ? initial.id : uid('rt'),
+      name: name.trim(),
+      exercises: exercises.map(e => ({
+        exId: e.exId, name: e.name,
+        sets: e.sets.map(s => ({ reps: Number(s.reps) || 0, weight: Number(s.weight) || 0 })),
+      })),
+    });
+  };
+
+  return (
+    <div className="t3-active">
+      <div className="t3-active-head">
+        <button type="button" onClick={onCancel} title="Avbryt"
+          style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink2, cursor: 'pointer', padding: 6 }}>
+          <Icon name="x" size={20} stroke={2} />
+        </button>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: 800, color: C.ink }}>
+          {initial ? 'Redigera pass' : 'Nytt pass'}
+        </div>
+        <button type="button" onClick={save} className="t3-btn t3-btn-primary t3-btn-sm">Spara</button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Field label="Passnamn">
+          <TextInput value={name} placeholder="ex. Push A · bröst, axlar, triceps" invalid={tried && nameBad} onChange={e => setName(e.target.value)} autoFocus />
+        </Field>
+
+        <span className="t3-label">Övningar med målvärden</span>
+        {noExercises && (
+          <p style={{ fontSize: 12.5, color: C.ink3, margin: '0 0 2px' }}>
+            Lägg till övningar och ange måltal för set (reps × vikt). När du sedan startar passet är allt förifyllt.
+          </p>
+        )}
+        {exercises.map(ex => (
+          <ExerciseCard key={ex.id} ex={ex} onChange={next => updateExercise(ex.id, next)} onRemove={() => removeExercise(ex.id)} />
+        ))}
+        {tried && noExercises && (
+          <span style={{ fontSize: 12, color: '#e05c5c', fontWeight: 600 }}>Lägg till minst en övning.</span>
+        )}
+
+        {!picking ? (
+          <Button variant="dark" icon="plus" onClick={() => { setPicking(true); setQuery(''); }}>Lägg till övning</Button>
+        ) : (
+          <div className="t3-search-wrap">
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
+                <Icon name="search" size={15} stroke={2} />
+              </span>
+              <TextInput value={query} autoFocus placeholder="Sök övning…" style={{ paddingLeft: 34 }} onChange={e => setQuery(e.target.value)} />
+              <button type="button" onClick={() => { setPicking(false); setQuery(''); }}
+                style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 4 }}>
+                <Icon name="x" size={16} stroke={2} />
+              </button>
+            </div>
+            {query.trim().length >= 2 && (
+              <div className="t3-search-results" style={{ position: 'static', marginTop: 6, maxHeight: 260 }}>
+                {results.length === 0 ? (
+                  <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
+                    <span className="t3-search-name">Lägg till "{query.trim()}"</span>
+                    <span className="t3-search-meta">Egen övning</span>
+                  </button>
+                ) : results.map(r => (
+                  <button type="button" key={r.id} className="t3-search-item" onClick={() => addExercise(r.name, r.id)}>
+                    <span className="t3-search-name">{r.name}</span>
+                    <span className="t3-search-meta">{r.category}{r.muscles ? ` · ${r.muscles}` : ''}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RoutineManager({ routines, onSave, onDelete, onStart, onClose }) {
+  const C = useC();
+  const [editing, setEditing] = useState(null); // null | 'new' | routine
+
+  if (editing) {
+    return (
+      <RoutineEditor initial={editing === 'new' ? null : editing}
+        onSave={r => { onSave(r); setEditing(null); }}
+        onCancel={() => setEditing(null)} />
+    );
+  }
+
+  return (
+    <div className="t3-active">
+      <div className="t3-active-head">
+        <button type="button" onClick={onClose} title="Stäng"
+          style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink2, cursor: 'pointer', padding: 6 }}>
+          <Icon name="x" size={20} stroke={2} />
+        </button>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 15, fontWeight: 800, color: C.ink }}>Mina pass</div>
+        <span style={{ width: 32 }} />
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Button variant="dark" icon="plus" onClick={() => setEditing('new')}>Skapa nytt pass</Button>
+
+        {routines.length === 0 ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '48px 0', color: C.ink3 }}>
+            <Icon name="bookmark" size={28} color={C.ink4} stroke={1.5} />
+            <span style={{ fontSize: 13, textAlign: 'center', maxWidth: 240 }}>
+              Inga sparade pass än. Skapa ett så slipper du fylla i samma övningar varje gång.
+            </span>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {routines.map(r => {
+              const exs = r.exercises || [];
+              const sets = exs.reduce((a, e) => a + (e.sets ? e.sets.length : 0), 0);
+              return (
+                <div key={r.id} style={{ border: `0.5px solid ${C.line}`, borderRadius: 12, background: C.bgSoft, overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 14px 10px' }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: C.ink }}>{r.name}</div>
+                    <div style={{ fontSize: 12, color: C.ink3, marginTop: 2 }}>{exs.length} övn · {sets} set</div>
+                    {exs.length > 0 && (
+                      <div style={{ fontSize: 12, color: C.ink3, marginTop: 6, lineHeight: 1.5 }}>
+                        {exs.map(e => e.name).join(' · ')}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', borderTop: `0.5px solid ${C.line}` }}>
+                    <button type="button" onClick={() => onStart(r)} className="t3-routine-act" style={{ color: C.teal, fontWeight: 800 }}>
+                      <Icon name="flame" size={15} stroke={2.25} /> Starta
+                    </button>
+                    <button type="button" onClick={() => setEditing(r)} className="t3-routine-act" style={{ borderLeft: `0.5px solid ${C.line}` }}>
+                      <Icon name="pencil" size={15} stroke={2} /> Redigera
+                    </button>
+                    <button type="button" onClick={() => { if (window.confirm(`Ta bort "${r.name}"?`)) onDelete(r.id); }} className="t3-routine-act" style={{ borderLeft: `0.5px solid ${C.line}`, color: C.ink3 }}>
+                      <Icon name="trash-2" size={15} stroke={2} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout, onStartSession, onManageRoutines }) {
   const C = useC();
   const workouts = day.workouts;
   const totalMin = workouts.reduce((a,w) => a + (w.durationMin||0), 0);
@@ -1849,9 +2027,12 @@ function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout, on
         ) : workouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => onEditWorkout(w)} />)}
       </div>
 
-      <div style={{ paddingTop: 12, display: 'flex', gap: 10 }}>
-        <Button variant="dark" icon="flame" onClick={onStartSession} style={{ flex: 1 }}>Starta pass</Button>
-        <Button variant="secondary" icon="plus" onClick={onAddWorkout} title="Logga ett tidigare pass manuellt">Manuellt</Button>
+      <div style={{ paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <Button variant="dark" icon="flame" onClick={onStartSession}>Starta pass</Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button variant="secondary" icon="bookmark" onClick={onManageRoutines} style={{ flex: 1 }} title="Skapa och hantera färdiga pass">Mina pass</Button>
+          <Button variant="secondary" icon="plus" onClick={onAddWorkout} style={{ flex: 1 }} title="Logga ett tidigare pass manuellt">Manuellt</Button>
+        </div>
       </div>
     </>
   );
@@ -2256,6 +2437,7 @@ export default function TrackrApp() {
   const [units] = useState('kg');
   const [session, setSession] = useState(null);   // live workout (full-screen)
   const [routines, setRoutines] = useState([]);    // saved strength templates
+  const [routineMgr, setRoutineMgr] = useState(false); // "Mina pass" manager open
 
   const C = mkC(theme === 'dark');
   const store = useStore(profileId);
@@ -2381,6 +2563,23 @@ export default function TrackrApp() {
     flash('Sparad som mall', 'bookmark');
   };
   const deleteRoutine = id => { const next = routines.filter(r => r.id !== id); setRoutines(next); saveRoutines(profileId, next); };
+  // Create/update a routine from the "Mina pass" editor.
+  const upsertRoutine = routine => {
+    const next = [...routines.filter(r => r.id !== routine.id), routine];
+    setRoutines(next); saveRoutines(profileId, next);
+    flash('Pass sparat', 'bookmark');
+  };
+  // Start a live session pre-filled from a saved routine.
+  const startFromRoutine = r => {
+    const sess = {
+      profileId, mode: 'strength', startedAt: Date.now(), name: r.name,
+      exercises: (r.exercises || []).map(e => ({
+        id: uid('ex'), exId: e.exId ?? null, name: e.name,
+        sets: (e.sets && e.sets.length ? e.sets : [{ reps: '', weight: '' }]).map(x => ({ reps: x.reps ?? '', weight: x.weight ?? '', done: false })),
+      })),
+    };
+    setRoutineMgr(false); setSession(sess); saveActiveSession(sess);
+  };
 
   const stepDay = n => {
     const next = addDays(selectedKey, n);
@@ -2424,7 +2623,7 @@ export default function TrackrApp() {
               </div>
               {tab === 'food'
                 ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} />
-                : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
+                : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onManageRoutines={() => setRoutineMgr(true)} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
             </Panel>
 
             <Panel>
@@ -2454,6 +2653,11 @@ export default function TrackrApp() {
         {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} favorites={state.favorites} onAddFavorite={f => { store.addFavorite(f); flash('Sparad som favorit', 'star'); }} onRemoveFavorite={store.removeFavorite} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
         {modal?.type === 'export' && <ExportModal profileId={profileId} onClose={() => setModal(null)} onDone={() => { setModal(null); flash('Export nedladdad', 'download'); }} />}
+
+        {routineMgr && !session && (
+          <RoutineManager routines={routines} onSave={upsertRoutine} onDelete={deleteRoutine}
+            onStart={startFromRoutine} onClose={() => setRoutineMgr(false)} />
+        )}
 
         {session && (
           <ActiveWorkout session={session} days={state.days} routines={routines}
