@@ -1,6 +1,6 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle } from 'lucide-react';
 import * as db from './db.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
@@ -146,6 +146,7 @@ const ICON_MAP = {
   'check': Check, 'trash-2': Trash2, 'pencil': Pencil, 'plus': Plus,
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
+  'alert-triangle': AlertTriangle,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -199,10 +200,15 @@ function kcalInGoal(day, goals) {
   return t > 0 && t <= goals.kcal * 1.05;
 }
 function stepsHit(day, goals) { return !!day && day.steps != null && day.steps >= goals.steps; }
-function calcStreak(days, goals) {
+function dayLogged(day) { return !!day && day.meals.length > 0; }
+function calcStreak(days) {
+  // Streak rewards the habit of logging consistently, not hitting an exact
+  // calorie number. An honest over-goal day still counts; only a day with no
+  // meals logged breaks it. Today being un-logged yet doesn't break a prior
+  // streak, so we start counting from yesterday in that case.
   let n = 0, k = todayKey();
-  if (!kcalInGoal(days[k], goals)) k = addDays(k,-1);
-  while (kcalInGoal(days[k], goals)) { n++; k = addDays(k,-1); }
+  if (!dayLogged(days[k])) k = addDays(k,-1);
+  while (dayLogged(days[k])) { n++; k = addDays(k,-1); }
   return n;
 }
 function series(days, goals, endKey, n, metric) {
@@ -243,7 +249,10 @@ function getActiveUserName() {
 function rowsToDays(rows) {
   const days = {};
   (rows || []).forEach(r => {
-    days[r.date] = {
+    // Supabase returns a `date` column as "YYYY-MM-DD"; slice defensively in
+    // case a time/zone component ever sneaks in, so keys always match keyOf().
+    const dk = String(r.date).slice(0, 10);
+    days[dk] = {
       meals: r.meals || [],
       workouts: r.workouts || [],
       steps: r.steps,
@@ -504,6 +513,13 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const nameBad = !f.name.trim(), kcalBad = !(parseFloat(f.kcal) > 0);
 
+  // Atwater sanity check: protein·4 + carbs·4 + fat·9 should roughly match the
+  // entered kcal. Soft, non-blocking warning that catches gross typos (e.g.
+  // 100 kcal + 80 g protein) while tolerating rounding, fiber and alcohol.
+  const kcalNum = parseFloat(f.kcal) || 0;
+  const macroKcal = (parseFloat(f.protein)||0)*4 + (parseFloat(f.carbs)||0)*4 + (parseFloat(f.fat)||0)*9;
+  const macroMismatch = kcalNum > 0 && macroKcal > 0 && Math.abs(macroKcal - kcalNum) > Math.max(50, kcalNum * 0.2);
+
   const submit = () => {
     setTried(true);
     if (nameBad || kcalBad) return;
@@ -543,6 +559,12 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
           <TextInput type="number" inputMode="numeric" min="0" value={f.fat} placeholder="0" onChange={e => set('fat', e.target.value)} />
         </Field>
       </div>
+      {macroMismatch && (
+        <div style={{ marginTop: 14, padding: '9px 12px', borderRadius: 8, background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.35)', color: '#d97706', fontSize: 12.5, fontWeight: 600, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <Icon name="alert-triangle" size={15} stroke={2.25} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>Makrona motsvarar ~{Math.round(macroKcal)} kcal (P·4 + K·4 + F·9), men du angav {Math.round(kcalNum)} kcal. Kontrollera siffrorna.</span>
+        </div>
+      )}
     </Modal>
   );
 }
@@ -978,7 +1000,7 @@ function Summary({ day, goals, selectedKey, days, units, store }) {
   const left = goals.kcal - totals.kcal;
   const over = left < 0;
   const stepsPct = day.steps != null ? Math.round((day.steps / goals.steps) * 100) : null;
-  const streak = calcStreak(days, goals);
+  const streak = calcStreak(days);
   const prevW = (days[addDays(selectedKey, -7)] || {}).weight;
   const wd = day.weight != null && prevW != null ? day.weight - prevW : null;
   const onTrack = totals.kcal > 0 && !over;

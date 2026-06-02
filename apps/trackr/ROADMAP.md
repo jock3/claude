@@ -23,40 +23,40 @@ Att bygga Fas 1–3 först och säkra sen är som att lägga en månad på att f
 
 ---
 
-## Fas 0 — Fundament & beslut (gör först, blockerar resten)
+## Fas 0 — Fundament & beslut (gör först, blockerar resten) ✅ BESLUTAT 2026-06-02
 
-Strategiska beslut som styr allt annat. Inget byggande förrän dessa är tagna.
+Strategiska beslut som styr allt annat. **Besluten är tagna — se nedan.**
 
-- [ ] **Bestäm produktidentitet** — experiment i "AI Labb" eller fristående produkt? Avgör domän, säkerhetskrav och marknadsföring. `S`
-- [ ] **Definiera målanvändaren** — låsa positioneringen till "repetitiv ätare + fast träningsschema som vill ha clean export & insikter". Allt nedan optimeras för den nischen. `S`
-- [ ] **En eller flera användare?** — hubben är *redan byggd* för flera (kontoskapande, "byt användare", users-objekt). Två vägar, inga mellanlägen: erkänn det och säkra på riktigt (utlöser grinden), **eller** gör appen medvetet enanvändar-Gustav-only och ta bort multi-user-skalet så du inte har en fasad som låtsas skydda något den inte skyddar. `S`
-- [ ] **GDPR-ställningstagande** — hälsodata är särskild kategori (art. 9). Dokumentera nuvarande modell och risknivå. Om appen ska växa: plan för riktig RLS per rad + samtycke. `S`
-- [ ] **Mobil-först-beslut** — bekräfta att Track3r byggs mobile-first (till skillnad från övriga sajten). Styr all UI nedan. `S`
+- [x] **Produktidentitet → Produkt för fler.** Andra verkliga personer ska kunna logga sin kroppsdata. Konsekvens: **säkerhetsgrinden (riktig auth + RLS) är nu obligatorisk** före Fas 3 / delning — inte valfri.
+- [x] **Målanvändare → Bred nutritionsspårare.** Konkurrerar mer direkt med MyFitnessPal. Konsekvens: **Open Food Facts-sök + streckkod flyttar UPP** till kärna i Fas 1 (inte längre "lägre prio, sist"). En stor, sökbar matdatabas är ett måste för den här positioneringen, inte ett tillval.
+- [x] **En eller flera användare → Flera.** Multi-user-skalet behålls och ska säkras på riktigt (utlöser grinden ovan). Ingen enanvändar-genväg.
+- [x] **GDPR → måste hanteras** (följer av "produkt för fler"). Hälsodata = särskild kategori (art. 9). Kräver samtyckestext + riktig RLS per rad innan delning. Spårat i Fas 8.
+- [x] **Mobil-först → Ja.** Track3r byggs mobile-first (bottom-nav, touch-ytor, PWA), till skillnad från sajtens övriga desktop-appar.
 
 ---
 
 ## Fas 0.5 — Korrigeringar (det som redan finns men beter sig fel)
 
-> Billiga fixar på befintlig kod, alla `S`, alla med verifierad plats i `App.jsx`. Gör dessa före du bygger nytt ovanpå en skev grund — och de träffar datakvaliteten rakt, som din målanvändare bryr sig om.
+> Billiga fixar på befintlig kod, alla `S`, alla med verifierad plats i `App.jsx`. Gör dessa före du bygger nytt ovanpå en skev grund — och de träffar datakvaliteten rakt, som din målanvändare bryr sig om. **Klart 2026-06-02.**
 
-- [ ] **Fixa streak-logiken** (`calcStreak` rad 202 + `kcalInGoal` rad 196) — idag returnerar `kcalInGoal` `false` om dagen saknar måltider *eller* om totalen > mål×1,05. Resultat: en *ologgad* dag bryter streaken, och en *ärligt loggad* dag över mål bryter den. Du belönar under-loggning och bestraffar ärlighet. Räkna istället streak på *handlingen att logga / följa planen*, inte på en enda kapad siffra. `S`
-- [ ] **Makro-sanity-check (4/4/9)** — stämmer protein×4 + kolh×4 + fett×9 ungefär med inmatade kcal? Mjuk varning vid orimliga värden (t.ex. 100 kcal + 80 g protein, fysiskt omöjligt). Fångar feltryck → renare data att analysera senare. `S`
-- [ ] **Tidszonssäkra datumnycklar** (`keyOf` rad 158) — använder lokal enhetstid (`getFullYear/getMonth/getDate`); loggar du i en tidszon och kollar i en annan kan poster hamna på fel dag. Lås till en konsekvent zon. `S`
+- [x] **Fixa streak-logiken** (`calcStreak` + ny `dayLogged`-helper) — streaken räknar nu *consecutive loggade dagar* (≥1 måltid), inte om totalen kapats under mål×1,05. En ärligt loggad överskottsdag bryter inte längre streaken, och en ologgad *idag* nollställer inte en pågående serie (räknas från igår). Belönar vanan att logga, inte att under-logga.
+- [x] **Makro-sanity-check (4/4/9)** — `MealModal` visar nu en mjuk, icke-blockerande amber-varning när protein·4 + kolh·4 + fett·9 avviker från inmatade kcal med mer än `max(50, kcal·20%)`. Fångar feltryck (t.ex. 100 kcal + 80 g protein) utan att tjata på normala värden (tolererar avrundning/fiber/alkohol).
+- [x] **Tidszonssäkra datumnycklar** — verifierat att `keyOf`/`parseKey` är internt konsekventa (lokal tid, ingen UTC-round-trip) och att Supabase `date`-kolumnen returnerar `"YYYY-MM-DD"` som används rått som nyckel. Ingen akut bugg — men la till defensiv `String(r.date).slice(0,10)` i `rowsToDays` som försäkring ifall ett tids-/zon-suffix någonsin smyger in.
 
 ---
 
 ## Fas 1 — Ta bort inmatningsfriktionen (högst ROI)
 
-> De billiga återanvändnings-vinsterna ligger **först** — de löser ~70 % av en repetitiv ätares dagliga loggning på några timmar. Tunga integrationer (Open Food Facts, streckkod) ligger sist. Detta följer roadmappens egen värde/friktion-regel: `S`-items före `L`-items.
+> **Omprioriterad efter Fas 0-beslutet (bred nutritionsspårare).** En sökbar matdatabas är nu *kärnan* i Fas 1, inte ett sent tillägg — utan den kan appen inte konkurrera i den valda positioneringen. De billiga återanvändnings-vinsterna byggs parallellt eftersom de är `S` och löser den repetitiva delen av loggningen nästan gratis.
 
-- [ ] **Kopiera gårdagen** — en knapp som klonar gårdagens måltider till idag. Billigaste högvärdesfunktionen som finns; en repetitiv ätare äter nästan samma sak dag till dag. `S`
+- [ ] **Open Food Facts-sök** *(uppflyttad — kärna för bred nutritionsspårare)* — öppna API:t (gratis, 3M+ produkter, svenska livsmedel). Sökfält i `MealModal` som autofyller kcal/P/C/F. Detta är den enskilt viktigaste Fas 1-funktionen givet positioneringen. `L`
+- [ ] **Streckkodsskanning** *(följer direkt på OFF)* — `BarcodeDetector` via webbkameran → uppslag i Open Food Facts. Fallback för iOS Safari (saknar API:t — t.ex. ZXing eller Quagga). `L`
+- [ ] **Kopiera gårdagen** — en knapp som klonar gårdagens måltider till idag. Billigaste högvärdesfunktionen som finns. `S`
 - [ ] **Senast använda livsmedel** — auto-lista de N senaste loggade posterna för ett-klicks-återanvändning. `S`
 - [ ] **Sparade måltider / favoriter** — ny tabell `track3r_favorites`. "Mina måltider" + "lägg till senaste" så återkommande mat loggas med ett klick. `M`
 - [ ] **Onboarding-flöde** — första gången: kort guide som förifyller rimliga mål. Gör defaulterna meningsfulla med en TDEE-uppskattning (Mifflin-St Jeor) från längd/vikt/aktivitet istället för godtyckliga 2400/160/240/70 (`DEFAULT_GOALS` rad 226). `M`
-- [ ] **Open Food Facts-sök** *(flyttad hit, lägre prio — se not nedan)* — öppna API:t (gratis, 3M+ produkter). Bäst för förpackad / märkesvara; svag på hemlagat. `L`
-- [ ] **Streckkodsskanning** *(följer Open Food Facts)* — `BarcodeDetector` via webbkameran → uppslag i Open Food Facts. Fallback för iOS Safari (saknar API:t — t.ex. ZXing eller Quagga). Värt mest om du äter mycket förpackat. `L`
 
-> **Not om matinmatning (viktig prioriteringsfråga):** Open Food Facts + streckkod löser *förpackad* mat. AI-naturligt-språk (Fas 6) löser *hemlagad / restaurang / vag* mat — "kycklinggryta med ris". Din definierade målanvändare är en repetitiv hemmakock, så den större halvan är hemlagat. **Rekommendation: dra upp AI-inmatningen före OFF/streckkod** (se Fas 6). Tiebreaker om du tvekar: äter du mest förpackat → OFF först; mest hemlagat → AI först.
+> **Not om matinmatning:** Open Food Facts + streckkod löser *förpackad* mat. AI-naturligt-språk (Fas 6) löser *hemlagad / restaurang / vag* mat. Med positioneringen "bred nutritionsspårare" behövs **båda** — OFF/streckkod är basen (förväntas av varje MyFitnessPal-jämförelse), AI-NL är differentieraren ovanpå. OFF byggs först eftersom det är bordsinsats; AI-NL (Fas 6) blir nästa stora lyft.
 
 ---
 
@@ -106,7 +106,7 @@ Halvdan träningsspårning är värre än ingen. Bestäm i Fas 0-andan.
 
 ## Fas 6 — AI-funktioner (matchar "AI Labb"-identiteten + differentierar)
 
-> **Omprioriterad.** Naturlig-språks-inmatningen är inte en "till sist"-feature — det är din enda riktiga differentiator och den löser hemlagat-halvan av matfriktionen. **Överväg att bygga den i Fas 1-tidsfönstret, före OFF/streckkod** (se noten i Fas 1). Reliabilitetsinvändningen (svårt att gissa portionsstorlek) är mildrad av att användaren alltid bekräftar/justerar de förifyllda värdena — det är en estimator, inte ett orakel, och en grov förifyllning slår att skriva fyra siffror från noll.
+> **Differentieraren ovanpå basen.** Med positioneringen "bred nutritionsspårare" byggs OFF/streckkod (Fas 1) *först* som bordsinsats — sedan blir naturlig-språks-inmatningen det som skiljer Track3r från MyFitnessPal. Den löser hemlagat-/restaurang-halvan som streckkoder inte når. Reliabilitetsinvändningen (svårt att gissa portionsstorlek) är mildrad av att användaren alltid bekräftar/justerar de förifyllda värdena — det är en estimator, inte ett orakel, och en grov förifyllning slår att skriva fyra siffror från noll.
 
 - [ ] **Naturlig-språksinmatning** — "Jag åt en tallrik pasta" → Claude estimerar kcal/P/C/F → förifyller måltidsmodalen (redigerbart). Löser inmatningsfriktion + är en unik feature. `L`
 - [ ] **Målvalidering** — engångskoll "är ditt kalorimål rimligt givet vikt & aktivitet?". *(Verkligt adaptiva mål som löpande justeras efter vikttrenden — MacroFactors hela pitch — är ett större produktbeslut. Lägg in som eget spår om du vill dit.)* `M`
@@ -156,7 +156,12 @@ Halvdan träningsspårning är värre än ingen. Bestäm i Fas 0-andan.
 
 ## Ändringslogg
 
-**rev. 2 → rev. 3 (denna konsolidering)**
+**rev. 3 → rev. 4 (2026-06-02 — Fas 0 beslutad + Fas 0.5 byggd)**
+- **Fas 0-besluten tagna:** produkt för fler · bred nutritionsspårare · flera användare · GDPR måste hanteras · mobile-first. Säkerhetsgrinden därmed bekräftad som obligatorisk.
+- **Fas 1 omprioriterad** efter "bred nutritionsspårare": Open Food Facts-sök + streckkod flyttade UPP till kärna (var "sist, lägre prio"). Fas 6-noten justerad — OFF är nu bordsinsats först, AI-NL differentieraren ovanpå (tidigare rekommenderades AI före OFF, vilket gällde nischen "hemmakock").
+- **Fas 0.5 implementerad i `App.jsx`:** streak-logik (ny `dayLogged`, räknar loggade dagar), makro-sanity-varning i `MealModal` (Atwater 4/4/9), defensiv datumnyckel-normalisering i `rowsToDays`. Build verifierad. Tidszons-"buggen" visade sig vara teoretisk — koden var redan konsekvent — så det blev en försäkring, inte en akut fix.
+
+**rev. 2 → rev. 3 (konsolidering)**
 - Slog ihop de två parallella roadmap-filerna till en kanonisk fil. Rev. 2 antagen som bas (strikt förbättring av rev. 1).
 - **Fas 0.5 förankrad i verifierade radnummer** i `App.jsx`: `calcStreak` (202) / `kcalInGoal` (196), `keyOf` (158), `DEFAULT_GOALS` (226). Alla tre buggar bekräftade mot faktisk kod.
 - **Auth-nyans korrigerad:** PIN-inloggningen sitter i *hubben*, inte i trackr (som bara läser `ailabb_active_user` och redirectar). Säkerhetsslutsatsen oförändrad — anon-nyckel + `using(true)` = världen kan läsa/radera.
