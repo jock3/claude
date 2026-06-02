@@ -56,7 +56,7 @@ Strategiska beslut som styr allt annat. **Besluten är tagna — se nedan.**
 - [x] **Kopiera gårdagen** — knapp i `FoodPanel` (i tom-läget + i footern när dagen har måltider) som klonar gårdagens måltider till idag med nya id:n. Visas bara när gårdagen har loggade måltider.
 - [x] **Senast använda livsmedel** — `MealModal` visar "Senast använda"-chips (de 8 senaste distinkta livsmedlen, nyast först, dedupade på namn) när sökrutan är tom. Ett klick fyller formuläret med de loggade makrona.
 - [ ] **Sparade måltider / favoriter** — ny tabell `track3r_favorites`. "Mina måltider" + "lägg till senaste" så återkommande mat loggas med ett klick. `M`
-- [ ] **Onboarding-flöde** — första gången: kort guide som förifyller rimliga mål. Gör defaulterna meningsfulla med en TDEE-uppskattning (Mifflin-St Jeor) från längd/vikt/aktivitet istället för godtyckliga 2400/160/240/70 (`DEFAULT_GOALS` rad 226). `M`
+- [x] **Onboarding-flöde** — `OnboardingModal` visas första gången (när ingen mål-rad finns, `goalsSet`-flagga i storen). Samlar kön/ålder/längd/vikt/aktivitet/mål och räknar ut kcal + makron via Mifflin-St Jeor (`goalsFromProfile`) med live-förhandsvisning. Protein 1,8 g/kg, fett ~27,5 %, kolhydrater som rest. "Hoppa över" behåller defaulterna utan att nagga igen.
 
 > **Not om matinmatning:** Open Food Facts + streckkod löser *förpackad* mat. AI-naturligt-språk (Fas 6) löser *hemlagad / restaurang / vag* mat. Med positioneringen "bred nutritionsspårare" behövs **båda** — OFF/streckkod är basen (förväntas av varje MyFitnessPal-jämförelse), AI-NL är differentieraren ovanpå. OFF byggs först eftersom det är bordsinsats; AI-NL (Fas 6) blir nästa stora lyft.
 

@@ -263,6 +263,26 @@ function avgOf(arr) {
 
 /* ── Defaults & session (Supabase-backed) ────────────────────────────── */
 const DEFAULT_GOALS = { kcal: 2400, protein: 160, carbs: 240, fat: 70, steps: 10000, weight: 75 };
+
+/* ── TDEE / goal estimation (Mifflin-St Jeor) ─────────────────────────────── */
+const ACTIVITY_LEVELS = [
+  { value: 1.2,   label: 'Stillasittande (lite/ingen träning)' },
+  { value: 1.375, label: 'Lätt aktiv (1–3 pass/vecka)' },
+  { value: 1.55,  label: 'Måttligt aktiv (3–5 pass/vecka)' },
+  { value: 1.725, label: 'Mycket aktiv (6–7 pass/vecka)' },
+  { value: 1.9,   label: 'Extremt aktiv (fysiskt jobb / 2 pass/dag)' },
+];
+function goalsFromProfile({ sex, age, height, weight, activity, aim }) {
+  // Mifflin-St Jeor BMR, then activity factor for TDEE.
+  const bmr = 10 * weight + 6.25 * height - 5 * age + (sex === 'female' ? -161 : 5);
+  const tdee = bmr * activity;
+  const adj = aim === 'lose' ? -500 : aim === 'gain' ? 300 : 0;
+  const kcal = Math.max(1200, Math.round((tdee + adj) / 10) * 10);
+  const protein = Math.round(1.8 * weight);          // 1.8 g/kg — solid for most goals
+  const fat = Math.round((kcal * 0.275) / 9);         // ~27.5% of energy from fat
+  const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)); // remainder
+  return { kcal, protein, carbs, fat, steps: 10000, weight };
+}
 const ACTIVE_KEY = 'ailabb_active_user';
 const PROFILE_ID_KEY = 'ailabb_profile_id';
 const PROFILE_NAME_KEY = 'ailabb_profile_name';
@@ -294,7 +314,7 @@ function rowsToDays(rows) {
 
 /* ── useStore hook (async, per profile) ───────────────────────────── */
 function useStore(profileId) {
-  const [state, setState] = useState({ goals: DEFAULT_GOALS, days: {} });
+  const [state, setState] = useState({ goals: DEFAULT_GOALS, days: {}, goalsSet: false });
   const [loading, setLoading] = useState(true);
   const dayTimers = useRef({});
   const goalTimer = useRef(null);
@@ -314,6 +334,7 @@ function useStore(profileId) {
           ? { kcal: goals.kcal, protein: goals.protein, carbs: goals.carbs, fat: goals.fat, steps: goals.steps, weight: goals.weight }
           : DEFAULT_GOALS,
         days: rowsToDays(rows),
+        goalsSet: !!goals,
       });
       setLoading(false);
     })();
@@ -343,7 +364,11 @@ function useStore(profileId) {
     setGoal: (k, v) => setState(s => {
       const goals = { ...s.goals, [k]: v };
       persistGoals(goals);
-      return { ...s, goals };
+      return { ...s, goals, goalsSet: true };
+    }),
+    setAllGoals: (goals) => setState(s => {
+      persistGoals(goals);
+      return { ...s, goals, goalsSet: true };
     }),
     addMeal: (key, m) => mutateDay(key, d => ({ ...d, meals: [...d.meals, m] })),
     updateMeal: (key, m) => mutateDay(key, d => ({ ...d, meals: d.meals.map(x => x.id === m.id ? m : x) })),
@@ -531,6 +556,69 @@ function Toast({ toast }) {
 
 /* ── Food panel ───────────────────────────────────────────────────────────── */
 const MEAL_SLOTS = ['Breakfast', 'Lunch', 'Snack', 'Dinner'];
+
+function OnboardingModal({ onSave, onSkip }) {
+  const C = useC();
+  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: '78', activity: 1.55, aim: 'maintain' });
+  const set = (k, v) => setF(s => ({ ...s, [k]: v }));
+  const valid = parseFloat(f.age) > 0 && parseFloat(f.height) > 0 && parseFloat(f.weight) > 0;
+  const preview = valid ? goalsFromProfile({
+    sex: f.sex, age: +f.age, height: +f.height, weight: +f.weight, activity: +f.activity, aim: f.aim,
+  }) : null;
+
+  return (
+    <Modal eyebrow="Välkommen till Track3r" title="Kom igång med dina mål"
+      onClose={onSkip}
+      footer={<>
+        <Button variant="ghost" onClick={onSkip} style={{ marginRight: 'auto' }}>Hoppa över</Button>
+        <Button variant="primary" icon="check" disabled={!valid} onClick={() => preview && onSave(preview)}>Sätt mina mål</Button>
+      </>}>
+      <p style={{ margin: '0 0 16px', fontSize: 13.5, color: C.ink3, lineHeight: 1.5 }}>
+        Vi räknar ut ett rimligt kalori- och makromål åt dig med Mifflin-St Jeor-formeln. Du kan alltid justera siffrorna direkt i appen efteråt.
+      </p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <Field label="Kön">
+          <select className="t3-input" value={f.sex} onChange={e => set('sex', e.target.value)}>
+            <option value="male">Man</option>
+            <option value="female">Kvinna</option>
+          </select>
+        </Field>
+        <Field label="Ålder">
+          <TextInput type="number" inputMode="numeric" min="0" value={f.age} onChange={e => set('age', e.target.value)} />
+        </Field>
+        <Field label="Längd (cm)">
+          <TextInput type="number" inputMode="numeric" min="0" value={f.height} onChange={e => set('height', e.target.value)} />
+        </Field>
+        <Field label="Vikt (kg)">
+          <TextInput type="number" inputMode="decimal" min="0" value={f.weight} onChange={e => set('weight', e.target.value)} />
+        </Field>
+        <Field label="Aktivitetsnivå" span={2}>
+          <select className="t3-input" value={f.activity} onChange={e => set('activity', e.target.value)}>
+            {ACTIVITY_LEVELS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
+          </select>
+        </Field>
+        <Field label="Mål" span={2}>
+          <select className="t3-input" value={f.aim} onChange={e => set('aim', e.target.value)}>
+            <option value="lose">Gå ner i vikt (−500 kcal)</option>
+            <option value="maintain">Behålla vikt</option>
+            <option value="gain">Gå upp i vikt (+300 kcal)</option>
+          </select>
+        </Field>
+      </div>
+      {preview && (
+        <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 10, background: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
+          <span className="t3-label" style={{ display: 'block', marginBottom: 8 }}>Föreslaget dagsmål</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 18px', fontSize: 13.5, fontWeight: 700 }}>
+            <span style={{ color: C.ink }}>{grp(preview.kcal)} kcal</span>
+            <span style={{ color: C.amber }}>{preview.protein} g protein</span>
+            <span style={{ color: C.tealLight }}>{preview.carbs} g kolh.</span>
+            <span style={{ color: C.tealDeep }}>{preview.fat} g fett</span>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
 
 function BarcodeScanner({ onDetect, onClose }) {
   const videoRef = useRef(null);
@@ -1576,6 +1664,13 @@ export default function TrackrApp() {
             </Panel>
           </div>
         </div>
+
+        {!state.goalsSet && (
+          <OnboardingModal
+            onSave={g => { store.setAllGoals(g); flash('Dina mål är satta', 'check'); }}
+            onSkip={() => store.setAllGoals(state.goals)}
+          />
+        )}
 
         {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
