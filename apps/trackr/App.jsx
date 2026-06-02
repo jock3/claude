@@ -1,7 +1,8 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader } from 'lucide-react';
 import * as db from './db.js';
+import { searchFoods } from './off.js';
 
 /* ── Scoped styles ────────────────────────────────────────────────────────── */
 function ScopedStyles() {
@@ -83,6 +84,15 @@ function ScopedStyles() {
       .t3-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
       .t3-hint { font-size: 11px; color: var(--color-text-muted); }
       .t3-input-invalid { border-color: #e05c5c !important; box-shadow: 0 0 0 3px rgba(224,92,92,0.14) !important; }
+      .t3-search-wrap { position: relative; }
+      .t3-search-results { position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0; max-height: 248px; overflow-y: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.28); padding: 4px; }
+      .t3-search-item { display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left; padding: 8px 10px; border: none; background: transparent; border-radius: 7px; cursor: pointer; font-family: inherit; color: var(--color-text); transition: background 110ms; }
+      .t3-search-item:hover, .t3-search-item:focus { background: var(--color-bg); outline: none; }
+      .t3-search-name { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+      .t3-search-meta { font-size: 11.5px; color: var(--color-text-muted); font-weight: 600; }
+      .t3-search-empty { padding: 12px 10px; font-size: 12.5px; color: var(--color-text-muted); font-weight: 600; }
+      @keyframes t3-spin { to { transform: rotate(360deg); } }
+      .t3-spin { animation: t3-spin 800ms linear infinite; }
 
       .t3-tag { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); transition: all 120ms; }
       .t3-tag.on { border-color: var(--color-link); background: rgba(58,165,156,0.12); color: var(--color-link); }
@@ -146,7 +156,7 @@ const ICON_MAP = {
   'check': Check, 'trash-2': Trash2, 'pencil': Pencil, 'plus': Plus,
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
-  'alert-triangle': AlertTriangle,
+  'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -513,6 +523,59 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
   const nameBad = !f.name.trim(), kcalBad = !(parseFloat(f.kcal) > 0);
 
+  // ── Open Food Facts search ──────────────────────────────────────────────
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [offError, setOffError] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [picked, setPicked] = useState(null); // per-100g base of the chosen food
+  const [grams, setGrams] = useState('');     // portion size in grams when picked
+
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) { setResults([]); setSearching(false); setOffError(false); return; }
+    setSearching(true); setOffError(false);
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const hits = await searchFoods(q, { signal: ctrl.signal });
+        setResults(hits); setShowResults(true);
+      } catch (e) {
+        if (e.name !== 'AbortError') { setOffError(true); setResults([]); setShowResults(true); }
+      } finally {
+        setSearching(false);
+      }
+    }, 380);
+    return () => { clearTimeout(t); ctrl.abort(); };
+  }, [query]);
+
+  // Scale a picked food's per-100g macros to the entered portion size.
+  const fillFromGrams = (g) => {
+    setGrams(g);
+    if (!picked) return;
+    const factor = (parseFloat(g) || 0) / 100;
+    setF(s => ({ ...s,
+      kcal: String(Math.round(picked.kcal * factor)),
+      protein: String(Math.round(picked.protein * factor)),
+      carbs: String(Math.round(picked.carbs * factor)),
+      fat: String(Math.round(picked.fat * factor)),
+    }));
+  };
+
+  const pickFood = (prod) => {
+    const label = prod.brand ? `${prod.name} (${prod.brand})` : prod.name;
+    setPicked(prod.per100);
+    setGrams('100');
+    setF(s => ({ ...s, name: label,
+      kcal: String(prod.per100.kcal),
+      protein: String(prod.per100.protein),
+      carbs: String(prod.per100.carbs),
+      fat: String(prod.per100.fat),
+    }));
+    setQuery(''); setResults([]); setShowResults(false);
+  };
+
   // Atwater sanity check: protein·4 + carbs·4 + fat·9 should roughly match the
   // entered kcal. Soft, non-blocking warning that catches gross typos (e.g.
   // 100 kcal + 80 g protein) while tolerating rounding, fiber and alcohol.
@@ -534,7 +597,39 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
         <Button variant="ghost" onClick={onClose}>Avbryt</Button>
         <Button variant="primary" icon="check" onClick={submit}>{editing ? 'Spara' : 'Lägg till'}</Button>
       </>}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <Field label="Sök livsmedel" hint="Open Food Facts">
+        <div className="t3-search-wrap">
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
+              <Icon name={searching ? 'loader' : 'search'} size={15} stroke={2} style={searching ? { animation: 't3-spin 800ms linear infinite' } : undefined} />
+            </span>
+            <TextInput
+              value={query}
+              placeholder="ex. yoghurt, havregryn, banan…"
+              style={{ paddingLeft: 34 }}
+              onChange={e => setQuery(e.target.value)}
+              onFocus={() => { if (results.length || offError) setShowResults(true); }}
+            />
+          </div>
+          {showResults && (query.trim().length >= 2) && (
+            <div className="t3-search-results">
+              {offError ? (
+                <div className="t3-search-empty">Kunde inte nå Open Food Facts. Skriv in värdena manuellt nedan.</div>
+              ) : results.length === 0 ? (
+                <div className="t3-search-empty">{searching ? 'Söker…' : 'Inga träffar — skriv in manuellt nedan.'}</div>
+              ) : results.map(r => (
+                <button type="button" key={r.code || `${r.name}-${r.brand}`} className="t3-search-item" onClick={() => pickFood(r)}>
+                  <span className="t3-search-name">{r.name}</span>
+                  <span className="t3-search-meta">
+                    {r.brand ? `${r.brand} · ` : ''}{r.per100.kcal} kcal · {r.per100.protein}P / {r.per100.carbs}K / {r.per100.fat}F (per 100 g)
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Field>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
         <Field label="Mål">
           <select className="t3-input" value={f.slot} onChange={e => set('slot', e.target.value)}>
             {MEAL_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -546,6 +641,11 @@ function MealModal({ initial, onSave, onClose, onDelete }) {
         <Field label="Vad åt du?" span={2}>
           <TextInput value={f.name} placeholder="ex. Kycklinggryta med ris" invalid={tried && nameBad} onChange={e => set('name', e.target.value)} autoFocus />
         </Field>
+        {picked && (
+          <Field label="Mängd (g)" hint="skalar makrona" span={2}>
+            <TextInput type="number" inputMode="numeric" min="0" value={grams} placeholder="100" onChange={e => fillFromGrams(e.target.value)} />
+          </Field>
+        )}
         <Field label="Kalorier" hint="kcal — obligatoriskt" span={2}>
           <TextInput type="number" inputMode="numeric" min="0" value={f.kcal} placeholder="0" invalid={tried && kcalBad} onChange={e => set('kcal', e.target.value)} />
         </Field>
