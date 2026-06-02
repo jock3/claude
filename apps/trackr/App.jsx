@@ -282,20 +282,30 @@ const ACTIVITY_LEVELS = [
   { value: 1.725, label: 'Mycket aktiv (6–7 pass/vecka)' },
   { value: 1.9,   label: 'Extremt aktiv (fysiskt jobb / 2 pass/dag)' },
 ];
-// Energy + macro targets from CURRENT body weight (the weight you are now is
-// what drives TDEE — not your goal weight). Returns only the kcal/macro fields;
-// the steps and goal-weight targets are handled separately by the caller so
-// they're never clobbered by the calorie calc.
-function goalsFromProfile({ sex, age, height, weight, activity, aim }) {
+// Direction of the calorie adjustment, derived from where you are now vs where
+// you want to be. A ±1 kg deadband counts as "maintain".
+function aimFromWeights(currentWeight, goalWeight) {
+  const diff = (goalWeight != null ? goalWeight : currentWeight) - currentWeight;
+  if (diff <= -1) return 'lose';
+  if (diff >= 1) return 'gain';
+  return 'maintain';
+}
+
+// Energy + macro targets. TDEE is driven by CURRENT body weight (that's what
+// determines expenditure); the goal weight only sets the deficit/surplus
+// direction. Returns just the kcal/macro fields plus the derived aim — steps
+// and the goal-weight target are handled by the caller.
+function goalsFromProfile({ sex, age, height, weight, activity, goalWeight }) {
   // Mifflin-St Jeor BMR, then activity factor for TDEE.
   const bmr = 10 * weight + 6.25 * height - 5 * age + (sex === 'female' ? -161 : 5);
   const tdee = bmr * activity;
+  const aim = aimFromWeights(weight, goalWeight);
   const adj = aim === 'lose' ? -500 : aim === 'gain' ? 300 : 0;
   const kcal = Math.max(1200, Math.round((tdee + adj) / 10) * 10);
   const protein = Math.round(1.8 * weight);          // 1.8 g/kg of current weight
   const fat = Math.round((kcal * 0.275) / 9);         // ~27.5% of energy from fat
   const carbs = Math.max(0, Math.round((kcal - protein * 4 - fat * 9) / 4)); // remainder
-  return { kcal, protein, carbs, fat };
+  return { kcal, protein, carbs, fat, aim };
 }
 const ACTIVE_KEY = 'ailabb_active_user';
 const PROFILE_ID_KEY = 'ailabb_profile_id';
@@ -595,22 +605,32 @@ function GoalsModal({ mode = 'onboard', currentGoals, latestWeight, onSave, onCl
   // any existing goal weight, then a neutral default. This is the weight that
   // drives the calorie calc, not the goal/target weight.
   const seedWeight = latestWeight != null ? latestWeight : (base.weight != null ? base.weight : 78);
-  const [f, setF] = useState({ sex: 'male', age: '30', height: '178', weight: String(Math.round(seedWeight)), activity: 1.55, aim: 'maintain' });
+  // Goal weight defaults to the existing target, else to current weight (= maintain).
+  const seedGoal = base.weight != null ? base.weight : seedWeight;
+  const [f, setF] = useState({
+    sex: 'male', age: '30', height: '178',
+    weight: String(Math.round(seedWeight)),
+    goalWeight: String(Math.round(seedGoal)),
+    activity: 1.55,
+  });
   const set = (k, v) => setF(s => ({ ...s, [k]: v }));
-  const valid = parseFloat(f.age) > 0 && parseFloat(f.height) > 0 && parseFloat(f.weight) > 0;
+  const valid = parseFloat(f.age) > 0 && parseFloat(f.height) > 0 && parseFloat(f.weight) > 0 && parseFloat(f.goalWeight) > 0;
   const preview = valid ? goalsFromProfile({
-    sex: f.sex, age: +f.age, height: +f.height, weight: +f.weight, activity: +f.activity, aim: f.aim,
+    sex: f.sex, age: +f.age, height: +f.height, weight: +f.weight, activity: +f.activity, goalWeight: +f.goalWeight,
   }) : null;
+  const aimLabel = preview && (preview.aim === 'lose' ? 'Underskott för viktnedgång (−500 kcal)'
+    : preview.aim === 'gain' ? 'Överskott för viktuppgång (+300 kcal)'
+    : 'Underhållsnivå');
 
   const handleSave = () => {
     if (!preview) return;
-    // Preserve steps + the goal-weight target. In edit mode keep the existing
-    // target weight; in onboarding seed it from the entered current weight.
+    const { aim, ...goalFields } = preview;
+    // Save the goal-weight target (editable now) and preserve the steps goal.
     onSave({
       ...base,
-      ...preview,
+      ...goalFields,
       steps: base.steps != null ? base.steps : DEFAULT_GOALS.steps,
-      weight: isEdit ? base.weight : +f.weight,
+      weight: +f.goalWeight,
     });
   };
 
@@ -638,19 +658,15 @@ function GoalsModal({ mode = 'onboard', currentGoals, latestWeight, onSave, onCl
         <Field label="Längd (cm)">
           <TextInput type="number" inputMode="numeric" min="0" value={f.height} onChange={e => set('height', e.target.value)} />
         </Field>
-        <Field label="Nuvarande vikt (kg)" hint="för kaloriberäkningen">
+        <Field label="Nuvarande vikt (kg)" hint="driver kalorierna">
           <TextInput type="number" inputMode="decimal" min="0" value={f.weight} onChange={e => set('weight', e.target.value)} />
+        </Field>
+        <Field label="Målvikt (kg)" hint="sätt = nuvarande för att behålla">
+          <TextInput type="number" inputMode="decimal" min="0" value={f.goalWeight} onChange={e => set('goalWeight', e.target.value)} />
         </Field>
         <Field label="Aktivitetsnivå" span={2}>
           <select className="t3-input" value={f.activity} onChange={e => set('activity', e.target.value)}>
             {ACTIVITY_LEVELS.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
-          </select>
-        </Field>
-        <Field label="Mål" span={2}>
-          <select className="t3-input" value={f.aim} onChange={e => set('aim', e.target.value)}>
-            <option value="lose">Gå ner i vikt (−500 kcal)</option>
-            <option value="maintain">Behålla vikt</option>
-            <option value="gain">Gå upp i vikt (+300 kcal)</option>
           </select>
         </Field>
       </div>
@@ -663,6 +679,7 @@ function GoalsModal({ mode = 'onboard', currentGoals, latestWeight, onSave, onCl
             <span style={{ color: C.tealLight }}>{preview.carbs} g kolh.</span>
             <span style={{ color: C.tealDeep }}>{preview.fat} g fett</span>
           </div>
+          <span style={{ display: 'block', marginTop: 8, fontSize: 12, fontWeight: 600, color: C.ink3 }}>{aimLabel}</span>
         </div>
       )}
     </Modal>
