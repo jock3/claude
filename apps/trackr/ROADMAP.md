@@ -92,18 +92,22 @@ Allt detta är ren aggregering av data som redan finns i Supabase.
 
 Halvdan träningsspårning är värre än ingen. Bestäm i Fas 0-andan.
 
-- [x] **VÄG A — Riktig träningslogg:** övningsdatabas (wger), set/reps/vikt, volymberäkning. `XL`
-  - [x] `wger.js`-klient — sök övningar mot wger.de (öppet API, ingen nyckel, CORS).
-  - [x] Utökad workout-modell: `exercises: [{ id, exId, name, sets: [{reps, weight}] }]`.
-  - [x] Övningssök + set-editor i `WorkoutModal` (visas för Strength-pass).
-  - [x] Volym (reps×vikt) summeras per övning/pass och visas i rad + panel + veckodiagram.
-  - [ ] *Kvar:* progressiv överbelastning ("+5 kg sedan förra veckan"), förra-passet-autoifyll, övningshistorik per övning.
-- [ ] ~~VÄG B — Förenkla~~ — valdes bort. Väg A vald.
+- [x] **VÄG A — Riktig träningslogg (Hevy/Strong-modell):** `XL`
+  - [x] Inbyggt övningsbibliotek (`exercises.js`, 120+ övningar på svenska, offline). *(wger.de blockerade CORS — bundlat bibliotek valt istället.)*
+  - [x] Utökad workout-modell: `exercises: [{ id, exId, name, note, sets:[{reps,weight}] }]` + cardio-fält.
+  - [x] **Live-loggning i helskärm** (`ActiveWorkout`) — inte popup; passet är aktivt tills "Avsluta", överlever omladdning via `localStorage`.
+  - [x] Startväljare: **Styrka / Cardio / Mina mallar**.
+  - [x] **Cardio** — Apple Fitness-modellerade former (löpning, cykel, rodd, crosstrainer, trappmaskin, HIIT, vandring, simning…) + live-klocka, distans, kcal, puls.
+  - [x] **Styrka** — Hevy-stil: löpande timer, set-rader `[# · tidigare · kg · reps · ✓]`, **"tidigare"-kolumn** från historik, **vilotimer** vid avbockat set, anteckning per övning.
+  - [x] **Skräddarsydda pass / mallar** — spara ett styrkepass som mall, starta framtida pass från det (`localStorage`).
+  - [x] **Finish-summering** → loggas till dagen; volym/set/distans visas i rad + panel + veckodiagram.
+  - [ ] *Kvar:* progressiv-överbelastning-tips ("+5 kg sedan förra veckan"), superset, PR-detektering, mallar synkade till Supabase (nu per-enhet).
+- [x] ~~VÄG B — Förenkla~~ — valdes bort. Väg A vald.
 
-> **Beslut: Väg A.** Användaren frågade efter en övningsdatabas i stil med Open
-> Food Facts → wger valdes (det öppna, gratis, gemenskapsdrivna alternativet).
-> Grundloggning (övningar, set/reps/vikt, volym) är byggd. Progression och
-> per-övningshistorik är nästa steg ovan.
+> **Beslut: Väg A.** Användaren ville ha live-loggning i Hevy/Strong-stil för
+> styrka och Apple-stil för cardio, i en helskärmsvy som är aktiv tills man
+> trycker "Avsluta". Byggt. Övningsdata ligger lokalt (`exercises.js`) eftersom
+> wger.de blockerar okända origins (CORS).
 
 ---
 

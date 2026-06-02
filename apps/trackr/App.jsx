@@ -1,6 +1,6 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target, Clock, Bike, Footprints, Waves, Mountain, CheckCircle2, Bookmark, MoreVertical, PersonStanding } from 'lucide-react';
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
@@ -96,6 +96,13 @@ function ScopedStyles() {
       @keyframes t3-spin { to { transform: rotate(360deg); } }
       .t3-spin { animation: t3-spin 800ms linear infinite; }
 
+      /* Full-screen live workout ("active session") */
+      .t3-active { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; background: var(--color-bg); animation: t3-slide-up 240ms cubic-bezier(0.16,1,0.3,1); }
+      @keyframes t3-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      .t3-active-head { display: flex; align-items: center; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 12px 12px; border-bottom: 0.5px solid var(--color-border); flex-shrink: 0; }
+      .t3-start-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; padding: 22px 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); color: var(--color-text); cursor: pointer; font-family: inherit; transition: all 130ms; }
+      .t3-start-card:hover { border-color: var(--color-text-muted); transform: translateY(-1px); }
+
       .t3-tag { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); transition: all 120ms; }
       .t3-tag.on { border-color: var(--color-link); background: rgba(58,165,156,0.12); color: var(--color-link); }
 
@@ -159,7 +166,10 @@ const ICON_MAP = {
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
   'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
   'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader, 'barcode': Barcode,
-  'star': Star, 'x': X, 'target': Target,
+  'star': Star, 'x': X, 'target': Target, 'clock': Clock, 'bike': Bike,
+  'footprints': Footprints, 'waves': Waves, 'mountain': Mountain,
+  'check-circle': CheckCircle2, 'bookmark': Bookmark, 'more-vertical': MoreVertical,
+  'person': PersonStanding,
 };
 function Icon({ name, size = 20, stroke = 1.75, color, style }) {
   const Comp = ICON_MAP[name];
@@ -1081,6 +1091,74 @@ function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterd
 const WORKOUT_KINDS = ['Strength', 'Cardio', 'Mobility', 'Sport'];
 const TAG_POOL = ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms', 'Core', 'Run', 'Bike', 'Swim', 'HIIT'];
 
+// Cardio formats modelled on Apple's Workout app. `distance` marks the ones
+// where logging a distance makes sense (a treadmill run vs. a HIIT circuit).
+const CARDIO_TYPES = [
+  { id: 'run-out',   label: 'Löpning ute',   icon: 'activity',   distance: true  },
+  { id: 'run-in',    label: 'Löpning inne',  icon: 'activity',   distance: true  },
+  { id: 'walk-out',  label: 'Promenad',      icon: 'footprints', distance: true  },
+  { id: 'cycle-out', label: 'Cykling ute',   icon: 'bike',       distance: true  },
+  { id: 'cycle-in',  label: 'Spinning',      icon: 'bike',       distance: true  },
+  { id: 'elliptical',label: 'Crosstrainer',  icon: 'activity',   distance: false },
+  { id: 'rower',     label: 'Roddmaskin',    icon: 'waves',      distance: true  },
+  { id: 'stairs',    label: 'Trappmaskin',   icon: 'mountain',   distance: false },
+  { id: 'hiit',      label: 'HIIT',          icon: 'flame',      distance: false },
+  { id: 'hike',      label: 'Vandring',      icon: 'mountain',   distance: true  },
+  { id: 'swim',      label: 'Simning',       icon: 'waves',      distance: true  },
+  { id: 'other',     label: 'Annat',         icon: 'person',     distance: false },
+];
+function cardioMeta(id) { return CARDIO_TYPES.find(c => c.id === id) || CARDIO_TYPES[CARDIO_TYPES.length - 1]; }
+
+// Format elapsed milliseconds as H:MM:SS or M:SS.
+function fmtClock(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+  const mm = String(m).padStart(h ? 2 : 1, '0'), ss = String(s).padStart(2, '0');
+  return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+// Most recent logged performance of a named exercise (for the "previous" column).
+function lastExercisePerformance(days, name, beforeKey) {
+  const target = (name || '').trim().toLowerCase();
+  if (!target) return null;
+  const keys = Object.keys(days).filter(k => !beforeKey || k < beforeKey).sort().reverse();
+  for (const k of keys) {
+    const ws = (days[k] && days[k].workouts) || [];
+    for (let i = ws.length - 1; i >= 0; i--) {
+      const ex = (ws[i].exercises || []).find(e => (e.name || '').trim().toLowerCase() === target);
+      if (ex && ex.sets && ex.sets.length) return { date: k, sets: ex.sets };
+    }
+  }
+  return null;
+}
+
+// ── Active-session persistence (survives reloads until "Avsluta pass") ───────
+const ACTIVE_SESSION_KEY = 'track3r_active_session';
+function loadActiveSession(profileId) {
+  try {
+    const v = JSON.parse(localStorage.getItem(ACTIVE_SESSION_KEY));
+    return v && v.profileId === profileId ? v : null;
+  } catch (_) { return null; }
+}
+function saveActiveSession(s) { try { localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify(s)); } catch (_) {} }
+function clearActiveSession() { try { localStorage.removeItem(ACTIVE_SESSION_KEY); } catch (_) {} }
+
+// ── Templates / routines (saved strength layouts, per profile) ───────────────
+const ROUTINES_KEY = 'track3r_routines';
+function loadRoutines(profileId) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ROUTINES_KEY)) || {};
+    return all[profileId] || [];
+  } catch (_) { return []; }
+}
+function saveRoutines(profileId, routines) {
+  try {
+    const all = JSON.parse(localStorage.getItem(ROUTINES_KEY)) || {};
+    all[profileId] = routines;
+    localStorage.setItem(ROUTINES_KEY, JSON.stringify(all));
+  } catch (_) {}
+}
+
 // Training-volume helpers (reps × weight, summed). Used for strength sessions.
 function setsVolume(sets) {
   return (sets || []).reduce((a, s) => a + (Number(s.reps) || 0) * (Number(s.weight) || 0), 0);
@@ -1286,16 +1364,18 @@ function WorkoutRow({ w, onClick }) {
   const exCount = (w.exercises || []).length;
   const sets = workoutSetCount(w);
   const vol = workoutVolume(w);
-  const parts = [w.kind];
+  const label = w.kind === 'Cardio' && w.cardioType ? cardioMeta(w.cardioType).label : w.kind;
+  const parts = [label];
   if (exCount > 0) parts.push(`${exCount} övn · ${sets} set`);
   else if (w.durationMin) parts.push(`${w.durationMin} min`);
+  if (w.distanceKm) parts.push(`${w.distanceKm} km`);
   if (vol > 0) parts.push(`${grp(vol)} kg vol`);
   else if (w.kcal) parts.push(`${grp(w.kcal)} kcal`);
   return (
     <button onClick={onClick} className="t3-row"
       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 8px', width: '100%', textAlign: 'left', background: 'transparent', border: 'none', borderTop: `0.5px solid ${C.line2}`, cursor: 'pointer', fontFamily: 'inherit' }}>
       <span style={{ width: 36, height: 36, borderRadius: '50%', background: C.tealMist, color: C.tealDeep, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <Icon name={kindIcon(w.kind)} size={18} stroke={2} />
+        <Icon name={w.kind === 'Cardio' && w.cardioType ? cardioMeta(w.cardioType).icon : kindIcon(w.kind)} size={18} stroke={2} />
       </span>
       <span style={{ flex: 1, minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</span>
@@ -1306,7 +1386,397 @@ function WorkoutRow({ w, onClick }) {
   );
 }
 
-function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout }) {
+/* ── Live workout ("active session") ──────────────────────────────────────────
+   A full-screen experience (not a modal). Press "Starta pass" → choose Styrka,
+   Cardio, or a saved mall → log live with a running timer → "Avsluta pass".
+   The in-progress session is mirrored to localStorage so it survives reloads. */
+
+// A 1-second ticker used to drive elapsed/rest timers without re-rendering the
+// whole tree off a global interval.
+function useTicker(active) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => force(n => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [active]);
+}
+
+// One exercise inside a live strength session: previous-column reference, set
+// rows with kg/reps and a done checkmark, add/remove sets, a per-exercise note.
+function ActiveExerciseCard({ ex, prev, onChange, onRemove, onSetDone }) {
+  const C = useC();
+  const sets = ex.sets || [];
+  const prevSets = (prev && prev.sets) || [];
+  const setRow = (i, k, v) => onChange({ ...ex, sets: sets.map((s, j) => j === i ? { ...s, [k]: v } : s) });
+  const addSet = () => {
+    const last = sets[sets.length - 1];
+    onChange({ ...ex, sets: [...sets, { reps: last ? last.reps : '', weight: last ? last.weight : '', done: false }] });
+  };
+  const delSet = i => onChange({ ...ex, sets: sets.filter((_, j) => j !== i) });
+  const toggleDone = i => {
+    const willDo = !sets[i].done;
+    // Auto-fill empty fields from the previous session when checking a set off.
+    const p = prevSets[i] || {};
+    const filled = { ...sets[i],
+      reps: sets[i].reps === '' && p.reps != null ? String(p.reps) : sets[i].reps,
+      weight: sets[i].weight === '' && p.weight != null ? String(p.weight) : sets[i].weight,
+      done: willDo };
+    onChange({ ...ex, sets: sets.map((s, j) => j === i ? filled : s) });
+    if (willDo) onSetDone();
+  };
+
+  return (
+    <div style={{ border: `0.5px solid ${C.line}`, borderRadius: 12, background: C.bgSoft, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 13px 9px' }}>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.name}</span>
+        <button type="button" onClick={onRemove} title="Ta bort övning"
+          style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 3 }}>
+          <Icon name="x" size={16} stroke={2.25} />
+        </button>
+      </div>
+      <input className="t3-input" value={ex.note || ''} placeholder="Anteckning (valfritt)…"
+        onChange={e => onChange({ ...ex, note: e.target.value })}
+        style={{ margin: '0 13px 10px', width: 'calc(100% - 26px)', fontSize: 12.5, padding: '7px 10px', background: 'transparent', border: `0.5px solid ${C.line}` }} />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '26px 1fr 1fr 1fr 40px', gap: 6, alignItems: 'center', padding: '0 13px 4px', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: C.ink4 }}>
+        <span style={{ textAlign: 'center' }}>Set</span>
+        <span style={{ textAlign: 'center' }}>Tidigare</span>
+        <span style={{ textAlign: 'center' }}>Kg</span>
+        <span style={{ textAlign: 'center' }}>Reps</span>
+        <span />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {sets.map((s, i) => {
+          const p = prevSets[i];
+          const prevLabel = p ? `${p.weight || 0}×${p.reps || 0}` : '–';
+          return (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '26px 1fr 1fr 1fr 40px', gap: 6, alignItems: 'center', padding: '5px 13px', background: s.done ? (C.tealMist) : 'transparent' }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: C.ink3, textAlign: 'center' }}>{i + 1}</span>
+              <span style={{ fontSize: 12, color: C.ink4, textAlign: 'center', fontWeight: 600 }}>{prevLabel}</span>
+              <input className="t3-input" type="number" inputMode="decimal" min="0" value={s.weight}
+                placeholder={p ? String(p.weight ?? '') : '0'}
+                onChange={e => setRow(i, 'weight', e.target.value)}
+                style={{ textAlign: 'center', padding: '7px 4px', fontWeight: 700 }} />
+              <input className="t3-input" type="number" inputMode="numeric" min="0" value={s.reps}
+                placeholder={p ? String(p.reps ?? '') : '0'}
+                onChange={e => setRow(i, 'reps', e.target.value)}
+                style={{ textAlign: 'center', padding: '7px 4px', fontWeight: 700 }} />
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                <button type="button" onClick={() => toggleDone(i)} title={s.done ? 'Ångra' : 'Klar'}
+                  style={{ display: 'inline-flex', border: 'none', background: s.done ? C.teal : 'transparent', borderRadius: 7, color: s.done ? '#fff' : C.ink4, cursor: 'pointer', padding: 4, transition: 'background 140ms' }}>
+                  <Icon name="check" size={16} stroke={2.75} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 8, padding: '8px 13px 12px' }}>
+        <button type="button" className="t3-tag" onClick={addSet} style={{ gap: 5 }}>
+          <Icon name="plus" size={13} stroke={2.5} /> Set
+        </button>
+        {sets.length > 0 && (
+          <button type="button" className="t3-tag" onClick={() => delSet(sets.length - 1)} style={{ gap: 5 }}>
+            <Icon name="minus" size={13} stroke={2.5} /> Ta bort set
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Bottom rest-timer banner — counts down after a set is completed.
+function RestBar({ remaining, total, onAdd, onSkip }) {
+  const C = useC();
+  const pct = total > 0 ? Math.max(0, Math.min(100, (remaining / total) * 100)) : 0;
+  return (
+    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 76, padding: '0 16px', zIndex: 5 }}>
+      <div style={{ background: C.ink, color: C.bg, borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.28)' }}>
+        <Icon name="clock" size={17} stroke={2.25} />
+        <span style={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', minWidth: 52 }}>{fmtClock(remaining * 1000)}</span>
+        <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.25)', overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${pct}%`, background: C.bg, transition: 'width 1s linear' }} />
+        </div>
+        <button type="button" onClick={onAdd} style={{ border: 'none', background: 'transparent', color: 'inherit', fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>+30s</button>
+        <button type="button" onClick={onSkip} style={{ border: 'none', background: 'transparent', color: 'inherit', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', opacity: 0.8 }}>Hoppa över</button>
+      </div>
+    </div>
+  );
+}
+
+// The full-screen chooser shown when a session is starting (mode not yet set).
+function StartChooser({ routines, onPickStrength, onPickCardio, onPickRoutine, onDeleteRoutine, onClose }) {
+  const C = useC();
+  const [showCardio, setShowCardio] = useState(false);
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {!showCardio ? (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <button type="button" onClick={onPickStrength} className="t3-start-card">
+              <Icon name="dumbbell" size={30} stroke={1.75} />
+              <span style={{ fontSize: 16, fontWeight: 800 }}>Styrka</span>
+              <span style={{ fontSize: 12, color: C.ink3 }}>Övningar · set · reps · vikt</span>
+            </button>
+            <button type="button" onClick={() => setShowCardio(true)} className="t3-start-card">
+              <Icon name="activity" size={30} stroke={1.75} />
+              <span style={{ fontSize: 16, fontWeight: 800 }}>Cardio</span>
+              <span style={{ fontSize: 12, color: C.ink3 }}>Löpning · cykel · rodd · m.m.</span>
+            </button>
+          </div>
+
+          <div>
+            <Eyebrow style={{ marginBottom: 10 }}>Mina mallar</Eyebrow>
+            {routines.length === 0 ? (
+              <p style={{ fontSize: 12.5, color: C.ink3, margin: 0 }}>
+                Inga mallar än. Bygg ett styrkepass och tryck <b>Spara som mall</b> för att återanvända det.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {routines.map(r => (
+                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10, border: `0.5px solid ${C.line}`, borderRadius: 10, padding: '10px 12px', background: C.bgSoft }}>
+                    <button type="button" onClick={() => onPickRoutine(r)} style={{ flex: 1, minWidth: 0, textAlign: 'left', border: 'none', background: 'transparent', cursor: 'pointer', font: 'inherit', color: C.ink }}>
+                      <span style={{ display: 'block', fontSize: 14, fontWeight: 700 }}>{r.name}</span>
+                      <span style={{ display: 'block', fontSize: 12, color: C.ink3, marginTop: 1 }}>
+                        {(r.exercises || []).map(e => e.name).slice(0, 3).join(' · ')}{(r.exercises || []).length > 3 ? ' …' : ''}
+                      </span>
+                    </button>
+                    <button type="button" onClick={() => onDeleteRoutine(r.id)} title="Ta bort mall"
+                      style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 4 }}>
+                      <Icon name="trash-2" size={15} stroke={2} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div>
+          <button type="button" onClick={() => setShowCardio(false)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', color: C.ink3, cursor: 'pointer', font: 'inherit', fontSize: 13, fontWeight: 600, marginBottom: 12, padding: 0 }}>
+            <Icon name="chevron-left" size={16} stroke={2} /> Tillbaka
+          </button>
+          <Eyebrow style={{ marginBottom: 10 }}>Välj cardioform</Eyebrow>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {CARDIO_TYPES.map(c => (
+              <button type="button" key={c.id} onClick={() => onPickCardio(c.id)} className="t3-start-card" style={{ padding: '16px 12px' }}>
+                <Icon name={c.icon} size={24} stroke={1.75} />
+                <span style={{ fontSize: 13.5, fontWeight: 700 }}>{c.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActiveWorkout({ session, days, routines, onUpdate, onFinish, onCancel, onSaveTemplate, onDeleteRoutine }) {
+  const C = useC();
+  const s = session;
+  const started = !!s.startedAt;
+  useTicker(started); // re-render every second while a session is running
+
+  // Exercise picker (strength) — reuse the bundled library search.
+  const [picking, setPicking] = useState(false);
+  const [query, setQuery] = useState('');
+  const results = query.trim().length >= 2 ? searchExercises(query) : [];
+
+  // Rest timer (not persisted — purely a live aid).
+  const [rest, setRest] = useState(null); // { endsAt, total }
+  useEffect(() => {
+    if (!rest) return;
+    const t = setInterval(() => {
+      if (Date.now() >= rest.endsAt) setRest(null);
+      else setRest(r => ({ ...r })); // tick
+    }, 250);
+    return () => clearInterval(t);
+  }, [rest]);
+  const restRemaining = rest ? Math.ceil((rest.endsAt - Date.now()) / 1000) : 0;
+  const startRest = (secs = 90) => setRest({ endsAt: Date.now() + secs * 1000, total: secs });
+
+  const elapsedMs = started ? Date.now() - s.startedAt : 0;
+
+  // ── Mutators (each persists via onUpdate) ──────────────────────────────────
+  const beginStrength = (exercises = []) =>
+    onUpdate({ ...s, mode: 'strength', startedAt: Date.now(), exercises });
+  const beginCardio = (cardioType) =>
+    onUpdate({ ...s, mode: 'cardio', startedAt: Date.now(), cardioType, distanceKm: '', kcal: '', avgHr: '' });
+  const beginFromRoutine = (r) =>
+    beginStrength((r.exercises || []).map(e => ({
+      id: uid('ex'), exId: e.exId ?? null, name: e.name,
+      sets: (e.sets && e.sets.length ? e.sets : [{ reps: '', weight: '' }]).map(x => ({ reps: x.reps ?? '', weight: x.weight ?? '', done: false })),
+    })));
+
+  const addExercise = (name, exId) => {
+    const prev = lastExercisePerformance(days, name);
+    const seed = prev ? prev.sets.map(p => ({ reps: '', weight: '', done: false })) : [{ reps: '', weight: '', done: false }];
+    onUpdate({ ...s, exercises: [...(s.exercises || []), { id: uid('ex'), exId: exId ?? null, name, sets: seed }] });
+    setPicking(false); setQuery('');
+  };
+  const updateExercise = (id, next) => onUpdate({ ...s, exercises: s.exercises.map(e => e.id === id ? next : e) });
+  const removeExercise = id => onUpdate({ ...s, exercises: s.exercises.filter(e => e.id !== id) });
+  const setCardioField = (k, v) => onUpdate({ ...s, [k]: v });
+
+  // ── Finish: build a workout object and hand back to the day ────────────────
+  const finish = () => {
+    const durationMin = Math.max(1, Math.round(elapsedMs / 60000));
+    if (s.mode === 'cardio') {
+      const meta = cardioMeta(s.cardioType);
+      onFinish({
+        id: uid('w'), kind: 'Cardio', name: meta.label, cardioType: s.cardioType,
+        durationMin, kcal: Math.round(parseFloat(s.kcal) || 0),
+        distanceKm: parseFloat(s.distanceKm) || 0, avgHr: Math.round(parseFloat(s.avgHr) || 0) || null,
+        tags: [], exercises: [],
+      });
+      return;
+    }
+    const exercises = (s.exercises || []).map(e => ({
+      id: e.id, exId: e.exId, name: e.name, note: e.note || '',
+      sets: (e.sets || [])
+        .filter(x => x.done || Number(x.reps) > 0 || Number(x.weight) > 0)
+        .map(x => ({ reps: Math.round(Number(x.reps) || 0), weight: Number(x.weight) || 0 })),
+    })).filter(e => e.sets.length > 0);
+    onFinish({
+      id: uid('w'), kind: 'Strength', name: s.name || 'Styrkepass',
+      durationMin, kcal: Math.round(parseFloat(s.kcal) || 0), tags: [], exercises,
+    });
+  };
+
+  const exTotal = (s.exercises || []).reduce((a, e) => a + setsVolume(e.sets), 0);
+  const doneSets = (s.exercises || []).reduce((a, e) => a + (e.sets || []).filter(x => x.done).length, 0);
+  const canFinish = s.mode === 'cardio' ? true : (s.exercises || []).some(e => (e.sets || []).some(x => x.done || Number(x.reps) > 0));
+
+  const headerTitle = !started ? 'Starta pass'
+    : s.mode === 'cardio' ? cardioMeta(s.cardioType).label
+    : (s.name || 'Styrkepass');
+
+  return (
+    <div className="t3-active">
+      <div className="t3-active-head">
+        <button type="button" onClick={onCancel} title={started ? 'Avbryt pass' : 'Stäng'}
+          style={{ display: 'inline-flex', border: 'none', background: 'transparent', color: C.ink2, cursor: 'pointer', padding: 6 }}>
+          <Icon name="x" size={20} stroke={2} />
+        </button>
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: C.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{headerTitle}</div>
+          {started && (
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.teal, fontVariantNumeric: 'tabular-nums', marginTop: 1 }}>
+              <Icon name="clock" size={12} stroke={2.5} style={{ verticalAlign: '-1px', marginRight: 4 }} />{fmtClock(elapsedMs)}
+            </div>
+          )}
+        </div>
+        {started ? (
+          <button type="button" onClick={finish} disabled={!canFinish}
+            className="t3-btn t3-btn-primary t3-btn-sm" style={{ opacity: canFinish ? 1 : 0.5 }}>
+            Avsluta
+          </button>
+        ) : <span style={{ width: 32 }} />}
+      </div>
+
+      {!started && (
+        <StartChooser routines={routines}
+          onPickStrength={() => beginStrength([])}
+          onPickCardio={beginCardio}
+          onPickRoutine={beginFromRoutine}
+          onDeleteRoutine={onDeleteRoutine}
+          onClose={onCancel} />
+      )}
+
+      {started && s.mode === 'cardio' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 18px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22 }}>
+          <div style={{ width: 88, height: 88, borderRadius: '50%', background: C.tealMist, color: C.tealDeep, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name={cardioMeta(s.cardioType).icon} size={40} stroke={1.6} />
+          </div>
+          <div style={{ fontSize: 52, fontWeight: 900, letterSpacing: '-0.03em', color: C.ink, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{fmtClock(elapsedMs)}</div>
+          <Eyebrow>Aktiv tid · räknar uppåt</Eyebrow>
+          <div style={{ width: '100%', maxWidth: 360, display: 'grid', gridTemplateColumns: cardioMeta(s.cardioType).distance ? '1fr 1fr' : '1fr', gap: 14, marginTop: 4 }}>
+            {cardioMeta(s.cardioType).distance && (
+              <Field label="Distans (km)">
+                <TextInput type="number" inputMode="decimal" min="0" value={s.distanceKm} placeholder="0" onChange={e => setCardioField('distanceKm', e.target.value)} />
+              </Field>
+            )}
+            <Field label="Kalorier (valfritt)">
+              <TextInput type="number" inputMode="numeric" min="0" value={s.kcal} placeholder="0" onChange={e => setCardioField('kcal', e.target.value)} />
+            </Field>
+            <Field label="Snittpuls (valfritt)" span={cardioMeta(s.cardioType).distance ? 2 : 1}>
+              <TextInput type="number" inputMode="numeric" min="0" value={s.avgHr} placeholder="bpm" onChange={e => setCardioField('avgHr', e.target.value)} />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {started && s.mode === 'strength' && (
+        <>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 96px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input className="t3-input" value={s.name || ''} placeholder="Namnge passet (valfritt)…"
+              onChange={e => onUpdate({ ...s, name: e.target.value })}
+              style={{ fontWeight: 700, fontSize: 15 }} />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 600, color: C.ink3, padding: '0 2px' }}>
+              <span>{doneSets} set klara</span>
+              {exTotal > 0 && <span>Volym {grp(exTotal)} kg</span>}
+            </div>
+
+            {(s.exercises || []).map(ex => (
+              <ActiveExerciseCard key={ex.id} ex={ex}
+                prev={lastExercisePerformance(days, ex.name)}
+                onChange={next => updateExercise(ex.id, next)}
+                onRemove={() => removeExercise(ex.id)}
+                onSetDone={() => startRest(90)} />
+            ))}
+
+            {!picking ? (
+              <div style={{ display: 'flex', gap: 10, marginTop: 2 }}>
+                <Button variant="dark" icon="plus" onClick={() => { setPicking(true); setQuery(''); }} style={{ flex: 1 }}>Lägg till övning</Button>
+                {(s.exercises || []).length > 0 && (
+                  <Button variant="secondary" icon="bookmark" onClick={() => onSaveTemplate(s)} title="Spara som mall">Spara som mall</Button>
+                )}
+              </div>
+            ) : (
+              <div className="t3-search-wrap">
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--color-text-muted)', pointerEvents: 'none' }}>
+                    <Icon name="search" size={15} stroke={2} />
+                  </span>
+                  <TextInput value={query} autoFocus placeholder="Sök övning…" style={{ paddingLeft: 34 }} onChange={e => setQuery(e.target.value)} />
+                  <button type="button" onClick={() => { setPicking(false); setQuery(''); }}
+                    style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: C.ink4, cursor: 'pointer', padding: 4 }}>
+                    <Icon name="x" size={16} stroke={2} />
+                  </button>
+                </div>
+                {query.trim().length >= 2 && (
+                  <div className="t3-search-results" style={{ position: 'static', marginTop: 6, maxHeight: 260 }}>
+                    {results.length === 0 ? (
+                      <button type="button" className="t3-search-item" onClick={() => addExercise(query.trim(), null)}>
+                        <span className="t3-search-name">Lägg till "{query.trim()}"</span>
+                        <span className="t3-search-meta">Egen övning</span>
+                      </button>
+                    ) : results.map(r => (
+                      <button type="button" key={r.id} className="t3-search-item" onClick={() => addExercise(r.name, r.id)}>
+                        <span className="t3-search-name">{r.name}</span>
+                        <span className="t3-search-meta">{r.category}{r.muscles ? ` · ${r.muscles}` : ''}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {rest && restRemaining > 0 && (
+            <RestBar remaining={restRemaining} total={rest.total}
+              onAdd={() => setRest(r => ({ ...r, endsAt: r.endsAt + 30000, total: r.total + 30 }))}
+              onSkip={() => setRest(null)} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout, onStartSession }) {
   const C = useC();
   const workouts = day.workouts;
   const totalMin = workouts.reduce((a,w) => a + (w.durationMin||0), 0);
@@ -1376,8 +1846,9 @@ function TrainingPanel({ day, days, selectedKey, onAddWorkout, onEditWorkout }) 
         ) : workouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => onEditWorkout(w)} />)}
       </div>
 
-      <div style={{ paddingTop: 12 }}>
-        <Button variant="dark" icon="plus" onClick={onAddWorkout}>Logga pass</Button>
+      <div style={{ paddingTop: 12, display: 'flex', gap: 10 }}>
+        <Button variant="dark" icon="flame" onClick={onStartSession} style={{ flex: 1 }}>Starta pass</Button>
+        <Button variant="secondary" icon="plus" onClick={onAddWorkout} title="Logga ett tidigare pass manuellt">Manuellt</Button>
       </div>
     </>
   );
@@ -1780,6 +2251,8 @@ export default function TrackrApp() {
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [units] = useState('kg');
+  const [session, setSession] = useState(null);   // live workout (full-screen)
+  const [routines, setRoutines] = useState([]);    // saved strength templates
 
   const C = mkC(theme === 'dark');
   const store = useStore(profileId);
@@ -1870,6 +2343,42 @@ export default function TrackrApp() {
   };
   const removeWorkout = id => { store.deleteWorkout(selectedKey, id); setModal(null); flash('Pass borttaget', 'trash-2'); };
 
+  // ── Live workout sessions ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!profileId) return;
+    setRoutines(loadRoutines(profileId));
+    setSession(loadActiveSession(profileId));
+  }, [profileId]);
+
+  const startSession = () => { const sess = { profileId, mode: null, startedAt: null }; setSession(sess); saveActiveSession(sess); };
+  const updateSession = next => { setSession(next); saveActiveSession(next); };
+  const cancelSession = () => {
+    if (session?.startedAt && !window.confirm('Avbryt passet? Det du loggat sparas inte.')) return;
+    clearActiveSession(); setSession(null);
+  };
+  const finishSession = workout => {
+    const key = todayKey();
+    store.addWorkout(key, workout);
+    clearActiveSession(); setSession(null);
+    setSelectedKey(key); setTab('training');
+    flash(`${workout.name} loggat`, 'check');
+  };
+  const saveTemplate = sess => {
+    const name = (sess.name || '').trim();
+    if (!name) { flash('Namnge passet först för att spara som mall', 'alert-triangle'); return; }
+    const routine = {
+      id: uid('rt'), name,
+      exercises: (sess.exercises || []).map(e => ({
+        exId: e.exId, name: e.name,
+        sets: (e.sets || []).map(x => ({ reps: Number(x.reps) || 0, weight: Number(x.weight) || 0 })),
+      })),
+    };
+    const next = [...routines.filter(r => r.name.toLowerCase() !== name.toLowerCase()), routine];
+    setRoutines(next); saveRoutines(profileId, next);
+    flash('Sparad som mall', 'bookmark');
+  };
+  const deleteRoutine = id => { const next = routines.filter(r => r.id !== id); setRoutines(next); saveRoutines(profileId, next); };
+
   const stepDay = n => {
     const next = addDays(selectedKey, n);
     if (parseKey(next) <= parseKey(todayKey())) setSelectedKey(next);
@@ -1912,7 +2421,7 @@ export default function TrackrApp() {
               </div>
               {tab === 'food'
                 ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} />
-                : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
+                : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
             </Panel>
 
             <Panel>
@@ -1942,6 +2451,12 @@ export default function TrackrApp() {
         {modal?.type === 'meal' && <MealModal initial={modal.data} recent={recentFoods} favorites={state.favorites} onAddFavorite={f => { store.addFavorite(f); flash('Sparad som favorit', 'star'); }} onRemoveFavorite={store.removeFavorite} onSave={saveMeal} onClose={() => setModal(null)} onDelete={removeMeal} />}
         {modal?.type === 'workout' && <WorkoutModal initial={modal.data} onSave={saveWorkout} onClose={() => setModal(null)} onDelete={removeWorkout} />}
         {modal?.type === 'export' && <ExportModal profileId={profileId} onClose={() => setModal(null)} onDone={() => { setModal(null); flash('Export nedladdad', 'download'); }} />}
+
+        {session && (
+          <ActiveWorkout session={session} days={state.days} routines={routines}
+            onUpdate={updateSession} onFinish={finishSession} onCancel={cancelSession}
+            onSaveTemplate={saveTemplate} onDeleteRoutine={deleteRoutine} />
+        )}
 
         <Toast toast={toast} />
       </div>
