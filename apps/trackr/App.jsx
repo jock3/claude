@@ -170,7 +170,7 @@ const ICON_MAP = {
   'sun': Sun, 'moon': Moon, 'utensils': Utensils, 'dumbbell': Dumbbell,
   'check': Check, 'trash-2': Trash2, 'pencil': Pencil, 'plus': Plus,
   'minus': Minus, 'activity': Activity, 'move': Move, 'trophy': Trophy,
-  'flame': Flame, 'rotate-ccw': RotateCcw, 'log-out': LogOut, 'download': Download,
+  'flame': Flame, 'rotate-ccw': RotateCcw, 'download': Download,
   'alert-triangle': AlertTriangle, 'search': Search, 'loader': Loader, 'barcode': Barcode,
   'star': Star, 'x': X, 'target': Target, 'clock': Clock, 'bike': Bike,
   'footprints': Footprints, 'waves': Waves, 'mountain': Mountain,
