@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { Plus, Trash2, X, Check, Calendar, ChevronDown, LogOut } from 'lucide-react';
+import { Plus, Trash2, X, Check, Calendar } from 'lucide-react';
 import * as db from './db.js';
+import { Sidebar, SidebarStyles } from '../shared/Sidebar.jsx';
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -46,86 +47,6 @@ const countTodos = (todos) => {
   }
   return { done, total };
 };
-
-/* ─── Logo ────────────────────────────────────────────────── */
-
-const Logo = () => (
-  <a href="../../" className="tl-logo" aria-label="Gustav Mattsson — AI Labb">
-    <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
-      <defs>
-        <style>{`
-          .logo-cls-1 { font-size: 193.17px; }
-          .logo-cls-1, .logo-cls-2 {
-            font-family: Montserrat-Bold, Montserrat;
-            font-weight: 700;
-            opacity: .91;
-          }
-          .logo-cls-2 { font-size: 189.12px; }
-        `}</style>
-      </defs>
-      <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
-      <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
-      <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-      <text className="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-      <text className="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
-    </svg>
-  </a>
-);
-
-/* ─── Theme Toggle ────────────────────────────────────────── */
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState(() =>
-    document.documentElement.getAttribute('data-theme') || 'dark'
-  );
-
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('ailabb_theme', next);
-    setTheme(next);
-  };
-
-  return (
-    <button className="tl-theme-toggle" onClick={toggle} aria-label="Byt tema">
-      {theme === 'dark'
-        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      }
-    </button>
-  );
-}
-
-/* ─── User Menu ───────────────────────────────────────────── */
-
-function UserMenu({ activeUser, onSwitch }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    const id = setTimeout(() => document.addEventListener('click', close), 0);
-    return () => { clearTimeout(id); document.removeEventListener('click', close); };
-  }, [open]);
-
-  return (
-    <div className="tl-user-menu" onClick={(e) => e.stopPropagation()}>
-      <button className="tl-user-chip" onClick={() => setOpen(!open)}>
-        <span className="tl-avatar">{activeUser[0].toUpperCase()}</span>
-        <span className="tl-user-name">{activeUser}</span>
-        <ChevronDown size={12} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 200ms' }} />
-      </button>
-      {open && (
-        <div className="tl-user-dropdown">
-          <button onClick={() => { setOpen(false); onSwitch(); }}>
-            <LogOut size={14} />
-            Byt användare
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ─── EditInput ───────────────────────────────────────────── */
 
@@ -689,28 +610,10 @@ export default function TodoLabb() {
   return (
     <>
       <ScopedStyles />
-      <div className="tl-app-root">
-
-        <nav className="tl-top-nav">
-          <Logo />
-          <div className="tl-nav-right">
-            <ul className="tl-menu">
-              <li><a href="../../">Hem</a></li>
-              <li className="tl-has-dropdown">
-                <a href="#" aria-haspopup="true">
-                  Appar <span className="tl-chev" aria-hidden="true">▾</span>
-                </a>
-                <ul className="tl-dropdown" role="menu">
-                  <li role="none"><a href="../todo/" role="menuitem" className="active">Todo</a></li>
-                  <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
-                  <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
-                </ul>
-              </li>
-            </ul>
-            <ThemeToggle />
-            <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
-          </div>
-        </nav>
+      <SidebarStyles />
+      <div className="sb-shell">
+        <Sidebar activeApp="todo" user={activeUser} onSwitchUser={handleSwitch} />
+        <div className="tl-app-root">
 
         <section className="tl-hero">
           <h1>Hej {activeUser}, redo att <span className="hand">labba?</span></h1>
@@ -817,6 +720,7 @@ export default function TodoLabb() {
           </section>
         )}
 
+        </div>
       </div>
 
       {toast && (
@@ -838,15 +742,14 @@ export default function TodoLabb() {
 function ScopedStyles() {
   return (
     <style>{`
-      .tl-app-root, .tl-welcome-root {
-        min-height: 100vh;
-        margin: 0 auto;
+      .tl-app-root {
+        flex: 1;
+        min-width: 0;
+        padding: 40px 48px 96px;
         color: var(--color-text);
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
       }
-      .tl-app-root { max-width: 75%; padding: 32px 24px 96px; }
-      .tl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
 
       .tl-fullscreen-loader {
         min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -854,75 +757,6 @@ function ScopedStyles() {
         font-family: var(--font-body, "Montserrat", sans-serif);
       }
       .tl-loading { color: var(--color-text-faint); font-size: 13px; margin: 0; }
-
-      .tl-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; gap: 16px; }
-      .tl-nav-right { display: flex; align-items: center; gap: 32px; }
-      .tl-logo { display: inline-flex; align-items: center; height: 36px; color: var(--color-text); text-decoration: none; transition: opacity 200ms; border: 0; }
-      .tl-logo:hover { opacity: 0.85; }
-      .tl-logo svg { height: 100%; width: auto; }
-      .tl-menu { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
-      .tl-menu a { font-size: 14px; font-weight: 500; color: var(--color-text-muted); text-decoration: none; transition: color 200ms; position: relative; border: 0; }
-      .tl-menu a:hover, .tl-menu a.active { color: var(--color-text); }
-      .tl-menu a.active::after {
-        content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
-        height: 2px; background: var(--color-red); border-radius: 2px;
-      }
-      .tl-has-dropdown { position: relative; }
-      .tl-has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
-      .tl-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
-      .tl-has-dropdown:hover .tl-chev,
-      .tl-has-dropdown:focus-within .tl-chev { transform: rotate(180deg); }
-      .tl-dropdown {
-        position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
-        list-style: none; margin: 0; padding: 6px;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-        opacity: 0; visibility: hidden; transform: translateY(-4px);
-        transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
-      }
-      .tl-dropdown::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
-      .tl-has-dropdown:hover .tl-dropdown,
-      .tl-has-dropdown:focus-within .tl-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
-      .tl-dropdown li { display: block; }
-      .tl-dropdown a {
-        display: block; padding: 8px 12px; border-radius: 6px;
-        font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0;
-        transition: background 150ms, color 150ms;
-      }
-      .tl-dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
-      .tl-dropdown a::after { display: none; }
-
-      .tl-user-menu { position: relative; }
-      .tl-user-chip {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 5px 12px 5px 5px; border-radius: 999px;
-        border: 1px solid var(--color-border); background: var(--color-surface);
-        color: var(--color-text); font-family: inherit;
-        font-size: 13px; font-weight: 500; cursor: pointer; transition: all 200ms;
-      }
-      .tl-user-chip:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
-      .tl-user-chip .tl-user-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-      .tl-avatar {
-        width: 26px; height: 26px; border-radius: 50%;
-        background: var(--color-red); color: #FFFFFF;
-        font-size: 12px; font-weight: 700;
-        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-      }
-      .tl-user-chip .tl-avatar { width: 22px; height: 22px; font-size: 11px; }
-      .tl-user-dropdown {
-        position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; padding: 6px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06); z-index: 20;
-      }
-      .tl-user-dropdown button {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 9px 12px; background: transparent; border: 0;
-        border-radius: 6px; color: var(--color-text-muted);
-        font-family: inherit; font-size: 13px; font-weight: 500;
-        cursor: pointer; text-align: left; transition: all 200ms;
-      }
-      .tl-user-dropdown button:hover { background: var(--color-surface-2); color: var(--color-text); }
 
       .tl-welcome-nav { margin-bottom: 64px; }
       .tl-welcome-card { flex: 1; display: flex; flex-direction: column; justify-content: center; }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, X, ChevronDown, LogOut } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 import * as db from './db.js';
+import { Sidebar, SidebarStyles } from '../shared/Sidebar.jsx';
 
 /* ─── Constants ───────────────────────────────────────────── */
 
@@ -114,89 +115,6 @@ function newPlatform(start, end) {
   return { name: '', budget: 0, start, end, status: getDefaultPlatformStatus(start) };
 }
 
-
-/* ─── Logo ────────────────────────────────────────────────── */
-
-const Logo = () => (
-  <a href="../../" className="kl-logo" aria-label="Gustav Mattsson — AI Labb">
-    <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
-      <defs>
-        <style>{`
-          .logo-cls-1 { font-size: 193.17px; }
-          .logo-cls-1, .logo-cls-2 {
-            font-family: Montserrat-Bold, Montserrat;
-            font-weight: 700;
-            opacity: .91;
-          }
-          .logo-cls-2 { font-size: 189.12px; }
-        `}</style>
-      </defs>
-      <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
-      <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
-      <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-      <text className="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-      <text className="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
-    </svg>
-  </a>
-);
-
-/* ─── Theme Toggle ────────────────────────────────────────── */
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState(() =>
-    document.documentElement.getAttribute('data-theme') || 'dark'
-  );
-
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('ailabb_theme', next);
-    setTheme(next);
-  };
-
-  return (
-    <button className="kl-theme-toggle" onClick={toggle} aria-label="Byt tema">
-      {theme === 'dark'
-        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      }
-    </button>
-  );
-}
-
-/* ─── User Menu ───────────────────────────────────────────── */
-
-function UserMenu({ activeUser, onSwitch }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = () => setOpen(false);
-    const id = setTimeout(() => document.addEventListener('click', close), 0);
-    return () => {
-      clearTimeout(id);
-      document.removeEventListener('click', close);
-    };
-  }, [open]);
-
-  return (
-    <div className="kl-user-menu" onClick={(e) => e.stopPropagation()}>
-      <button className="kl-user-chip" onClick={() => setOpen(!open)}>
-        <span className="kl-avatar">{activeUser[0].toUpperCase()}</span>
-        <span className="kl-user-name">{activeUser}</span>
-        <ChevronDown size={12} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 200ms' }} />
-      </button>
-      {open && (
-        <div className="kl-user-dropdown">
-          <button onClick={() => { setOpen(false); onSwitch(); }}>
-            <LogOut size={14} />
-            Byt användare
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ─── Campaign Timeline (overall progress bar) ────────────── */
 
@@ -677,28 +595,10 @@ export default function KampanjLabb() {
   return (
     <>
       <ScopedStyles />
-      <div className="kl-app-root">
-
-        <nav className="kl-top-nav">
-          <Logo />
-          <div className="kl-nav-right">
-            <ul className="kl-menu">
-              <li><a href="../../">Hem</a></li>
-              <li className="kl-has-dropdown">
-                <a href="#" aria-haspopup="true">
-                  Appar <span className="kl-chev" aria-hidden="true">▾</span>
-                </a>
-                <ul className="kl-dropdown" role="menu">
-                  <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
-                  <li role="none"><a href="../kampanj/" role="menuitem" className="active">Kampanjplanerare</a></li>
-                  <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
-                </ul>
-              </li>
-            </ul>
-            <ThemeToggle />
-            <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
-          </div>
-        </nav>
+      <SidebarStyles />
+      <div className="sb-shell">
+        <Sidebar activeApp="kampanj" user={activeUser} onSwitchUser={handleSwitch} />
+        <div className="kl-app-root">
 
         <section className="kl-hero">
           <h1>Hej {activeUser}, dags att <span className="hand">planera?</span></h1>
@@ -807,6 +707,7 @@ export default function KampanjLabb() {
           )}
         </section>
 
+        </div>
       </div>
     </>
   );
@@ -817,93 +718,20 @@ export default function KampanjLabb() {
 function ScopedStyles() {
   return (
     <style>{`
-      .kl-app-root, .kl-welcome-root {
-        min-height: 100vh;
-        margin: 0 auto;
+      .kl-app-root {
+        flex: 1;
+        min-width: 0;
+        padding: 40px 48px 96px;
         color: var(--color-text);
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
       }
-      .kl-app-root { max-width: 920px; padding: 32px 24px 96px; }
-      .kl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
 
       .kl-fullscreen-loader {
         min-height: 100vh; display: flex; align-items: center; justify-content: center;
         color: var(--color-text-faint); font-size: 15px;
         font-family: var(--font-body, "Montserrat", sans-serif);
       }
-
-      /* Top nav */
-      .kl-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; gap: 16px; }
-      .kl-nav-right { display: flex; align-items: center; gap: 32px; }
-      .kl-logo { display: inline-flex; align-items: center; height: 36px; color: var(--color-text); text-decoration: none; transition: opacity 200ms; border: 0; }
-      .kl-logo:hover { opacity: 0.85; }
-      .kl-logo svg { height: 100%; width: auto; }
-      .kl-menu { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
-      .kl-menu a { font-size: 14px; font-weight: 500; color: var(--color-text-muted); text-decoration: none; transition: color 200ms; position: relative; border: 0; }
-      .kl-menu a:hover, .kl-menu a.active { color: var(--color-text); }
-      .kl-menu a.active::after {
-        content: ''; position: absolute; left: 0; right: 0; bottom: -6px;
-        height: 2px; background: var(--color-red); border-radius: 2px;
-      }
-      .kl-has-dropdown { position: relative; }
-      .kl-has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
-      .kl-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
-      .kl-has-dropdown:hover .kl-chev,
-      .kl-has-dropdown:focus-within .kl-chev { transform: rotate(180deg); }
-      .kl-dropdown {
-        position: absolute; top: calc(100% + 10px); right: 0; min-width: 180px;
-        list-style: none; margin: 0; padding: 6px;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
-        opacity: 0; visibility: hidden; transform: translateY(-4px);
-        transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
-      }
-      .kl-dropdown::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
-      .kl-has-dropdown:hover .kl-dropdown,
-      .kl-has-dropdown:focus-within .kl-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
-      .kl-dropdown li { display: block; }
-      .kl-dropdown a {
-        display: block; padding: 8px 12px; border-radius: 6px;
-        font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0;
-        transition: background 150ms, color 150ms;
-      }
-      .kl-dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
-      .kl-dropdown a::after { display: none; }
-
-      /* User chip */
-      .kl-user-menu { position: relative; }
-      .kl-user-chip {
-        display: inline-flex; align-items: center; gap: 8px;
-        padding: 5px 12px 5px 5px; border-radius: 999px;
-        border: 1px solid var(--color-border); background: var(--color-surface);
-        color: var(--color-text); font-family: inherit;
-        font-size: 13px; font-weight: 500; cursor: pointer; transition: all 200ms;
-      }
-      .kl-user-chip:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
-      .kl-user-chip .kl-user-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-      .kl-avatar {
-        width: 26px; height: 26px; border-radius: 50%;
-        background: var(--color-red); color: #FFFFFF;
-        font-size: 12px; font-weight: 700;
-        display: inline-flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
-      }
-      .kl-user-chip .kl-avatar { width: 22px; height: 22px; font-size: 11px; }
-      .kl-user-dropdown {
-        position: absolute; top: calc(100% + 8px); right: 0; min-width: 180px;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; padding: 6px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.06); z-index: 20;
-      }
-      .kl-user-dropdown button {
-        display: flex; align-items: center; gap: 10px; width: 100%;
-        padding: 9px 12px; background: transparent; border: 0;
-        border-radius: 6px; color: var(--color-text-muted);
-        font-family: inherit; font-size: 13px; font-weight: 500;
-        cursor: pointer; text-align: left; transition: all 200ms;
-      }
-      .kl-user-dropdown button:hover { background: var(--color-surface-2); color: var(--color-text); }
 
       /* Welcome */
       .kl-welcome-nav { margin-bottom: 64px; }

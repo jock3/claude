@@ -1,6 +1,7 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target, Clock, Bike, Footprints, Waves, Mountain, CheckCircle2, Bookmark, MoreVertical, PersonStanding } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target, Clock, Bike, Footprints, Waves, Mountain, CheckCircle2, Bookmark, MoreVertical, PersonStanding } from 'lucide-react';
+import { Sidebar, SidebarStyles } from '../shared/Sidebar.jsx';
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
@@ -10,8 +11,8 @@ import { searchExercises } from './exercises.js';
 function ScopedStyles() {
   return (
     <style>{`
-      .t3-root { font-family: var(--font-body, 'Montserrat', sans-serif); min-height: 100vh; background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased; }
-      .t3-stage { max-width: 1480px; margin: 0 auto; padding: 28px 28px 64px; display: flex; flex-direction: column; gap: 18px; min-height: 100vh; }
+      .t3-root { font-family: var(--font-body, 'Montserrat', sans-serif); min-height: 100vh; background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased; display: flex; }
+      .t3-stage { flex: 1; min-width: 0; padding: 28px 28px 64px; display: flex; flex-direction: column; gap: 18px; min-height: 100vh; }
 
       .t3-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
       .t3-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -2198,7 +2199,7 @@ function BrandMark() {
   );
 }
 
-function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, onExport, onUpdateGoals, onLogout }) {
+function Header({ selectedKey, onStep, onToday, onExport, onUpdateGoals }) {
   const C = useC();
   const rel = fmtRelative(selectedKey);
   const d = parseKey(selectedKey);
@@ -2208,32 +2209,19 @@ function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, 
 
   return (
     <header className="t3-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-        <BrandMark />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-          <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', color: C.ink }}>
-            Track<span style={{ color: C.teal }}>3</span>r
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.ink3 }}>Tracking hub</span>
-        </div>
+      <div className="t3-datesel">
+        <IconButton icon="chevron-left" label="Föregående dag" onClick={() => onStep(-1)} size={30} />
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 158, lineHeight: 1.15 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>{rel || weekday}</span>
+          <span style={{ fontSize: 11, color: C.ink3 }}>{dateStr}</span>
+        </span>
+        <IconButton icon="chevron-right" label="Nästa dag" onClick={() => onStep(1)} size={30}
+          style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
       </div>
-
       <div className="t3-header-right">
-        <div className="t3-datesel">
-          <IconButton icon="chevron-left" label="Föregående dag" onClick={() => onStep(-1)} size={30} />
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 158, lineHeight: 1.15 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>{rel || weekday}</span>
-            <span style={{ fontSize: 11, color: C.ink3 }}>{dateStr}</span>
-          </span>
-          <IconButton icon="chevron-right" label="Nästa dag" onClick={() => onStep(1)} size={30}
-            style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
-        </div>
         {!isToday && <Button variant="secondary" size="sm" onClick={onToday}>Idag</Button>}
         <Button variant="secondary" size="sm" icon="target" onClick={onUpdateGoals}>Uppdatera mål</Button>
         <Button variant="secondary" size="sm" icon="download" onClick={onExport}>Exportera</Button>
-        <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label="Växla tema" onClick={onToggleTheme} size={36} />
-        <IconButton icon="log-out" label="Byt användare" onClick={onLogout} size={36} />
-        <span className="t3-avatar" title={userName}>{(userName || '?').slice(0,2).toUpperCase()}</span>
       </div>
     </header>
   );
@@ -2601,10 +2589,11 @@ export default function TrackrApp() {
     <CC.Provider value={C}>
       <div className="t3-root">
         <ScopedStyles />
+        <SidebarStyles />
+        <Sidebar activeApp="trackr" user={userName} onSwitchUser={logout} theme={theme} onToggleTheme={toggleTheme} />
         <div className="t3-stage">
           <Header selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
-            theme={theme} onToggleTheme={toggleTheme} userName={userName}
-            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} onLogout={logout} />
+            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 

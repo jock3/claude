@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Check, AlertTriangle, X } from 'lucide-react';
+import { Sidebar, SidebarStyles } from '../shared/Sidebar.jsx';
 
 /* ─── Helpers ─────────────────────────────────────────────── */
 
@@ -156,53 +157,6 @@ const SCAN_MESSAGES = [
   'Sammanställer rapport…',
 ];
 
-/* ─── Logo ─────────────────────────────────────────────────── */
-
-const Logo = () => (
-  <a href="../../" className="sa-logo" aria-label="Gustav Mattsson — AI Labb">
-    <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
-      <defs>
-        <style>{`
-          .logo-cls-1 { font-size: 193.17px; }
-          .logo-cls-1, .logo-cls-2 {
-            font-family: Montserrat-Bold, Montserrat;
-            font-weight: 700;
-            opacity: .91;
-          }
-          .logo-cls-2 { font-size: 189.12px; }
-        `}</style>
-      </defs>
-      <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
-      <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
-      <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-      <text className="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-      <text className="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
-    </svg>
-  </a>
-);
-
-/* ─── Theme Toggle ─────────────────────────────────────────── */
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState(() =>
-    document.documentElement.getAttribute('data-theme') || 'dark'
-  );
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('ailabb_theme', next);
-    setTheme(next);
-  };
-  return (
-    <button className="sa-theme-toggle" onClick={toggle} aria-label="Byt tema">
-      {theme === 'dark'
-        ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-        : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      }
-    </button>
-  );
-}
-
 /* ─── Check Section ─────────────────────────────────────────── */
 
 function CheckSection({ title, checks, visibleFrom, visibleCount }) {
@@ -291,27 +245,10 @@ export default function SeoAuditApp() {
   return (
     <>
       <ScopedStyles />
-      <div className="sa-root">
-
-        <nav className="sa-top-nav">
-          <Logo />
-          <div className="sa-nav-right">
-            <ul className="sa-menu">
-              <li><a href="../../">Hem</a></li>
-              <li className="sa-has-dropdown">
-                <a href="#" aria-haspopup="true">
-                  Appar <span className="sa-chev" aria-hidden="true">▾</span>
-                </a>
-                <ul className="sa-dropdown" role="menu">
-                  <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
-                  <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
-                  <li role="none"><a href="../seo-audit/" role="menuitem" className="active">SEO & GEO-granskning</a></li>
-                </ul>
-              </li>
-            </ul>
-            <ThemeToggle />
-          </div>
-        </nav>
+      <SidebarStyles />
+      <div className="sb-shell">
+        <Sidebar activeApp="seo" />
+        <div className="sa-root">
 
         {phase === 'idle' && (
           <div className="sa-hero">
@@ -388,6 +325,7 @@ export default function SeoAuditApp() {
           </div>
         )}
 
+        </div>
       </div>
     </>
   );
@@ -399,47 +337,13 @@ function ScopedStyles() {
   return (
     <style>{`
       .sa-root {
-        min-height: 100vh;
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 32px 24px 96px;
+        flex: 1;
+        min-width: 0;
+        padding: 40px 48px 96px;
         color: var(--color-text);
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
       }
-
-      /* ── Nav ── */
-      .sa-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 56px; gap: 16px; }
-      .sa-nav-right { display: flex; align-items: center; gap: 32px; }
-      .sa-logo { display: inline-flex; align-items: center; height: 36px; color: var(--color-text); text-decoration: none; transition: opacity 200ms; border: 0; }
-      .sa-logo:hover { opacity: 0.85; }
-      .sa-logo svg { height: 100%; width: auto; }
-      .sa-menu { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
-      .sa-menu a { font-size: 14px; font-weight: 500; color: var(--color-text-muted); text-decoration: none; transition: color 200ms; position: relative; border: 0; }
-      .sa-menu a:hover, .sa-menu a.active { color: var(--color-text); }
-      .sa-menu a.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--color-accent); border-radius: 2px; }
-      .sa-has-dropdown { position: relative; }
-      .sa-has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
-      .sa-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
-      .sa-has-dropdown:hover .sa-chev,
-      .sa-has-dropdown:focus-within .sa-chev { transform: rotate(180deg); }
-      .sa-dropdown {
-        position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px;
-        list-style: none; margin: 0; padding: 6px;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.14);
-        opacity: 0; visibility: hidden; transform: translateY(-4px);
-        transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20;
-      }
-      .sa-dropdown::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
-      .sa-has-dropdown:hover .sa-dropdown,
-      .sa-has-dropdown:focus-within .sa-dropdown { opacity: 1; visibility: visible; transform: translateY(0); }
-      .sa-dropdown li { display: block; }
-      .sa-dropdown a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0; transition: background 150ms, color 150ms; }
-      .sa-dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
-      .sa-dropdown a::after { display: none; }
-      .sa-theme-toggle { background: transparent; border: 0; color: var(--color-text-muted); padding: 6px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: color 200ms, background 200ms; }
-      .sa-theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); }
 
       /* ── Hero ── */
       .sa-hero { text-align: center; padding: 32px 24px 64px; max-width: 640px; margin: 0 auto; }
