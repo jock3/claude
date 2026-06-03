@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { LogOut, ChevronDown } from 'lucide-react';
+import { LogOut, ChevronDown, CheckSquare, Megaphone, Globe, Activity } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { key: 'todo',    label: 'Todo',             href: '../todo/' },
-  { key: 'kampanj', label: 'Kampanjplanerare', href: '../kampanj/' },
-  { key: 'seo',     label: 'GEO och SEO',      href: '../seo-audit/' },
-  { key: 'trackr',  label: 'Track3r',           href: '../trackr/' },
+  { key: 'todo',    label: 'Todo',             shortLabel: 'Todo',    href: '../todo/',       Icon: CheckSquare },
+  { key: 'kampanj', label: 'Kampanjplanerare', shortLabel: 'Kampanj', href: '../kampanj/',    Icon: Megaphone },
+  { key: 'seo',     label: 'GEO och SEO',      shortLabel: 'SEO',     href: '../seo-audit/', Icon: Globe },
+  { key: 'trackr',  label: 'Track3r',           shortLabel: 'Track3r', href: '../trackr/',    Icon: Activity },
 ];
 
 const SunIcon = () => (
@@ -87,7 +87,9 @@ export function SidebarStyles() {
         flex: 1;
       }
       .sb-nav a {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         padding: 8px 12px;
         border-radius: 8px;
         font-size: 13.5px;
@@ -97,6 +99,7 @@ export function SidebarStyles() {
         border: 0;
         transition: background 140ms, color 140ms;
       }
+      .sb-nav a svg { flex-shrink: 0; }
       .sb-nav a:hover { background: var(--color-surface-2); color: var(--color-text); }
       .sb-nav a.sb-active {
         background: var(--color-surface-2);
@@ -159,6 +162,43 @@ export function SidebarStyles() {
         text-align: left; transition: all 180ms;
       }
       .sb-user-dropdown button:hover { background: var(--color-surface-2); color: var(--color-text); }
+
+      /* ── Mobile bottom nav ── */
+      .sb-mobile-nav {
+        display: none;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border);
+        z-index: 100;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
+      .sb-mobile-nav-inner {
+        display: flex;
+        height: 60px;
+      }
+      .sb-mob-link {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: var(--color-text-muted);
+        text-decoration: none;
+        font-size: 10px;
+        font-weight: 500;
+        border: 0;
+        transition: color 140ms;
+      }
+      .sb-mob-link:hover, .sb-mob-link.sb-mob-active { color: var(--color-text); }
+      .sb-mob-link svg { flex-shrink: 0; }
+
+      @media (max-width: 640px) {
+        .sb-sidebar { display: none; }
+        .sb-shell { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0)); }
+        .sb-mobile-nav { display: block; }
+      }
     `}</style>
   );
 }
@@ -169,49 +209,65 @@ export function Sidebar({ activeApp, user, onSwitchUser, theme, onToggleTheme })
   const closeUser = () => setUserOpen(false);
 
   return (
-    <aside className="sb-sidebar" onClick={userOpen ? closeUser : undefined}>
-      <a href="../../" className="sb-logo-link" aria-label="Gustav Mattsson — AI Labb">
-        <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
-          <defs>
-            <style>{`.logo-cls-1{font-size:193.17px}.logo-cls-1,.logo-cls-2{font-family:Montserrat-Bold,Montserrat;font-weight:700;opacity:.91}.logo-cls-2{font-size:189.12px}`}</style>
-          </defs>
-          <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
-          <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
-          <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-          <text className="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-          <text className="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
-        </svg>
-      </a>
+    <>
+      <aside className="sb-sidebar" onClick={userOpen ? closeUser : undefined}>
+        <a href="../../" className="sb-logo-link" aria-label="Gustav Mattsson — AI Labb">
+          <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
+            <defs>
+              <style>{`.logo-cls-1{font-size:193.17px}.logo-cls-1,.logo-cls-2{font-family:Montserrat-Bold,Montserrat;font-weight:700;opacity:.91}.logo-cls-2{font-size:189.12px}`}</style>
+            </defs>
+            <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
+            <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
+            <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
+            <text className="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+            <text className="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+          </svg>
+        </a>
 
-      <ul className="sb-nav">
-        {NAV_ITEMS.map(({ key, label, href }) => (
-          <li key={key}>
-            <a href={href} className={activeApp === key ? 'sb-active' : ''}>{label}</a>
-          </li>
-        ))}
-      </ul>
+        <ul className="sb-nav">
+          {NAV_ITEMS.map(({ key, label, href, Icon }) => (
+            <li key={key}>
+              <a href={href} className={activeApp === key ? 'sb-active' : ''}>
+                <Icon size={16} />
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
 
-      <div className="sb-bottom">
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+        <div className="sb-bottom">
+          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 
-        {user && (
-          <div className="sb-user" onClick={e => e.stopPropagation()}>
-            <button className="sb-row-btn" onClick={() => setUserOpen(o => !o)}>
-              <span className="sb-avatar">{user[0].toUpperCase()}</span>
-              <span className="sb-user-name">{user}</span>
-              <ChevronDown size={12} style={{ flexShrink: 0, transform: userOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms' }} />
-            </button>
-            {userOpen && (
-              <div className="sb-user-dropdown">
-                <button onClick={() => { setUserOpen(false); onSwitchUser?.(); }}>
-                  <LogOut size={14} />
-                  Byt användare
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </aside>
+          {user && (
+            <div className="sb-user" onClick={e => e.stopPropagation()}>
+              <button className="sb-row-btn" onClick={() => setUserOpen(o => !o)}>
+                <span className="sb-avatar">{user[0].toUpperCase()}</span>
+                <span className="sb-user-name">{user}</span>
+                <ChevronDown size={12} style={{ flexShrink: 0, transform: userOpen ? 'rotate(180deg)' : 'none', transition: 'transform 180ms' }} />
+              </button>
+              {userOpen && (
+                <div className="sb-user-dropdown">
+                  <button onClick={() => { setUserOpen(false); onSwitchUser?.(); }}>
+                    <LogOut size={14} />
+                    Byt användare
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      <nav className="sb-mobile-nav" aria-label="Appnavigering">
+        <div className="sb-mobile-nav-inner">
+          {NAV_ITEMS.map(({ key, shortLabel, href, Icon }) => (
+            <a key={key} href={href} className={`sb-mob-link${activeApp === key ? ' sb-mob-active' : ''}`}>
+              <Icon size={22} />
+              <span>{shortLabel}</span>
+            </a>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 }
