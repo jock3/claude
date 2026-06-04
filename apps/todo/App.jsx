@@ -704,6 +704,7 @@ export default function TodoLabb() {
                   <li role="none"><a href="../todo/" role="menuitem" className="active">Todo</a></li>
                   <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
                   <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
+                  <li role="none"><a href="../trackr/" role="menuitem">Track3r</a></li>
                 </ul>
               </li>
             </ul>

@@ -1,6 +1,6 @@
 // Track3r — Tracking Hub
 import { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { ChevronLeft, ChevronRight, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target, Clock, Bike, Footprints, Waves, Mountain, CheckCircle2, Bookmark, MoreVertical, PersonStanding } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Sun, Moon, Utensils, Dumbbell, Check, Trash2, Pencil, Plus, Minus, Activity, Move, Trophy, Flame, RotateCcw, LogOut, Download, AlertTriangle, Search, Loader, Barcode, Star, X, Target, Clock, Bike, Footprints, Waves, Mountain, CheckCircle2, Bookmark, MoreVertical, PersonStanding } from 'lucide-react';
 import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
@@ -60,8 +60,8 @@ function ScopedStyles() {
 
       .t3-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: opacity 120ms, box-shadow 120ms, background 120ms; white-space: nowrap; text-decoration: none; }
       .t3-btn:active { opacity: 0.85; }
-      .t3-btn-primary { background: var(--color-link); color: #fff; border-color: var(--color-link); }
-      .t3-btn-primary:hover { opacity: 0.9; }
+      .t3-btn-primary { background: var(--color-accent); color: var(--color-text-inverse); border-color: var(--color-accent); }
+      .t3-btn-primary:hover { background: var(--color-accent-hover); opacity: 1; }
       .t3-btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-border); }
       .t3-btn-secondary:hover { background: var(--color-surface-2, rgba(128,128,128,0.06)); }
       .t3-btn-ghost { background: transparent; color: var(--color-text-muted); border-color: transparent; }
@@ -124,12 +124,50 @@ function ScopedStyles() {
       @keyframes t3-sheet { from { opacity: 0; transform: translateY(10px) scale(0.99) } to { opacity: 1; transform: none } }
       @keyframes t3-toast { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
 
+      /* Top nav */
+      .t3-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 16px; }
+      .t3-nav-right { display: flex; align-items: center; gap: 32px; }
+      .t3-logo { display: inline-flex; align-items: center; height: 36px; color: var(--color-text); text-decoration: none; transition: opacity 200ms; border: 0; }
+      .t3-logo:hover { opacity: 0.85; }
+      .t3-logo svg { height: 100%; width: auto; }
+      .t3-nav-menu { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
+      .t3-nav-menu a { font-size: 14px; font-weight: 500; color: var(--color-text-muted); text-decoration: none; transition: color 200ms; position: relative; border: 0; padding-bottom: 4px; }
+      .t3-nav-menu a:hover, .t3-nav-menu a.active { color: var(--color-text); }
+      .t3-nav-menu a.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--color-accent); border-radius: 2px; }
+      .t3-has-dd { position: relative; }
+      .t3-has-dd > a { display: inline-flex; align-items: center; gap: 6px; }
+      .t3-nav-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
+      .t3-has-dd:hover .t3-nav-chev, .t3-has-dd:focus-within .t3-nav-chev { transform: rotate(180deg); }
+      .t3-nav-dd { position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px; list-style: none; margin: 0; padding: 6px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20; }
+      .t3-nav-dd::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
+      .t3-has-dd:hover .t3-nav-dd, .t3-has-dd:focus-within .t3-nav-dd { opacity: 1; visibility: visible; transform: translateY(0); }
+      .t3-nav-dd li { display: block; }
+      .t3-nav-dd a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0; transition: background 150ms, color 150ms; }
+      .t3-nav-dd a:hover, .t3-nav-dd a.active { background: var(--color-surface-2); color: var(--color-text); }
+      .t3-nav-dd a::after { display: none; }
+      .t3-theme-btn { background: transparent; border: none; color: var(--color-text-muted); padding: 6px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: color 200ms, background 200ms; }
+      .t3-theme-btn:hover { color: var(--color-text); background: var(--color-surface-2, rgba(128,128,128,0.08)); }
+      .t3-user-wrap { position: relative; }
+      .t3-user-chip2 { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 200ms; }
+      .t3-user-chip2:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
+      .t3-avatar-sm { width: 22px; height: 22px; border-radius: 50%; background: var(--color-accent); color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+      .t3-chip-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+      .t3-user-dd2 { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); padding: 4px; z-index: 50; }
+      .t3-user-dd2 button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--color-text-muted); cursor: pointer; transition: all 150ms; }
+      .t3-user-dd2 button:hover { background: var(--color-surface-2); color: var(--color-text); }
+      /* Date bar */
+      .t3-date-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      .t3-date-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+
       @media (max-width: 1060px) {
         .t3-main { grid-template-columns: 1fr; }
         .t3-panel { min-height: auto; }
       }
       @media (max-width: 680px) {
         .t3-stage { padding: 16px 16px 48px; gap: 14px; }
+        .t3-top-nav { margin-bottom: 16px; }
+        .t3-nav-right { gap: 16px; }
+        .t3-nav-menu { gap: 16px; }
         .t3-summary { gap: 12px 16px; }
         .t3-summary .t3-vsplit { display: none; }
         .t3-summary-spacer { flex-basis: 100%; height: 0; }
@@ -2198,7 +2236,82 @@ function BrandMark() {
   );
 }
 
-function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, onExport, onUpdateGoals, onLogout }) {
+function Logo() {
+  return (
+    <a href="../../" className="t3-logo" aria-label="Gustav Mattsson — AI Labb">
+      <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
+        <defs>
+          <style>{`
+            .t3-logo-cls-1 { font-size: 193.17px; }
+            .t3-logo-cls-1, .t3-logo-cls-2 { font-family: Montserrat-Bold, Montserrat; font-weight: 700; opacity: .91; }
+            .t3-logo-cls-2 { font-size: 189.12px; }
+          `}</style>
+        </defs>
+        <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
+        <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
+        <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
+        <text className="t3-logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+        <text className="t3-logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+      </svg>
+    </a>
+  );
+}
+
+function TopNav({ theme, onToggleTheme, userName, onLogout }) {
+  const [userOpen, setUserOpen] = useState(false);
+
+  useEffect(() => {
+    if (!userOpen) return;
+    const close = () => setUserOpen(false);
+    const id = setTimeout(() => document.addEventListener('click', close), 0);
+    return () => { clearTimeout(id); document.removeEventListener('click', close); };
+  }, [userOpen]);
+
+  return (
+    <nav className="t3-top-nav">
+      <Logo />
+      <div className="t3-nav-right">
+        <ul className="t3-nav-menu">
+          <li><a href="../../">Hem</a></li>
+          <li className="t3-has-dd">
+            <a href="#" aria-haspopup="true">
+              Appar <span className="t3-nav-chev" aria-hidden="true">▾</span>
+            </a>
+            <ul className="t3-nav-dd" role="menu">
+              <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
+              <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
+              <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
+              <li role="none"><a href="../trackr/" role="menuitem" className="active">Track3r</a></li>
+            </ul>
+          </li>
+        </ul>
+        <button className="t3-theme-btn" onClick={onToggleTheme} aria-label="Byt tema">
+          {theme === 'dark'
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          }
+        </button>
+        <div className="t3-user-wrap" onClick={(e) => e.stopPropagation()}>
+          <button className="t3-user-chip2" onClick={() => setUserOpen(!userOpen)}>
+            <span className="t3-avatar-sm">{(userName || '?').slice(0, 2).toUpperCase()}</span>
+            <span className="t3-chip-name">{userName}</span>
+            <ChevronDown size={12} style={{ transform: userOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 200ms' }} />
+          </button>
+          {userOpen && (
+            <div className="t3-user-dd2">
+              <button onClick={() => { setUserOpen(false); onLogout(); }}>
+                <LogOut size={14} />
+                Byt användare
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function DateBar({ selectedKey, onStep, onToday, onExport, onUpdateGoals }) {
   const C = useC();
   const rel = fmtRelative(selectedKey);
   const d = parseKey(selectedKey);
@@ -2207,35 +2320,22 @@ function Header({ selectedKey, onStep, onToday, theme, onToggleTheme, userName, 
   const isToday = selectedKey === todayKey();
 
   return (
-    <header className="t3-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-        <BrandMark />
-        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-          <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: '-0.02em', color: C.ink }}>
-            Track<span style={{ color: C.teal }}>3</span>r
-          </span>
-          <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: C.ink3 }}>Tracking hub</span>
-        </div>
+    <div className="t3-date-bar">
+      <div className="t3-datesel">
+        <IconButton icon="chevron-left" label="Föregående dag" onClick={() => onStep(-1)} size={30} />
+        <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 158, lineHeight: 1.15 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>{rel || weekday}</span>
+          <span style={{ fontSize: 11, color: C.ink3 }}>{dateStr}</span>
+        </span>
+        <IconButton icon="chevron-right" label="Nästa dag" onClick={() => onStep(1)} size={30}
+          style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
       </div>
-
-      <div className="t3-header-right">
-        <div className="t3-datesel">
-          <IconButton icon="chevron-left" label="Föregående dag" onClick={() => onStep(-1)} size={30} />
-          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 158, lineHeight: 1.15 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.ink }}>{rel || weekday}</span>
-            <span style={{ fontSize: 11, color: C.ink3 }}>{dateStr}</span>
-          </span>
-          <IconButton icon="chevron-right" label="Nästa dag" onClick={() => onStep(1)} size={30}
-            style={{ opacity: isToday ? 0.35 : 1, pointerEvents: isToday ? 'none' : 'auto' }} />
-        </div>
-        {!isToday && <Button variant="secondary" size="sm" onClick={onToday}>Idag</Button>}
+      {!isToday && <Button variant="secondary" size="sm" onClick={onToday}>Idag</Button>}
+      <div className="t3-date-bar-right">
         <Button variant="secondary" size="sm" icon="target" onClick={onUpdateGoals}>Uppdatera mål</Button>
         <Button variant="secondary" size="sm" icon="download" onClick={onExport}>Exportera</Button>
-        <IconButton icon={theme === 'dark' ? 'sun' : 'moon'} label="Växla tema" onClick={onToggleTheme} size={36} />
-        <IconButton icon="log-out" label="Byt användare" onClick={onLogout} size={36} />
-        <span className="t3-avatar" title={userName}>{(userName || '?').slice(0,2).toUpperCase()}</span>
       </div>
-    </header>
+    </div>
   );
 }
 
@@ -2602,9 +2702,9 @@ export default function TrackrApp() {
       <div className="t3-root">
         <ScopedStyles />
         <div className="t3-stage">
-          <Header selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
-            theme={theme} onToggleTheme={toggleTheme} userName={userName}
-            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} onLogout={logout} />
+          <TopNav theme={theme} onToggleTheme={toggleTheme} userName={userName} onLogout={logout} />
+          <DateBar selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
+            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 
