@@ -25,113 +25,123 @@
     .page {
       min-height: 100vh;
       display: flex;
+    }
+
+    /* ─── Sidebar ─── */
+    .hp-sidebar {
+      width: 216px;
+      flex-shrink: 0;
+      display: flex;
       flex-direction: column;
-      padding: var(--sp-6) var(--sp-8);
-      max-width: 1400px;
-      margin: 0 auto;
+      padding: 22px 10px;
+      border-right: 1px solid var(--color-border);
+      background: var(--color-surface);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      box-sizing: border-box;
     }
-
-    /* ─── Nav ─── */
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: var(--sp-6);
-    }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      height: 40px;
+    .hp-logo-link {
+      display: block;
+      height: 32px;
       color: var(--color-text);
-      border: 0;
       text-decoration: none;
-      transition: opacity var(--dur-base) var(--ease-out);
+      border: 0;
+      margin: 0 8px 28px;
+      opacity: 0.9;
+      transition: opacity 200ms;
     }
-    .logo:hover { opacity: 0.85; }
-    .logo svg { height: 100%; width: auto; display: block; }
-
-    .nav-right { display: flex; align-items: center; gap: var(--sp-5); }
-
-    .menu {
-      display: flex;
-      gap: var(--sp-7);
+    .hp-logo-link:hover { opacity: 0.65; }
+    .hp-logo-link svg { height: 100%; width: auto; display: block; }
+    .hp-nav {
       list-style: none;
       margin: 0;
       padding: 0;
-      align-items: center;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
     }
-    .menu a {
+    .hp-nav a {
+      display: block;
+      padding: 8px 12px;
+      border-radius: 8px;
       font-family: var(--font-display);
-      font-size: var(--fs-sm);
+      font-size: 13.5px;
       font-weight: var(--fw-medium);
       color: var(--color-text-muted);
       text-decoration: none;
       border: 0;
-      letter-spacing: 0.02em;
-      transition: color var(--dur-base) var(--ease-out);
-      position: relative;
-      padding-bottom: 4px;
+      transition: background 140ms, color 140ms;
     }
-    .menu a:hover { color: var(--color-text); }
-    .menu a.active { color: var(--color-text); }
-    .menu a.active::after {
-      content: '';
-      position: absolute;
-      left: 0; right: 0; bottom: -2px;
-      height: 2px;
-      background: var(--color-accent);
-      border-radius: 2px;
+    .hp-nav a:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .hp-bottom {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
     }
-
-    .has-dropdown { position: relative; }
-    .has-dropdown > a { display: inline-flex; align-items: center; gap: 6px; }
-    .chev { font-size: 9px; line-height: 1; transition: transform var(--dur-base) var(--ease-out); }
-    .has-dropdown:hover .chev,
-    .has-dropdown:focus-within .chev { transform: rotate(180deg); }
-
-    .dropdown {
+    .hp-row-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 0;
+      background: transparent;
+      color: var(--color-text-muted);
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: var(--fw-medium);
+      cursor: pointer;
+      text-align: left;
+      transition: background 140ms, color 140ms;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .hp-row-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .hp-user { position: relative; }
+    .hp-user-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .hp-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--color-accent); color: #FFF;
+      font-size: 11px; font-weight: var(--fw-bold);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .hp-user-dropdown {
       position: absolute;
-      top: calc(100% + 10px); right: 0;
-      min-width: 200px;
-      list-style: none; margin: 0; padding: 6px;
+      bottom: calc(100% + 6px);
+      left: 0; right: 0;
       background: var(--color-surface);
       border: 1px solid var(--color-border);
-      border-radius: var(--r-md);
-      box-shadow: var(--shadow-lg);
-      opacity: 0; visibility: hidden; transform: translateY(-4px);
-      transition: opacity var(--dur-base) var(--ease-out),
-                  visibility var(--dur-base) var(--ease-out),
-                  transform var(--dur-base) var(--ease-out);
-      z-index: 10;
+      border-radius: 10px;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+      z-index: 50;
     }
-    .dropdown::before {
-      content: ''; position: absolute;
-      top: -10px; left: 0; right: 0; height: 10px;
+    .hp-user-dropdown button {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 9px 12px;
+      background: transparent; border: 0; border-radius: 6px;
+      color: var(--color-text-muted); font-family: var(--font-display);
+      font-size: 13px; font-weight: var(--fw-medium); cursor: pointer;
+      text-align: left; transition: all 180ms;
     }
-    .has-dropdown:hover .dropdown,
-    .has-dropdown:focus-within .dropdown {
-      opacity: 1; visibility: visible; transform: translateY(0);
-    }
-    .dropdown li { display: block; }
-    .dropdown a {
-      display: block; padding: 8px 12px;
-      border-radius: var(--r-sm);
-      font-size: var(--fs-sm); font-weight: var(--fw-medium);
-      color: var(--color-text-muted); border: 0;
-      transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
-    }
-    .dropdown a:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .hp-user-dropdown button:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .hp-user-dropdown .btn-danger-text:hover { color: var(--color-accent) !important; background: var(--color-surface-2); }
 
-    /* ─── Theme toggle ─── */
-    .theme-toggle {
-      background: transparent; border: 0;
-      color: var(--color-text-muted);
-      padding: 6px; border-radius: var(--r-sm);
-      cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-      transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+    /* ─── Main content area ─── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      padding: var(--sp-6) var(--sp-8);
     }
-    .theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); }
 
     /* ─── Hero ─── */
     .hero {
@@ -314,24 +324,22 @@
 
     /* ─── Mobile ─── */
     @media (max-width: 900px) {
-      .page { padding: var(--sp-5) var(--sp-5); }
+      .hp-sidebar { width: 180px; }
+      .main-content { padding: var(--sp-5) var(--sp-5); }
       .hero { padding-top: var(--sp-6); }
     }
-    @media (max-width: 540px) {
+    @media (max-width: 600px) {
+      .hp-sidebar { display: none; }
       .headline { font-size: 26px; }
-      .menu { gap: var(--sp-4); }
       .pin-input { width: 48px; height: 52px; font-size: 18px; }
-    }
-    @media (max-width: 400px) {
-      .logo svg { height: 32px; }
     }
   </style>
 </head>
 <body>
   <div class="page">
 
-    <nav>
-      <a href="/" class="logo" aria-label="Gustav Mattsson — AI Labb">
+    <aside class="hp-sidebar">
+      <a href="/" class="hp-logo-link" aria-label="Gustav Mattsson — AI Labb">
         <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
           <defs>
             <style>
@@ -352,28 +360,41 @@
         </svg>
       </a>
 
-      <div class="nav-right">
-        <ul class="menu">
-          <li><a href="/" class="active">Hem</a></li>
-          <li class="has-dropdown">
-            <a href="#" aria-haspopup="true" aria-expanded="false">
-              Appar <span class="chev" aria-hidden="true">▾</span>
-            </a>
-            <ul class="dropdown" role="menu">
-              <li role="none"><a href="./apps/todo/" role="menuitem">Todo</a></li>
-              <li role="none"><a href="./apps/kampanj/" role="menuitem">Kampanjplanerare</a></li>
-              <li role="none"><a href="./apps/seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
-              <li role="none"><a href="./apps/trackr/" role="menuitem">Track3r</a></li>
-            </ul>
-          </li>
-        </ul>
-        <button class="theme-toggle" id="theme-toggle-btn" aria-label="Byt tema">
+      <ul class="hp-nav">
+        <li><a href="./apps/todo/">Todo</a></li>
+        <li><a href="./apps/kampanj/">Kampanjplanerare</a></li>
+        <li><a href="./apps/seo-audit/">GEO och SEO</a></li>
+        <li><a href="./apps/trackr/">Track3r</a></li>
+      </ul>
+
+      <div class="hp-bottom">
+        <button class="hp-row-btn" id="theme-toggle-btn" aria-label="Byt tema">
           <svg id="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
           <svg id="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span id="theme-label">Ljust läge</span>
         </button>
-      </div>
-    </nav>
 
+        <div class="hp-user" id="sidebar-user" hidden>
+          <button class="hp-row-btn" id="sidebar-user-btn" aria-expanded="false">
+            <span class="hp-avatar" id="sidebar-avatar"></span>
+            <span class="hp-user-name" id="sidebar-user-name"></span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transition:transform 180ms" id="sidebar-chev"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="hp-user-dropdown" id="sidebar-user-dropdown" hidden>
+            <button id="sidebar-logout-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Byt användare
+            </button>
+            <button id="sidebar-delete-btn" class="btn-danger-text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Ta bort konto
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-content">
     <main class="hero">
       <p class="eyebrow">AI · Experiment · Verktyg</p>
       <h1 class="headline">Välkommen till mitt<span class="hand-accent">AI labb!</span></h1>
@@ -440,6 +461,7 @@
         </div>
       </section>
     </main>
+    </div>
 
   </div>
 
@@ -449,6 +471,8 @@
       function updateIcons(theme) {
         document.getElementById('icon-sun').style.display  = theme === 'dark'  ? '' : 'none';
         document.getElementById('icon-moon').style.display = theme === 'light' ? '' : 'none';
+        var lbl = document.getElementById('theme-label');
+        if (lbl) lbl.textContent = theme === 'dark' ? 'Ljust läge' : 'Mörkt läge';
       }
       var current = document.documentElement.getAttribute('data-theme') || 'dark';
       updateIcons(current);
@@ -556,12 +580,27 @@
       document.getElementById('login-section').hidden = !!user;
       document.getElementById('loggedin-section').hidden = !user;
 
+      var sidebarUser = document.getElementById('sidebar-user');
+      sidebarUser.hidden = !user;
+
       if (user) {
         document.getElementById('user-name').textContent = user;
         document.getElementById('user-avatar').textContent = user[0].toUpperCase();
+        document.getElementById('sidebar-user-name').textContent = user;
+        document.getElementById('sidebar-avatar').textContent = user[0].toUpperCase();
       } else {
+        closeSidebarDropdown();
         resetLoginForm();
       }
+    }
+
+    function closeSidebarDropdown() {
+      var dd = document.getElementById('sidebar-user-dropdown');
+      var btn = document.getElementById('sidebar-user-btn');
+      var chev = document.getElementById('sidebar-chev');
+      if (dd) dd.hidden = true;
+      if (btn) btn.setAttribute('aria-expanded', 'false');
+      if (chev) chev.style.transform = '';
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -596,6 +635,26 @@
       document.getElementById('login-btn').addEventListener('click', handleSubmit);
       document.getElementById('logout-btn').addEventListener('click', logout);
       document.getElementById('delete-btn').addEventListener('click', deleteAccount);
+
+      /* Sidebar user dropdown */
+      document.getElementById('sidebar-user-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        var dd = document.getElementById('sidebar-user-dropdown');
+        var chev = document.getElementById('sidebar-chev');
+        var open = !dd.hidden;
+        dd.hidden = open;
+        this.setAttribute('aria-expanded', String(!open));
+        chev.style.transform = open ? '' : 'rotate(180deg)';
+      });
+      document.getElementById('sidebar-logout-btn').addEventListener('click', function() {
+        closeSidebarDropdown();
+        logout();
+      });
+      document.getElementById('sidebar-delete-btn').addEventListener('click', function() {
+        closeSidebarDropdown();
+        deleteAccount();
+      });
+      document.addEventListener('click', function() { closeSidebarDropdown(); });
 
       render();
     });
