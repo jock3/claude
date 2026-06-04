@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Check, AlertTriangle, X } from 'lucide-react';
 
-/* ─── Helpers ─────────────────────────────────────────────── */
+/* ─── URL helpers ────────────────────────────────────────── */
 
 function normalizeUrl(raw) {
   const s = raw.trim();
@@ -11,130 +11,379 @@ function normalizeUrl(raw) {
     const u = new URL(withProto);
     if (!u.hostname.includes('.')) return null;
     return u.origin;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function domainOf(url) {
   try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return url; }
 }
 
-function seedOf(url) {
-  let h = 0;
-  for (let i = 0; i < url.length; i++) h = (h * 31 + url.charCodeAt(i)) & 0xffffffff;
-  return Math.abs(h);
+/* ─── Network ────────────────────────────────────────────── */
+
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+async function proxyFetch(url, ms = 10000) {
+  const res = await fetch(`${PROXY}${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(ms) });
+  if (!res.ok) throw new Error(`proxy ${res.status}`);
+  const j = await res.json();
+  return j.contents ?? '';
 }
 
-function buildChecks(url) {
-  const seed = seedOf(url);
+async function getHtml(origin) {
+  return proxyFetch(origin, 12000);
+}
+
+async function getRobots(origin) {
+  try { return await proxyFetch(`${origin}/robots.txt`, 8000); }
+  catch { return null; }
+}
+
+async function getSitemap(origin, robotsTxt) {
+  const candidates = [];
+  if (robotsTxt) {
+    for (const m of robotsTxt.matchAll(/^Sitemap:\s*(.+)$/gim)) candidates.push(m[1].trim());
+  }
+  candidates.push(`${origin}/sitemap.xml`, `${origin}/sitemap_index.xml`);
+  for (const u of candidates.slice(0, 3)) {
+    try {
+      const xml = await proxyFetch(u, 6000);
+      if (xml && (xml.includes('<urlset') || xml.includes('<sitemapindex'))) return true;
+    } catch {}
+  }
+  return false;
+}
+
+async function getPageSpeed(url) {
+  try {
+    const endpoint =
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed` +
+      `?url=${encodeURIComponent(url)}&strategy=mobile&category=performance&category=seo`;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(25000) });
+    if (!res.ok) return null;
+    return res.json();
+  } catch { return null; }
+}
+
+/* ─── HTML analysis ──────────────────────────────────────── */
+
+function parseHtml(html, origin) {
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const hostname = new URL(origin).hostname;
+
+    const title    = doc.querySelector('title')?.textContent?.trim() ?? '';
+    const metaDesc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() ?? '';
+
+    const h1s  = doc.querySelectorAll('h1');
+    const h2s  = doc.querySelectorAll('h2');
+    const imgs = [...doc.querySelectorAll('img')];
+    const imgsNoAlt = imgs.filter(img => !img.getAttribute('alt')?.trim());
+
+    const allLinks = [...doc.querySelectorAll('a[href]')];
+    const internalLinks = allLinks.filter(a => {
+      const h = a.getAttribute('href') ?? '';
+      return h.startsWith('/') || h.startsWith('#') || h.includes(hostname);
+    });
+    const outboundLinks = allLinks.filter(a => {
+      const h = a.getAttribute('href') ?? '';
+      return h.startsWith('http') && !h.includes(hostname);
+    });
+
+    const canonical = !!doc.querySelector('link[rel="canonical"]');
+
+    // Schema.org JSON-LD
+    const schemas = [];
+    for (const s of doc.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        const p = JSON.parse(s.textContent);
+        if (Array.isArray(p)) schemas.push(...p); else schemas.push(p);
+      } catch {}
+    }
+    const schemaTypes = schemas.flatMap(s => {
+      const t = s['@type'];
+      return Array.isArray(t) ? t : t ? [t] : [];
+    });
+    const hasOrg     = schemaTypes.some(t => ['Organization','LocalBusiness','Corporation','Brand'].includes(t));
+    const hasWebSite = schemaTypes.includes('WebSite');
+    const hasFAQSchema = schemaTypes.some(t => ['FAQPage','Question'].includes(t));
+    const hasSameAs  = schemas.some(s => s.sameAs);
+    const hasKGLinks = schemas.some(s => {
+      const str = JSON.stringify(s);
+      return str.includes('wikidata.org') || str.includes('wikipedia.org') || str.includes('google.com/maps');
+    });
+
+    // E-E-A-T
+    const hasAuthor = !!doc.querySelector('[rel="author"],.author,[itemprop="author"],.byline')
+                    || schemas.some(s => s.author);
+    const hasAbout  = allLinks.some(a => {
+      const h = (a.getAttribute('href') ?? '').toLowerCase();
+      const t = (a.textContent ?? '').toLowerCase();
+      return h.includes('about') || h.includes('om-') || t.includes('om oss') || t === 'about';
+    });
+    const hasDate   = !!doc.querySelector('time,[itemprop="datePublished"],[itemprop="dateModified"]')
+                    || schemas.some(s => s.datePublished || s.dateModified);
+    const eeatCount = [hasAuthor, hasAbout, hasDate].filter(Boolean).length;
+
+    // AI readability
+    const hasSemantic         = !!doc.querySelector('article,main,section,header,footer,nav');
+    const hasHeadingHierarchy = h1s.length > 0 && h2s.length > 0;
+
+    // FAQ (with or without schema)
+    const htmlLower     = html.toLowerCase();
+    const hasFAQContent = hasFAQSchema
+      || htmlLower.includes('faq')
+      || htmlLower.includes('vanliga frågor')
+      || htmlLower.includes('frequently asked');
+
+    return {
+      title, titleLen: title.length,
+      metaDesc, metaLen: metaDesc.length,
+      h1Count: h1s.length, h2Count: h2s.length,
+      imgCount: imgs.length, imgsNoAltCount: imgsNoAlt.length,
+      internalLinkCount: internalLinks.length,
+      outboundCount: outboundLinks.length,
+      canonical,
+      schemaTypes, hasOrg, hasWebSite, hasFAQSchema, hasSameAs, hasKGLinks,
+      eeatCount, hasAuthor, hasAbout, hasDate,
+      hasSemantic, hasHeadingHierarchy,
+      hasFAQContent,
+    };
+  } catch { return null; }
+}
+
+/* ─── Check builder ──────────────────────────────────────── */
+
+function buildChecks(url, h, ps, robotsTxt, hasSitemap) {
   const isHttps = url.startsWith('https://');
-  const s2 = seed % 2 === 0;
-  const s3 = seed % 3 === 0;
 
-  const seo = [
-    {
-      label: 'HTTPS & säkerhet',
-      ...(isHttps
-        ? { status: 'pass', note: 'Sidan är krypterad med HTTPS. Sökmotorer prioriterar säkra sidor.' }
-        : { status: 'fail', note: 'HTTPS saknas. Google rankar ner osäkra sidor och besökare möts av säkerhetsvarningar i webbläsaren.' }),
-    },
-    {
-      label: 'Sidtiteloptimering',
-      status: 'warn',
-      note: 'Titeln uppvisar möjligheter för förbättrad nyckelordsstrategi. En optimerad titel kan öka klickfrekvensen med 20–30 %.',
-    },
-    {
-      label: 'Meta-beskrivning',
-      status: 'fail',
-      note: 'Ingen optimerad meta-beskrivning hittades. Det är det första en besökare läser i sökresultaten — utan den förlorar du klick.',
-    },
-    {
-      label: 'Core Web Vitals',
-      status: 'warn',
-      note: 'Prestandadata indikerar förseningar som påverkar din Google-rankning. Core Web Vitals är en direkt rankingfaktor sedan 2021.',
-    },
-    {
-      label: 'Mobiloptimering',
-      status: 'pass',
-      note: 'Grundläggande mobilanpassning är på plats.',
-    },
-    {
-      label: 'Rubrikstruktur (H1–H6)',
-      ...(s2
-        ? { status: 'warn', note: 'Rubrikhierarkin har oklarheter som försvårar för sökmotorer att identifiera sidans primära ämne.' }
-        : { status: 'fail', note: 'H1-strukturen saknas eller är inkonsekvent. Rubriker är sökmotorernas karta till ditt innehåll.' }),
-    },
-    {
-      label: 'Alt-attribut för bilder',
-      status: 'fail',
-      note: 'Bilder utan alt-text hittades. Det skadar synligheten i bildsök och är en känd rankingsignal hos Google.',
-    },
-    {
-      label: 'Intern länkstruktur',
-      status: 'warn',
-      note: 'Intern länkning kan förstärkas avsevärt. En genomtänkt struktur distribuerar auktoritet och guidar sökmotorer djupare in.',
-    },
-    {
-      label: 'Sitemap & Robots.txt',
-      ...(s3
-        ? { status: 'fail', note: 'Ingen XML-sitemap hittades. Utan den har sökmotorer svårt att crawla och indexera hela din webbplats.' }
-        : { status: 'warn', note: 'Sitemap är detekterad men robots.txt har inkonsekvenser som kan begränsa indexeringen av nyckelsidor.' }),
-    },
-    {
-      label: 'Kanoniska URL:er',
-      status: 'warn',
-      note: 'Kanonisk konfiguration saknas på nyckelsidor, vilket ökar risken för duplicerat-innehåll-problem som sänker rankning.',
-    },
-  ];
+  // PageSpeed values
+  const audits = ps?.lighthouseResult?.audits ?? {};
+  const lcp  = audits['largest-contentful-paint']?.numericValue;
+  const cls  = audits['cumulative-layout-shift']?.numericValue;
+  const tbt  = audits['total-blocking-time']?.numericValue;
+  const vp   = audits['viewport']?.score;
+  const perf = ps?.categories?.performance?.score;
 
-  const geo = [
-    {
-      label: 'Strukturerad data (Schema.org)',
-      status: 'fail',
-      note: 'Ingen strukturerad data-markup hittades. AI-assistenter som ChatGPT och Perplexity förlitar sig på detta för att förstå och citera ditt innehåll.',
-    },
-    {
-      label: 'E-E-A-T-signaler',
-      status: 'warn',
-      note: 'Signaler för Erfarenhet, Expertis, Auktoritet och Trovärdighet är otydliga — avgörande för AI-synlighet och Googles Quality Raters.',
-    },
-    {
-      label: 'AI-läsbart innehållsformat',
-      status: 'warn',
-      note: 'Innehållet är inte strukturerat för hur generativa AI-motorer extraherar svar. Utan rätt format väljs konkurrenter framför dig.',
-    },
-    {
-      label: 'Varumärkesentitet',
-      status: 'fail',
-      note: 'Varumärket är inte etablerat som en tydlig entitet i Googles kunskapsgraf. AI-modeller citerar entiteter de känner igen — inte anonyma domäner.',
-    },
-    {
-      label: 'FAQ & direktsvarsformat',
-      status: 'fail',
-      note: 'Inget FAQ- eller direktsvarsformat hittades. Det är ett av de vanligaste sätten AI-motorer väljer sidor att lyfta fram i sina svar.',
-    },
-    {
-      label: 'Innehållsaktualitet',
-      ...(s2
-        ? { status: 'warn', note: 'Aktualitetssignaler är otydliga. AI-motorer prefererar sidor med tydliga och nyliga publiceringsdatum.' }
-        : { status: 'pass', note: 'Publiceringssignaler är synliga, vilket bidrar positivt till AI-citerbarhet.' }),
-    },
-    {
-      label: 'Knowledge Graph-närvaro',
-      status: 'fail',
-      note: 'Ingen detekterbar närvaro i Googles Knowledge Graph — en central faktor för om AI omnämner ditt varumärke i svar.',
-    },
-    {
-      label: 'Citerbarhet',
-      status: 'warn',
-      note: 'Innehållsstrukturen gör det svårt för AI att extrahera citerbara fakta. Utan citerbar struktur väljs din sida bort till förmån för andra.',
-    },
-  ];
+  const cwvArr = [
+    lcp !== undefined ? (lcp < 2500 ? 'pass' : lcp < 4000 ? 'warn' : 'fail') : null,
+    cls !== undefined ? (cls < 0.1  ? 'pass' : cls < 0.25 ? 'warn' : 'fail') : null,
+    tbt !== undefined ? (tbt < 200  ? 'pass' : tbt < 600  ? 'warn' : 'fail') : null,
+  ].filter(Boolean);
+  const cwvStatus = !cwvArr.length ? 'warn'
+    : cwvArr.every(s => s === 'pass') ? 'pass'
+    : cwvArr.some(s => s === 'fail') ? 'fail' : 'warn';
+
+  const mobileStatus = !ps ? 'warn'
+    : vp !== 1 ? 'fail'
+    : perf >= 0.9 ? 'pass' : 'warn';
+
+  const titleStatus = !h ? 'warn'
+    : h.titleLen === 0 ? 'fail'
+    : (h.titleLen >= 30 && h.titleLen <= 60) ? 'pass' : 'warn';
+
+  const metaStatus = !h ? 'warn'
+    : h.metaLen === 0 ? 'fail'
+    : (h.metaLen >= 70 && h.metaLen <= 160) ? 'pass' : 'warn';
+
+  const h1Status = !h ? 'warn'
+    : h.h1Count === 0 ? 'fail'
+    : h.h1Count === 1 ? 'pass' : 'warn';
+
+  const altStatus = !h || h.imgCount === 0 ? 'pass'
+    : h.imgsNoAltCount === 0 ? 'pass'
+    : h.imgsNoAltCount / h.imgCount < 0.3 ? 'warn' : 'fail';
+
+  const linkStatus = !h ? 'warn'
+    : h.internalLinkCount >= 5 ? 'pass'
+    : h.internalLinkCount >= 2 ? 'warn' : 'fail';
+
+  const sitemapStatus = (!robotsTxt && !hasSitemap) ? 'fail'
+    : (robotsTxt && hasSitemap) ? 'pass' : 'warn';
+
+  const canonicalStatus = !h ? 'warn' : h.canonical ? 'pass' : 'warn';
+
+  const schemaStatus = !h ? 'warn'
+    : h.schemaTypes.length === 0 ? 'fail'
+    : (h.hasOrg || h.hasWebSite) ? 'pass' : 'warn';
+
+  const eeatStatus = !h ? 'warn'
+    : h.eeatCount >= 2 ? 'pass'
+    : h.eeatCount === 1 ? 'warn' : 'fail';
+
+  const aiStatus = !h ? 'warn'
+    : (h.hasSemantic && h.hasHeadingHierarchy) ? 'pass'
+    : (h.hasSemantic || h.hasHeadingHierarchy) ? 'warn' : 'fail';
+
+  const brandStatus = !h ? 'warn'
+    : (h.hasOrg && h.hasSameAs) ? 'pass'
+    : h.hasOrg ? 'warn' : 'fail';
+
+  const faqStatus = !h ? 'warn'
+    : h.hasFAQSchema ? 'pass'
+    : h.hasFAQContent ? 'warn' : 'fail';
+
+  const freshnessStatus = !h ? 'warn' : h.hasDate ? 'pass' : 'fail';
+
+  const kgStatus = !h ? 'warn'
+    : h.hasKGLinks ? 'pass'
+    : h.hasOrg ? 'warn' : 'fail';
+
+  const citationStatus = !h ? 'warn'
+    : h.outboundCount >= 3 ? 'pass'
+    : h.outboundCount > 0 ? 'warn' : 'fail';
+
+  const noHtml = 'Sidans HTML kunde inte hämtas för analys.';
 
   return [
-    ...seo.map(c => ({ ...c, category: 'SEO' })),
-    ...geo.map(c => ({ ...c, category: 'GEO' })),
+    {
+      category: 'SEO', label: 'HTTPS & säkerhet',
+      status: isHttps ? 'pass' : 'fail',
+      note: isHttps
+        ? 'Sidan är krypterad med HTTPS. Sökmotorer prioriterar säkra sidor.'
+        : 'HTTPS saknas. Google rankar ner osäkra sidor och besökare möts av säkerhetsvarningar.',
+    },
+    {
+      category: 'SEO', label: 'Sidtiteloptimering',
+      status: titleStatus,
+      note: !h ? noHtml
+        : h.titleLen === 0 ? 'Ingen titel-tagg hittades — en av de viktigaste SEO-faktorerna.'
+        : h.titleLen < 30 ? `Titeln är för kort (${h.titleLen} tecken). Rekommenderat: 30–60 tecken.`
+        : h.titleLen > 60 ? `Titeln trunkeras i sökresultaten (${h.titleLen} tecken). Håll den under 60 tecken.`
+        : `Titeln är väloptimerad (${h.titleLen} tecken).`,
+    },
+    {
+      category: 'SEO', label: 'Meta-beskrivning',
+      status: metaStatus,
+      note: !h ? noHtml
+        : h.metaLen === 0 ? 'Ingen meta-beskrivning hittades. Det är det första en besökare läser i sökresultaten.'
+        : h.metaLen < 70 ? `Meta-beskrivningen är kort (${h.metaLen} tecken). Rekommenderat: 70–160 tecken.`
+        : h.metaLen > 160 ? `Meta-beskrivningen trunkeras (${h.metaLen} tecken). Håll den under 160 tecken.`
+        : `Meta-beskrivningen är väloptimerad (${h.metaLen} tecken).`,
+    },
+    {
+      category: 'SEO', label: 'Core Web Vitals',
+      status: cwvStatus,
+      note: !ps ? 'Prestandadata kunde inte hämtas från Google PageSpeed Insights.'
+        : [
+            lcp !== undefined && `LCP ${(lcp / 1000).toFixed(1)}s`,
+            cls !== undefined && `CLS ${cls.toFixed(3)}`,
+            tbt !== undefined && `TBT ${Math.round(tbt)}ms`,
+          ].filter(Boolean).join(' · ')
+          + (cwvStatus === 'pass' ? ' — Alla Core Web Vitals godkända.'
+           : cwvStatus === 'warn' ? ' — Vissa värden behöver förbättras. Core Web Vitals är en direkt rankingfaktor sedan 2021.'
+           : ' — Core Web Vitals underkänns och påverkar din Google-rankning negativt.'),
+    },
+    {
+      category: 'SEO', label: 'Mobiloptimering',
+      status: mobileStatus,
+      note: !ps ? 'Mobildata kunde inte hämtas.'
+        : vp !== 1 ? 'Viewport-metatag saknas — sidan är troligen inte mobilanpassad, vilket är ett krav för god rankning.'
+        : perf >= 0.9 ? `Mobiloptimering godkänd (${Math.round(perf * 100)}/100 i Google PageSpeed).`
+        : `Viewport är korrekt men mobilprestandan (${Math.round((perf ?? 0) * 100)}/100) har förbättringspotential.`,
+    },
+    {
+      category: 'SEO', label: 'Rubrikstruktur (H1–H6)',
+      status: h1Status,
+      note: !h ? noHtml
+        : h.h1Count === 0 ? 'Ingen H1-rubrik hittades. H1 är sökmotorernas primära signal för sidans ämne.'
+        : h.h1Count > 1 ? `${h.h1Count} H1-rubriker hittades. En sida ska ha exakt en H1 för tydlig hierarki.`
+        : `Korrekt H1-struktur med ${h.h2Count} H2-rubriker som stödjer innehållshierarkin.`,
+    },
+    {
+      category: 'SEO', label: 'Alt-attribut för bilder',
+      status: altStatus,
+      note: !h ? noHtml
+        : h.imgCount === 0 ? 'Inga bilder hittades på sidan.'
+        : h.imgsNoAltCount === 0 ? `Alla ${h.imgCount} bilder har alt-text. Bra för bildsök och tillgänglighet.`
+        : `${h.imgsNoAltCount} av ${h.imgCount} bilder saknar alt-text — skadar synligheten i bildsök.`,
+    },
+    {
+      category: 'SEO', label: 'Intern länkstruktur',
+      status: linkStatus,
+      note: !h ? noHtml
+        : h.internalLinkCount < 2 ? `${h.internalLinkCount} intern(a) länk(ar) hittades. En genomtänkt intern länkstruktur distribuerar auktoritet och förbättrar crawlbarhet.`
+        : h.internalLinkCount < 5 ? `${h.internalLinkCount} interna länkar — förbättringspotential för djupare crawling.`
+        : `${h.internalLinkCount} interna länkar hittades. God intern länkstruktur.`,
+    },
+    {
+      category: 'SEO', label: 'Sitemap & Robots.txt',
+      status: sitemapStatus,
+      note: !robotsTxt && !hasSitemap
+        ? 'Varken robots.txt eller XML-sitemap hittades. Sökmotorer får svårt att crawla och indexera sajten.'
+        : !hasSitemap ? 'Robots.txt finns men ingen XML-sitemap hittades. En sitemap hjälper sökmotorer indexera alla sidor.'
+        : !robotsTxt ? 'XML-sitemap hittades men robots.txt saknas.'
+        : 'Både robots.txt och XML-sitemap hittades. Sökmotorer kan crawla sajten effektivt.',
+    },
+    {
+      category: 'SEO', label: 'Kanoniska URL:er',
+      status: canonicalStatus,
+      note: !h ? noHtml
+        : h.canonical ? 'Kanonisk URL är konfigurerad — minskar risken för duplicerat-innehåll.'
+        : 'Ingen kanonisk URL-tag hittades. Det ökar risken för duplicerat-innehåll som kan sänka rankning.',
+    },
+    {
+      category: 'GEO', label: 'Strukturerad data (Schema.org)',
+      status: schemaStatus,
+      note: !h ? noHtml
+        : h.schemaTypes.length === 0 ? 'Ingen strukturerad data hittades. AI-assistenter förlitar sig på Schema.org för att förstå och citera ditt innehåll.'
+        : (h.hasOrg || h.hasWebSite) ? `Schema-typer hittades: ${[...new Set(h.schemaTypes)].join(', ')}. Bra grund för AI-synlighet.`
+        : `Schema hittades (${[...new Set(h.schemaTypes)].join(', ')}) men saknar Organization/WebSite-markup som AI-motorer prioriterar.`,
+    },
+    {
+      category: 'GEO', label: 'E-E-A-T-signaler',
+      status: eeatStatus,
+      note: !h ? noHtml
+        : h.eeatCount >= 2 ? `${h.eeatCount}/3 E-E-A-T-signaler hittades (författare, om-sida, datum). Googles Quality Raters och AI-motorer värdesätter dessa högt.`
+        : h.eeatCount === 1 ? 'Svaga E-E-A-T-signaler. Expertis, auktoritet och trovärdighet avgör om AI-motorer väljer att citera dig.'
+        : 'Inga E-E-A-T-signaler hittades. Utan dessa riskerar du att bedömas som opålitlig källa av både Google och AI.',
+    },
+    {
+      category: 'GEO', label: 'AI-läsbart innehållsformat',
+      status: aiStatus,
+      note: !h ? noHtml
+        : (h.hasSemantic && h.hasHeadingHierarchy) ? 'Semantisk HTML och tydlig rubrikhierarki — bra förutsättningar för att AI-motorer ska extrahera och citera innehållet.'
+        : h.hasSemantic ? 'Semantisk HTML används men rubrikhierarkin är otydlig. Tydliga rubriker hjälper AI extrahera svar.'
+        : 'Innehållet saknar semantisk HTML-struktur. Utan den väljer AI-motorer ofta konkurrenter framför dig.',
+    },
+    {
+      category: 'GEO', label: 'Varumärkesentitet',
+      status: brandStatus,
+      note: !h ? noHtml
+        : (h.hasOrg && h.hasSameAs) ? 'Varumärket är etablerat som entitet med sameAs-kopplingar. AI-modeller kan identifiera och citera varumärket.'
+        : h.hasOrg ? 'Organization-schema finns men saknar sameAs-kopplingar till externa källor — det begränsar AI:s förmåga att känna igen varumärket.'
+        : 'Ingen varumärkesentitet hittades. AI-modeller citerar entiteter de känner igen, inte anonyma domäner.',
+    },
+    {
+      category: 'GEO', label: 'FAQ & direktsvarsformat',
+      status: faqStatus,
+      note: !h ? noHtml
+        : h.hasFAQSchema ? 'FAQPage-schema hittades — ett av de vanligaste sätten AI-motorer väljer sidor att lyfta fram i sina svar.'
+        : h.hasFAQContent ? 'FAQ-liknande innehåll hittades utan FAQPage-schema. Strukturerad data maximerar synligheten i AI-svar.'
+        : 'Inget FAQ-format hittades. FAQ är ett av de effektivaste formaten för att synas i AI-genererade svar.',
+    },
+    {
+      category: 'GEO', label: 'Innehållsaktualitet',
+      status: freshnessStatus,
+      note: !h ? noHtml
+        : h.hasDate ? 'Datum-signaler är synliga på sidan. AI-motorer prefererar sidor med tydliga och nyliga publiceringsdatum.'
+        : 'Inga datum-signaler hittades. AI-motorer prefererar sidor med tydliga datum vid val av källor att citera.',
+    },
+    {
+      category: 'GEO', label: 'Knowledge Graph-närvaro',
+      status: kgStatus,
+      note: !h ? noHtml
+        : h.hasKGLinks ? 'Kopplingar till externa kunskapsbaser (Wikidata, Wikipedia m.fl.) hittades — stärker närvaron i Googles Knowledge Graph.'
+        : h.hasOrg ? 'Organization-schema finns men saknar sameAs-kopplingar till Wikipedia/Wikidata som bygger Knowledge Graph-närvaro.'
+        : 'Inga Knowledge Graph-signaler hittades — en central faktor för om AI nämner ditt varumärke i svar.',
+    },
+    {
+      category: 'GEO', label: 'Citerbarhet',
+      status: citationStatus,
+      note: !h ? noHtml
+        : h.outboundCount >= 3 ? `${h.outboundCount} utgående länkar till externa källor hittades — god citerbarhetsprofil.`
+        : h.outboundCount > 0 ? `${h.outboundCount} utgående länk(ar) till externa källor. Fler välrefererade källor stärker trovärdigheten.`
+        : 'Inga utgående länkar till externa källor hittades. Innehåll utan referenser är svårare för AI att citera.',
+    },
   ];
 }
 
@@ -143,20 +392,28 @@ function calcScore(checks) {
   return Math.round((pts / checks.length) * 100);
 }
 
-/* ─── Scan messages ─────────────────────────────────────────── */
+/* ─── Scan messages ──────────────────────────────────────── */
 
 const SCAN_MESSAGES = [
   'Ansluter till webbplatsen…',
+  'Hämtar sidkod…',
   'Analyserar HTML-struktur…',
   'Kontrollerar meta-taggar…',
-  'Utvärderar sidhastighet…',
-  'Granskar länkstruktur…',
-  'Analyserar GEO-signaler…',
+  'Kör prestandaanalys via Google…',
+  'Analyserar Core Web Vitals…',
+  'Kontrollerar mobiloptimering…',
+  'Analyserar rubrikstruktur…',
+  'Kontrollerar bilder & alt-texter…',
+  'Söker efter robots.txt…',
+  'Söker efter XML-sitemap…',
+  'Analyserar strukturerad data…',
+  'Utvärderar E-E-A-T-signaler…',
   'Kontrollerar AI-synlighet…',
+  'Söker Knowledge Graph-signaler…',
   'Sammanställer rapport…',
 ];
 
-/* ─── Logo ─────────────────────────────────────────────────── */
+/* ─── Logo ───────────────────────────────────────────────── */
 
 const Logo = () => (
   <a href="../../" className="sa-logo" aria-label="Gustav Mattsson — AI Labb">
@@ -181,7 +438,7 @@ const Logo = () => (
   </a>
 );
 
-/* ─── Theme Toggle ─────────────────────────────────────────── */
+/* ─── Theme Toggle ───────────────────────────────────────── */
 
 function ThemeToggle() {
   const [theme, setTheme] = useState(() =>
@@ -203,7 +460,7 @@ function ThemeToggle() {
   );
 }
 
-/* ─── Check Section ─────────────────────────────────────────── */
+/* ─── Check Section ──────────────────────────────────────── */
 
 function CheckSection({ title, checks, visibleFrom, visibleCount }) {
   return (
@@ -229,7 +486,7 @@ function CheckSection({ title, checks, visibleFrom, visibleCount }) {
   );
 }
 
-/* ─── Main App ─────────────────────────────────────────────── */
+/* ─── Main App ───────────────────────────────────────────── */
 
 export default function SeoAuditApp() {
   const [url, setUrl]               = useState('');
@@ -240,16 +497,14 @@ export default function SeoAuditApp() {
   const [visibleCount, setVisibleCount] = useState(0);
   const [scannedUrl, setScannedUrl] = useState('');
 
+  // Cycle scan messages while scanning
   useEffect(() => {
     if (phase !== 'scanning') return;
-    const msgInterval = setInterval(() => setMsgIdx(i => (i + 1) % SCAN_MESSAGES.length), 450);
-    const done = setTimeout(() => {
-      clearInterval(msgInterval);
-      setPhase('done');
-    }, 2800);
-    return () => { clearInterval(msgInterval); clearTimeout(done); };
+    const iv = setInterval(() => setMsgIdx(i => (i + 1) % SCAN_MESSAGES.length), 1100);
+    return () => clearInterval(iv);
   }, [phase]);
 
+  // Stagger-reveal results when done
   useEffect(() => {
     if (phase !== 'done') return;
     setVisibleCount(0);
@@ -262,7 +517,7 @@ export default function SeoAuditApp() {
     return () => clearInterval(iv);
   }, [phase, checks.length]);
 
-  function handleStart() {
+  async function handleStart() {
     const norm = normalizeUrl(url);
     if (!norm) {
       setUrlError('Ange en giltig webbadress, t.ex. dindomän.se eller https://dindomän.se');
@@ -270,9 +525,22 @@ export default function SeoAuditApp() {
     }
     setUrlError('');
     setScannedUrl(norm);
-    setChecks(buildChecks(norm));
     setPhase('scanning');
     setMsgIdx(0);
+
+    try {
+      const [htmlStr, ps, robotsTxt] = await Promise.all([
+        getHtml(norm).catch(() => null),
+        getPageSpeed(norm),
+        getRobots(norm),
+      ]);
+      const hasSitemap = await getSitemap(norm, robotsTxt).catch(() => false);
+      const htmlData   = htmlStr ? parseHtml(htmlStr, norm) : null;
+      setChecks(buildChecks(norm, htmlData, ps, robotsTxt, hasSitemap));
+      setPhase('done');
+    } catch {
+      setPhase('error');
+    }
   }
 
   function handleReset() {
@@ -283,10 +551,10 @@ export default function SeoAuditApp() {
     setVisibleCount(0);
   }
 
-  const score = phase === 'done' ? calcScore(checks) : 0;
-  const scoreColor = score >= 70 ? 'var(--color-success)' : score >= 45 ? 'var(--color-warn)' : 'var(--color-accent)';
-  const seoChecks = checks.filter(c => c.category === 'SEO');
-  const geoChecks = checks.filter(c => c.category === 'GEO');
+  const score       = phase === 'done' ? calcScore(checks) : 0;
+  const scoreColor  = score >= 70 ? 'var(--color-success)' : score >= 45 ? 'var(--color-warn)' : 'var(--color-accent)';
+  const seoChecks   = checks.filter(c => c.category === 'SEO');
+  const geoChecks   = checks.filter(c => c.category === 'GEO');
 
   return (
     <>
@@ -317,7 +585,7 @@ export default function SeoAuditApp() {
           <div className="sa-hero">
             <span className="sa-eyebrow">SEO · GEO · AI-synlighet</span>
             <h1>Hur synlig är din<br /><span className="sa-hand">webbplats?</span></h1>
-            <p>Granska din webbplats synlighet i sökmotorer och generativa AI-assistenter. Ange din webbadress nedan för att se var du står.</p>
+            <p>Vi granskar din webbplats synlighet i sökmotorer och generativa AI-assistenter med riktiga data — inte gissningar. Ange din webbadress nedan.</p>
             <div className="sa-input-wrap">
               <input
                 className={`sa-url-input${urlError ? ' sa-url-input--error' : ''}`}
@@ -343,6 +611,18 @@ export default function SeoAuditApp() {
             <div className="sa-spinner" aria-label="Granskar" />
             <p className="sa-scan-msg">{SCAN_MESSAGES[msgIdx]}</p>
             <p className="sa-scan-domain">{domainOf(scannedUrl)}</p>
+            <p className="sa-scan-hint">Riktiga data tar 15–30 sekunder.</p>
+          </div>
+        )}
+
+        {phase === 'error' && (
+          <div className="sa-scanning">
+            <p className="sa-scan-msg">Granskningen misslyckades.</p>
+            <p className="sa-scan-domain">{domainOf(scannedUrl)}</p>
+            <p className="sa-scan-hint">Kontrollera webbadressen och försök igen.</p>
+            <button className="sa-reset-btn" style={{ marginTop: 24 }} onClick={handleReset}>
+              ← Försök igen
+            </button>
           </div>
         )}
 
@@ -393,7 +673,7 @@ export default function SeoAuditApp() {
   );
 }
 
-/* ─── Scoped Styles ─────────────────────────────────────────── */
+/* ─── Scoped Styles ──────────────────────────────────────── */
 
 function ScopedStyles() {
   return (
@@ -476,6 +756,7 @@ function ScopedStyles() {
       .sa-spinner { width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--color-border); border-top-color: var(--color-accent); animation: sa-spin 0.85s linear infinite; }
       .sa-scan-msg { font-size: 15px; color: var(--color-text-muted); margin: 0; min-height: 24px; }
       .sa-scan-domain { font-size: 13px; color: var(--color-text-faint); margin: -8px 0 0; font-weight: 500; }
+      .sa-scan-hint { font-size: 12px; color: var(--color-text-faint); margin: -8px 0 0; }
 
       /* ── Results ── */
       .sa-results { max-width: 640px; margin: 0 auto; padding: 0 0 16px; }
