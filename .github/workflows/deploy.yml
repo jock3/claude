@@ -2,10 +2,16 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/todo-table-app-TuKcA]
+    branches:
+      - claude/admiring-hamilton-VQ01o
+      - claude/todo-table-app-TuKcA
 
 permissions:
   contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
