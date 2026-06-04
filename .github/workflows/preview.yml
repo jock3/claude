@@ -1,17 +1,23 @@
-name: Deploy to GitHub Pages
+name: Deploy Branch Preview
 
 on:
   push:
-    branches: [claude/todo-table-app-TuKcA]
+    branches: ['claude/**']
 
 permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Compute preview slug
+        run: |
+          SLUG=$(echo "${{ github.ref_name }}" | sed 's|^claude/||' | sed 's|[^a-zA-Z0-9._-]|-|g')
+          echo "SLUG=$SLUG" >> $GITHUB_ENV
+          echo "VITE_BASE=/claude/preview/$SLUG/" >> $GITHUB_ENV
 
       - uses: actions/setup-node@v4
         with:
@@ -22,10 +28,11 @@ jobs:
 
       - run: npm run build
         env:
-          GITHUB_ACTIONS: true
+          VITE_BASE: ${{ env.VITE_BASE }}
 
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+          destination_dir: preview/${{ env.SLUG }}
           keep_files: true
