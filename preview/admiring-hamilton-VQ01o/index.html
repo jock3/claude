@@ -57,15 +57,11 @@
       50%  { opacity: 0.7; filter: hue-rotate(12deg)  blur(1px); }
       100% { opacity: 1;   filter: hue-rotate(-8deg)  blur(0px); }
     }
-
-    /* ─── Noise ─── */
     .noise {
       position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.028;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
       background-repeat: repeat; background-size: 200px 200px;
     }
-
-    /* ─── Spotlight ─── */
     .spotlight {
       pointer-events: none; position: fixed; inset: 0; z-index: 0; opacity: 0;
       background: radial-gradient(700px circle at var(--mx,50%) var(--my,50%), rgba(255,88,45,0.055) 0%, transparent 65%);
@@ -73,202 +69,141 @@
     }
     .spotlight.visible { opacity: 1; }
 
-    /* ─── Page shell ─── */
+    /* ─── Page ─── */
     .page {
-      min-height: 100vh; display: flex; flex-direction: column;
-      padding: var(--sp-5) var(--sp-8) var(--sp-8);
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      padding: 20px;
       max-width: 1400px; margin: 0 auto;
       position: relative; z-index: 1;
     }
 
-    /* ─── Two-column grid ─── */
+    /* ─── Two-column layout ─── */
     .content-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--sp-5);
+      grid-template-columns: 64px 1fr;
+      gap: 20px;
       flex: 1;
       align-items: start;
     }
 
-    /* ─── Sidebar — same glass pill style as old nav ─── */
+    /* ─── Sidebar pill — same glass as old top nav ─── */
     .sidebar {
       position: sticky;
-      top: var(--sp-5);
+      top: 20px;
       align-self: start;
+      width: 64px;
+      height: calc(100vh - 40px);
+      border-radius: 9999px;
       background: color-mix(in oklch, var(--color-surface) 88%, transparent);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--color-border);
-      border-radius: 22px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
-      padding: 16px 14px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      align-items: center;
+      padding: 14px 0;
+      overflow: hidden;
       animation: nav-drop 500ms var(--ease-spring) both;
     }
 
-    /* Logo row */
-    .sidebar-logo {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 4px 6px 12px;
-      border-bottom: 1px solid var(--color-border);
-      margin-bottom: 6px;
+    /* Generic icon button */
+    .s-btn {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--color-text-muted);
+      background: transparent; border: 0; outline: none;
+      text-decoration: none; flex-shrink: 0;
+      transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+      position: relative;
     }
-    .logo {
-      display: inline-flex; align-items: center; height: 30px;
-      color: var(--color-text); border: 0; text-decoration: none;
+    .s-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .s-btn.active { color: var(--color-accent); }
+    .s-btn.active::after {
+      content: ''; position: absolute; bottom: 3px; left: 50%;
+      transform: translateX(-50%);
+      width: 4px; height: 4px; background: var(--color-accent); border-radius: 50%;
+    }
+    .s-btn:focus-visible { box-shadow: 0 0 0 2px var(--color-link); }
+
+    /* Logo link */
+    .s-logo {
+      display: flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px; flex-shrink: 0;
+      color: var(--color-text); text-decoration: none; border: 0;
       transition: filter var(--dur-base) var(--ease-out);
+      margin-bottom: 2px;
     }
-    .logo:hover { filter: drop-shadow(0 0 12px rgba(255,88,45,0.5)); }
-    .logo svg { height: 100%; width: auto; display: block; }
+    .s-logo:hover { filter: drop-shadow(0 0 10px rgba(255,88,45,0.5)); }
+    .s-logo svg { height: 28px; width: auto; }
+
+    /* Separator */
+    .s-sep { width: 26px; height: 1px; background: var(--color-border); margin: 5px 0; flex-shrink: 0; }
+
+    /* Gap */
+    .s-gap { height: 3px; flex-shrink: 0; }
+
+    /* Spacer */
+    .s-spacer { flex: 1; }
+
+    /* App icon bubbles */
+    .s-app {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; border: 0; outline: none;
+      text-decoration: none; flex-shrink: 0;
+      transition: transform 220ms var(--ease-spring), box-shadow 200ms var(--ease-out);
+    }
+    .s-app:hover { transform: scale(1.13) translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.22); }
+    .s-app:focus-visible { box-shadow: 0 0 0 2px var(--color-link); }
+    .s-app.locked { opacity: 0.25; pointer-events: none; filter: grayscale(0.5); }
+
+    .ib-todo    { background: linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.25));    border: 1px solid rgba(34,197,94,.26);   color: #4ADE80; }
+    .ib-kampanj { background: linear-gradient(135deg,rgba(255,88,45,.14),rgba(255,88,45,.23));    border: 1px solid rgba(255,88,45,.28);   color: #FF6B4A; }
+    .ib-seo     { background: linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23)); border: 1px solid rgba(99,102,241,.28);  color: #A5B4FC; }
+    .ib-trackr  { background: linear-gradient(135deg,rgba(236,72,153,.14),rgba(219,39,119,.23)); border: 1px solid rgba(236,72,153,.28);  color: #F472B6; }
+
+    /* Avatar */
+    .s-avatar-el {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--color-accent); color: #fff;
+      font-size: 14px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent);
+      animation: avatar-pulse 3s ease-in-out 2s infinite;
+      flex-shrink: 0;
+    }
+
+    /* Stagger app icon entrance */
+    .s-app:nth-of-type(1) { animation: fade-up 360ms var(--ease-out) 110ms both; }
+    .s-app:nth-of-type(2) { animation: fade-up 360ms var(--ease-out) 150ms both; }
+    .s-app:nth-of-type(3) { animation: fade-up 360ms var(--ease-out) 190ms both; }
+    .s-app:nth-of-type(4) { animation: fade-up 360ms var(--ease-out) 230ms both; }
 
     /* Theme toggle */
     .theme-toggle {
       background: transparent; border: 0; color: var(--color-text-muted);
-      padding: 7px; border-radius: var(--r-pill); cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center;
+      padding: 0; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px; flex-shrink: 0;
       transition: color var(--dur-fast) var(--ease-out),
                   background var(--dur-fast) var(--ease-out),
                   transform 300ms var(--ease-spring);
-      flex-shrink: 0;
     }
     .theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); transform: rotate(18deg) scale(1.1); }
     .theme-toggle:active { transform: rotate(36deg) scale(0.9); }
 
-    /* ─── Sidebar nav links (moving pill) ─── */
-    .sidebar-nav {
-      display: flex; flex-direction: column; gap: 1px;
-      position: relative;
-      padding-bottom: 6px;
-      border-bottom: 1px solid var(--color-border);
-      margin-bottom: 6px;
-    }
-    .nav-pill {
-      position: absolute; border-radius: var(--r-pill);
-      background: var(--color-surface-2);
-      transition: all 220ms var(--ease-out);
-      pointer-events: none; z-index: 0; opacity: 0;
-    }
-    .sidebar-nav-link {
-      font-family: var(--font-display); font-size: var(--fs-sm); font-weight: var(--fw-medium);
-      color: var(--color-text-muted); text-decoration: none; border: 0;
-      padding: 7px 12px; border-radius: var(--r-pill);
-      display: flex; align-items: center; gap: 9px;
-      cursor: pointer; position: relative; z-index: 1;
-      transition: color var(--dur-base) var(--ease-out);
-    }
-    .sidebar-nav-link:hover { color: var(--color-text); }
-    .sidebar-nav-link.active { color: var(--color-text); }
-    .sidebar-nav-link.active::after {
-      content: ''; position: absolute; right: 10px; top: 50%;
-      transform: translateY(-50%);
-      width: 4px; height: 4px; background: var(--color-accent); border-radius: 50%;
-    }
-    .sidebar-nav-link svg { flex-shrink: 0; opacity: 0.65; transition: opacity var(--dur-fast) var(--ease-out); }
-    .sidebar-nav-link:hover svg, .sidebar-nav-link.active svg { opacity: 1; }
-
-    /* ─── App section ─── */
-    .sidebar-section-label {
-      font-size: 10px; font-weight: var(--fw-semibold);
-      letter-spacing: var(--tr-wider); text-transform: uppercase;
-      color: var(--color-text-faint); padding: 0 4px;
-      margin: 6px 0 4px;
-    }
-
-    /* App nav items: icon bubble + label (fills sidebar width well) */
-    .app-nav-item {
-      display: flex; align-items: center; gap: 11px;
-      padding: 7px 10px; border-radius: var(--r-lg);
-      text-decoration: none; color: inherit; border: 0; cursor: pointer;
-      outline: none;
-      transition: background 180ms var(--ease-out);
-      position: relative;
-    }
-    .app-nav-item:hover { background: var(--color-surface-2); }
-    .app-nav-item:focus-visible { box-shadow: 0 0 0 2px var(--color-link); }
-
-    .app-icon-bubble {
-      width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform 200ms var(--ease-spring), box-shadow 200ms var(--ease-out);
-    }
-    .app-nav-item:hover .app-icon-bubble {
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    .ib-todo    { background: linear-gradient(135deg,rgba(34,197,94,.14),rgba(22,163,74,.24));   border: 1px solid rgba(34,197,94,.26);   color: #4ADE80; }
-    .ib-kampanj { background: linear-gradient(135deg,rgba(255,88,45,.13),rgba(255,88,45,.22));   border: 1px solid rgba(255,88,45,.28);   color: #FF6B4A; }
-    .ib-seo     { background: linear-gradient(135deg,rgba(99,102,241,.14),rgba(129,140,248,.22)); border: 1px solid rgba(99,102,241,.28);  color: #A5B4FC; }
-    .ib-trackr  { background: linear-gradient(135deg,rgba(236,72,153,.13),rgba(219,39,119,.22)); border: 1px solid rgba(236,72,153,.28);  color: #F472B6; }
-
-    .app-nav-label { flex: 1; font-size: var(--fs-sm); font-weight: var(--fw-medium); color: var(--color-text-muted); transition: color var(--dur-fast) var(--ease-out); }
-    .app-nav-item:hover .app-nav-label { color: var(--color-text); }
-
-    .app-nav-arrow {
-      font-size: 12px; color: var(--color-accent);
-      opacity: 0; transform: translateX(-4px);
-      transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
-    }
-    .app-nav-item:hover .app-nav-arrow { opacity: 1; transform: translateX(0); }
-
-    /* Locked */
-    .app-nav-item.locked { opacity: 0.3; pointer-events: none; filter: grayscale(0.5); }
-
-    /* Stagger */
-    .app-nav-item:nth-child(1) { animation: fade-up 380ms var(--ease-out) 120ms both; }
-    .app-nav-item:nth-child(2) { animation: fade-up 380ms var(--ease-out) 160ms both; }
-    .app-nav-item:nth-child(3) { animation: fade-up 380ms var(--ease-out) 200ms both; }
-    .app-nav-item:nth-child(4) { animation: fade-up 380ms var(--ease-out) 240ms both; }
-
-    /* ─── User / lock section ─── */
-    .sidebar-bottom {
-      padding-top: 6px; margin-top: 4px;
-      border-top: 1px solid var(--color-border);
-    }
-    .sidebar-user {
-      display: flex; align-items: center; gap: 11px;
-      padding: 6px 8px; border-radius: var(--r-lg);
-    }
-    .avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--color-accent); color: #fff;
-      font-size: 14px; font-weight: var(--fw-bold);
-      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-      box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 22%, transparent);
-      animation: avatar-pulse 3s ease-in-out 2s infinite;
-    }
-    .s-info { flex: 1; min-width: 0; }
-    .s-greeting { font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--color-text); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .s-actions { display: flex; align-items: center; gap: 5px; }
-    .btn-sep { color: var(--color-text-faint); font-size: 10px; }
-    .btn-switch {
-      background: transparent; border: 0; color: var(--color-text-faint);
-      font-family: var(--font-display); font-size: 11px; font-weight: var(--fw-medium);
-      cursor: pointer; padding: 0;
-      transition: color var(--dur-fast) var(--ease-out);
-    }
-    .btn-switch:hover { color: var(--color-text-muted); }
-    .btn-danger-text:hover { color: var(--color-accent) !important; }
-
-    .sidebar-no-user {
-      display: flex; align-items: center; gap: 9px;
-      padding: 8px 10px; border-radius: var(--r-md);
-      background: color-mix(in oklch, var(--color-surface-2) 55%, transparent);
-      font-size: var(--fs-xs); color: var(--color-text-faint);
-    }
-    .sidebar-no-user svg { flex-shrink: 0; opacity: 0.5; }
-
-    /* ─── Hero area (right column) ─── */
+    /* ─── Hero area ─── */
     .hero-area {
       display: flex; flex-direction: column;
-      padding-top: var(--sp-3);
+      padding-top: var(--sp-2);
       animation: fade-up 550ms var(--ease-out) 80ms both;
     }
     .hero-area .eyebrow { margin: 0 0 var(--sp-4); }
 
     .headline {
-      font-size: clamp(24px, 3vw, 44px);
+      font-size: clamp(26px, 3.5vw, 48px);
       font-weight: var(--fw-bold); letter-spacing: var(--tr-tight);
       line-height: 1.2; margin: 0 0 var(--sp-4); color: var(--color-text);
     }
@@ -282,7 +217,7 @@
     }
     .tagline {
       font-size: var(--fs-md); color: var(--color-text-muted);
-      line-height: var(--lh-loose); max-width: 44ch; margin: 0 0 var(--sp-6);
+      line-height: var(--lh-loose); max-width: 50ch; margin: 0 0 var(--sp-6);
     }
 
     /* ─── Login ─── */
@@ -328,6 +263,28 @@
     .btn-primary:hover { background: var(--color-accent-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,88,45,0.35); }
     .btn-primary:active { transform: translateY(1px) scale(0.985); box-shadow: none; transition-duration: 80ms; }
 
+    /* ─── Logged-in view ─── */
+    #loggedin-view { animation: fade-up 400ms var(--ease-out) both; }
+    .loggedin-header { display: flex; align-items: center; gap: 16px; margin-bottom: var(--sp-4); }
+    .avatar-lg {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--color-accent); color: #fff;
+      font-size: 20px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent) 22%, transparent);
+      animation: avatar-pulse 3s ease-in-out 2s infinite;
+    }
+    .loggedin-greeting { font-size: var(--fs-xl); font-weight: var(--fw-semibold); color: var(--color-text); margin: 0 0 6px; }
+    .loggedin-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-sep { color: var(--color-text-faint); font-size: var(--fs-xs); }
+    .btn-switch {
+      background: transparent; border: 0; color: var(--color-text-faint);
+      font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      cursor: pointer; padding: 0;
+      transition: color var(--dur-fast) var(--ease-out);
+    }
+    .btn-switch:hover { color: var(--color-text-muted); }
+    .btn-danger-text:hover { color: var(--color-accent) !important; }
     .loggedin-hint { font-size: var(--fs-sm); color: var(--color-text-faint); margin: 0; line-height: var(--lh-loose); }
 
     /* ─── Keyframes ─── */
@@ -335,8 +292,8 @@
     @keyframes nav-drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes float { 0%,100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-7px); } }
     @keyframes avatar-pulse {
-      0%,100% { box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 22%, transparent); }
-      50%      { box-shadow: 0 0 0 5px color-mix(in oklch, var(--color-accent) 8%, transparent); }
+      0%,100% { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent) 22%, transparent); }
+      50%      { box-shadow: 0 0 0 7px color-mix(in oklch, var(--color-accent) 8%, transparent); }
     }
 
     /* ─── Reduced motion ─── */
@@ -347,20 +304,26 @@
     }
 
     /* ─── Responsive ─── */
-    @media (max-width: 900px) {
-      .page { padding: var(--sp-3) var(--sp-4) var(--sp-6); }
-    }
     @media (max-width: 768px) {
-      .content-grid { grid-template-columns: 1fr; gap: var(--sp-4); }
-      .sidebar { position: static; }
+      .page { padding: 12px; }
+      .content-grid { grid-template-columns: 1fr; gap: 12px; }
+      .sidebar {
+        position: static;
+        width: 100%; height: auto;
+        border-radius: 9999px;
+        flex-direction: row;
+        padding: 10px 16px;
+        justify-content: space-between;
+        overflow: visible;
+      }
+      .s-sep { display: none; }
+      .s-spacer { display: none; }
+      .s-gap { display: none; }
     }
     @media (max-width: 540px) {
       .headline { font-size: 24px; }
       .pin-row { gap: 6px; }
       .pin-input { width: 46px; height: 50px; font-size: 18px; }
-    }
-    @media (max-width: 400px) {
-      .logo svg { height: 26px; }
     }
   </style>
   <link rel="stylesheet" crossorigin href="/claude/preview/admiring-hamilton-VQ01o/assets/colors_and_type-HToBtge5.css">
@@ -376,98 +339,83 @@
   <div class="page">
     <div class="content-grid">
 
-      <!-- ─── LEFT: Vertical sidebar ─── -->
-      <aside class="sidebar">
+      <!-- ─── LEFT: Vertical pill sidebar ─── -->
+      <aside class="sidebar" aria-label="Navigering">
 
-        <!-- Logo + theme toggle -->
-        <div class="sidebar-logo">
-          <a href="/" class="logo" aria-label="Gustav Mattsson — AI Labb">
-            <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
-              <defs>
-                <style>
-                  .logo-cls-1 { font-size: 193.17px; }
-                  .logo-cls-1,.logo-cls-2 { font-family: Montserrat-Bold,Montserrat; font-weight: 700; opacity: .91; }
-                  .logo-cls-2 { font-size: 189.12px; }
-                </style>
-              </defs>
-              <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
-              <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
-              <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-              <text class="logo-cls-1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-              <text class="logo-cls-2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
-            </svg>
-          </a>
-          <button class="theme-toggle" id="theme-toggle-btn" aria-label="Byt tema">
-            <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          </button>
-        </div>
-
-        <!-- Nav links with moving pill -->
-        <nav class="sidebar-nav" id="sidebar-nav" aria-label="Huvudmeny">
-          <a href="/" class="sidebar-nav-link active">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            Hem
-          </a>
-        </nav>
-
-        <!-- Apps -->
-        <p class="sidebar-section-label">Appar</p>
-
-        <a href="./apps/todo/" class="app-nav-item locked" id="icon-todo">
-          <div class="app-icon-bubble ib-todo" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
-          </div>
-          <span class="app-nav-label">Todo</span>
-          <span class="app-nav-arrow" aria-hidden="true">→</span>
+        <!-- Logo -->
+        <a href="/" class="s-logo" title="AI Labb">
+          <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
+            <defs>
+              <style>
+                .lc1 { font-size: 193.17px; }
+                .lc1,.lc2 { font-family: Montserrat-Bold,Montserrat; font-weight: 700; opacity: .91; }
+                .lc2 { font-size: 189.12px; }
+              </style>
+            </defs>
+            <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
+            <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
+            <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
+            <text class="lc1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+            <text class="lc2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+          </svg>
         </a>
 
-        <a href="./apps/kampanj/" class="app-nav-item locked" id="icon-kampanj">
-          <div class="app-icon-bubble ib-kampanj" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          </div>
-          <span class="app-nav-label">Kampanjplanerare</span>
-          <span class="app-nav-arrow" aria-hidden="true">→</span>
+        <div class="s-sep"></div>
+
+        <!-- Hem -->
+        <a href="/" class="s-btn active" title="Hem" aria-label="Hem" aria-current="page">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </a>
 
-        <a href="./apps/seo-audit/" class="app-nav-item locked" id="icon-seo">
-          <div class="app-icon-bubble ib-seo" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </div>
-          <span class="app-nav-label">SEO &amp; GEO</span>
-          <span class="app-nav-arrow" aria-hidden="true">→</span>
+        <div class="s-sep"></div>
+        <div class="s-gap"></div>
+
+        <!-- App icons -->
+        <a href="./apps/todo/"      class="s-app ib-todo    locked" id="icon-todo"    title="Todo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+        </a>
+        <div class="s-gap"></div>
+        <a href="./apps/kampanj/"   class="s-app ib-kampanj locked" id="icon-kampanj" title="Kampanjplanerare">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </a>
+        <div class="s-gap"></div>
+        <a href="./apps/seo-audit/" class="s-app ib-seo     locked" id="icon-seo"     title="SEO &amp; GEO">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </a>
+        <div class="s-gap"></div>
+        <a href="./apps/trackr/"    class="s-app ib-trackr  locked" id="icon-trackr"  title="Track3r">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </a>
 
-        <a href="./apps/trackr/" class="app-nav-item locked" id="icon-trackr">
-          <div class="app-icon-bubble ib-trackr" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <span class="app-nav-label">Track3r</span>
-          <span class="app-nav-arrow" aria-hidden="true">→</span>
-        </a>
+        <div class="s-gap"></div>
+        <div class="s-sep"></div>
 
-        <!-- User / lock -->
-        <div class="sidebar-bottom">
-          <div class="sidebar-user" id="sidebar-user-section" hidden>
-            <span class="avatar" id="s-avatar"></span>
-            <div class="s-info">
-              <p class="s-greeting"><strong id="s-user-name"></strong></p>
-              <div class="s-actions">
-                <button class="btn-switch" id="s-logout-btn">Byt</button>
-                <span class="btn-sep">·</span>
-                <button class="btn-switch btn-danger-text" id="s-delete-btn">Ta bort</button>
-              </div>
-            </div>
-          </div>
-          <div class="sidebar-no-user" id="sidebar-no-user">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Logga in för att komma åt appar
-          </div>
-        </div>
+        <!-- Spacer -->
+        <div class="s-spacer"></div>
+
+        <div class="s-sep"></div>
+
+        <!-- User avatar (logged in) -->
+        <button class="s-btn" id="sidebar-user-btn" hidden title="" style="padding:0; background:transparent; border:0;">
+          <span class="s-avatar-el" id="s-avatar"></span>
+        </button>
+
+        <!-- Lock (not logged in) -->
+        <button class="s-btn" id="sidebar-lock-btn" title="Logga in" aria-label="Logga in">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </button>
+
+        <div class="s-gap"></div>
+
+        <!-- Theme toggle -->
+        <button class="theme-toggle" id="theme-toggle-btn" aria-label="Byt tema" title="Byt tema">
+          <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
 
       </aside>
 
-      <!-- ─── RIGHT: Hero + Login ─── -->
+      <!-- ─── RIGHT: Hero ─── -->
       <main class="hero-area">
         <p class="eyebrow">AI · Experiment · Verktyg</p>
         <h1 class="headline">
@@ -475,6 +423,7 @@
         </h1>
         <p class="tagline">En plats för experiment, verktyg och idéer byggda med artificiell intelligens — allt skapat av Gustav Mattsson.</p>
 
+        <!-- Not logged in -->
         <section id="login-section" aria-label="Logga in">
           <div class="login-name-row">
             <input type="text" id="name-input" placeholder="Ditt namn" maxlength="40" autocomplete="off" />
@@ -490,9 +439,21 @@
           <button class="btn-primary" id="login-btn">Fortsätt →</button>
         </section>
 
-        <p class="loggedin-hint" id="loggedin-hint" hidden>
-          Välj en app i menyn till vänster för att komma igång.
-        </p>
+        <!-- Logged in -->
+        <div id="loggedin-view" hidden>
+          <div class="loggedin-header">
+            <span class="avatar-lg" id="user-avatar-lg"></span>
+            <div>
+              <p class="loggedin-greeting">Hej, <strong id="user-name-display"></strong>!</p>
+              <div class="loggedin-actions">
+                <button class="btn-switch" id="s-logout-btn">Byt användare</button>
+                <span class="btn-sep">·</span>
+                <button class="btn-switch btn-danger-text" id="s-delete-btn">Ta bort konto</button>
+              </div>
+            </div>
+          </div>
+          <p class="loggedin-hint">Välj en app i menyn till vänster för att komma igång.</p>
+        </div>
       </main>
 
     </div>
@@ -531,26 +492,6 @@
         if (!shown) { s.classList.add('visible'); shown = true; }
       });
       document.addEventListener('mouseleave', function() { s.classList.remove('visible'); shown = false; });
-    })();
-
-    /* ─── Sidebar nav moving pill ─── */
-    (function() {
-      var nav = document.getElementById('sidebar-nav');
-      if (!nav) return;
-      var pill = document.createElement('div');
-      pill.className = 'nav-pill';
-      nav.appendChild(pill);
-      nav.querySelectorAll('.sidebar-nav-link').forEach(function(link) {
-        link.addEventListener('mouseenter', function() {
-          var nr = nav.getBoundingClientRect(), lr = link.getBoundingClientRect();
-          pill.style.width  = lr.width  + 'px';
-          pill.style.height = lr.height + 'px';
-          pill.style.left   = (lr.left - nr.left) + 'px';
-          pill.style.top    = (lr.top  - nr.top)  + 'px';
-          pill.style.opacity = '1';
-        });
-      });
-      nav.addEventListener('mouseleave', function() { pill.style.opacity = '0'; });
     })();
 
     /* ─── Text scramble ─── */
@@ -644,18 +585,33 @@
     }
     function render() {
       var user = getActiveUser();
-      document.getElementById('sidebar-user-section').hidden = !user;
-      document.getElementById('sidebar-no-user').hidden = !!user;
-      document.querySelectorAll('.app-nav-item').forEach(function(el) {
+      /* sidebar */
+      var userBtn  = document.getElementById('sidebar-user-btn');
+      var lockBtn  = document.getElementById('sidebar-lock-btn');
+      userBtn.hidden = !user;
+      lockBtn.hidden = !!user;
+      if (user) {
+        document.getElementById('s-avatar').textContent = user[0].toUpperCase();
+        userBtn.title = user;
+      }
+      /* app icons */
+      document.querySelectorAll('.s-app').forEach(function(el) {
         el.classList.toggle('locked', !user);
       });
-      document.getElementById('login-section').hidden = !!user;
-      document.getElementById('loggedin-hint').hidden = !user;
+      /* hero */
+      document.getElementById('login-section').hidden  = !!user;
+      document.getElementById('loggedin-view').hidden  = !user;
       if (user) {
-        document.getElementById('s-user-name').textContent = user;
-        document.getElementById('s-avatar').textContent = user[0].toUpperCase();
+        document.getElementById('user-avatar-lg').textContent   = user[0].toUpperCase();
+        document.getElementById('user-name-display').textContent = user;
       } else { resetLoginForm(); }
     }
+
+    /* Lock btn scrolls to / focuses login */
+    document.getElementById('sidebar-lock-btn').addEventListener('click', function() {
+      var inp = document.getElementById('name-input');
+      if (inp) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); }
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
       var nameInput = document.getElementById('name-input');
