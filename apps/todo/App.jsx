@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
-import { Plus, Trash2, X, Check, Calendar } from 'lucide-react';
+import { Plus, Trash2, X, Check, Calendar, ChevronDown } from 'lucide-react';
 import * as db from './db.js';
 import { Sidebar, SidebarStyles } from '../shared/Sidebar.jsx';
 
