@@ -486,11 +486,15 @@
         }
       });
       function lerp(a, b, t) { return a + (b - a) * t; }
-      (function tick() {
-        rx = lerp(rx, mx, 0.12); ry = lerp(ry, my, 0.12);
+      var last = 0;
+      (function tick(now) {
+        var dt = Math.min(now - last || 16, 50);
+        last = now;
+        var t = 1 - Math.pow(0.78, dt / 16.67);
+        rx = lerp(rx, mx, t); ry = lerp(ry, my, t);
         ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
         requestAnimationFrame(tick);
-      })();
+      })(0);
       document.addEventListener('mousedown', function() { dot.classList.add('clicking'); ring.classList.add('clicking'); });
       document.addEventListener('mouseup',   function() { dot.classList.remove('clicking'); ring.classList.remove('clicking'); });
       var sel = 'a, button, input';
