@@ -51,8 +51,8 @@ export async function searchFoods(query, { signal } = {}) {
   const q = (query || '').trim();
   if (q.length < 2) return [];
   const url =
-    `${BASE}/cgi/search.pl?search_terms=${encodeURIComponent(q)}` +
-    `&search_simple=1&action=process&json=1&page_size=24&sort_by=popularity` +
+    `${BASE}/api/v2/search?q=${encodeURIComponent(q)}` +
+    `&page_size=24&sort_by=unique_scans_n` +
     `&fields=code,product_name,generic_name,brands,nutriments`;
   const res = await fetch(url, { signal, headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(`OFF search failed (${res.status})`);
