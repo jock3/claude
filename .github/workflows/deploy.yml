@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [claude/elegant-cerf-1xNkb]
+    branches: [main, claude/trusting-einstein-HOWzY]
 
 permissions:
   contents: read
