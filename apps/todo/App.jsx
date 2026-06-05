@@ -72,6 +72,267 @@ const Logo = () => (
   </a>
 );
 
+/* ─── Hamilton FX — canvas aurora + custom cursor (green) ──── */
+
+function HamiltonFX() {
+  useEffect(() => {
+    const fine    = window.matchMedia('(pointer: fine)').matches;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const cleanups = [];
+
+    /* ── Custom cursor ── */
+    if (fine) {
+      const dot  = document.getElementById('tl-cursor-dot');
+      const ring = document.getElementById('tl-cursor-ring');
+      let mx = 0, my = 0, rx = 0, ry = 0, shown = false, raf;
+      const onMove = (e) => {
+        mx = e.clientX; my = e.clientY;
+        dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+        if (!shown) { dot.classList.add('visible'); ring.classList.add('visible'); shown = true; }
+      };
+      const lerp = (a, b, t) => a + (b - a) * t;
+      let last = 0;
+      const tick = (now) => {
+        const dt = Math.min(now - last || 16, 50); last = now;
+        const t = 1 - Math.pow(0.78, dt / 16.67);
+        rx = lerp(rx, mx, t); ry = lerp(ry, my, t);
+        ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      const md  = () => { dot.classList.add('clicking');  ring.classList.add('clicking'); };
+      const mu  = () => { dot.classList.remove('clicking'); ring.classList.remove('clicking'); };
+      const sel = 'a, button, input, textarea, [role="button"], .s-app-item';
+      const ov  = (e) => { if (e.target.closest(sel)) { dot.classList.add('hovering');  ring.classList.add('hovering'); } };
+      const out = (e) => { if (e.target.closest(sel)) { dot.classList.remove('hovering'); ring.classList.remove('hovering'); } };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mousedown', md);
+      document.addEventListener('mouseup',   mu);
+      document.addEventListener('mouseover', ov);
+      document.addEventListener('mouseout',  out);
+      cleanups.push(() => {
+        cancelAnimationFrame(raf);
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mousedown', md);
+        document.removeEventListener('mouseup',   mu);
+        document.removeEventListener('mouseover', ov);
+        document.removeEventListener('mouseout',  out);
+      });
+    }
+
+    /* ── Spotlight ── */
+    {
+      const s = document.getElementById('tl-spotlight'); let shown = false;
+      const onMove = (e) => {
+        s.style.setProperty('--mx', e.clientX + 'px');
+        s.style.setProperty('--my', e.clientY + 'px');
+        if (!shown) { s.classList.add('visible'); shown = true; }
+      };
+      document.addEventListener('mousemove', onMove);
+      cleanups.push(() => document.removeEventListener('mousemove', onMove));
+    }
+
+    /* ── Background canvas: green plasma orbs + warped grid + particle net ── */
+    {
+      const cvs = document.getElementById('tl-bg-canvas');
+      const ctx = cvs.getContext('2d', { alpha: true });
+      let W, H, dpr, pts, raf;
+      /* ox, oy, radius, speed, phase, r, g, b, alpha — all green family */
+      const ORBS = [
+        [0.14, 0.22, 0.42, 0.00014, 0.0,  34, 197,  94, 0.090],
+        [0.78, 0.63, 0.36, 0.00010, 2.1,  22, 163,  74, 0.070],
+        [0.48, 0.85, 0.31, 0.00017, 4.0,  74, 222, 128, 0.055],
+        [0.86, 0.13, 0.27, 0.00012, 1.3,  16, 185, 129, 0.050],
+        [0.24, 0.76, 0.24, 0.00019, 3.4,  52, 211, 153, 0.045],
+      ];
+      function Pt() {
+        this.x = Math.random() * W; this.y = Math.random() * H;
+        this.vx = (Math.random() - 0.5) * 0.38; this.vy = (Math.random() - 0.5) * 0.38;
+        this.sz = Math.random() * 1.1 + 0.4; this.al = Math.random() * 0.28 + 0.10;
+      }
+      function setup() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth; H = window.innerHeight;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr);
+        pts = []; const n = W < 768 ? 42 : 74;
+        for (let i = 0; i < n; i++) pts.push(new Pt());
+      }
+      function drawOrbs(t) {
+        ORBS.forEach((o) => {
+          const x = (o[0] + Math.sin(t * o[3] + o[4]) * 0.22) * W;
+          const y = (o[1] + Math.cos(t * o[3] * 0.73 + o[4] * 1.1) * 0.18) * H;
+          const r = o[2] * Math.max(W, H);
+          const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+          g.addColorStop(0,    `rgba(${o[5]},${o[6]},${o[7]},${o[8] * 2.4})`);
+          g.addColorStop(0.38, `rgba(${o[5]},${o[6]},${o[7]},${o[8]})`);
+          g.addColorStop(1,    `rgba(${o[5]},${o[6]},${o[7]},0)`);
+          ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        });
+      }
+      function drawGrid(t) {
+        const cols = 14, rows = 9, amp = 20, cw = W / cols, ch = H / rows;
+        ctx.lineWidth = 0.85; ctx.strokeStyle = 'rgba(34,197,94,0.045)';
+        let r, c, bx, by, dx, dy;
+        for (r = 0; r <= rows; r++) { ctx.beginPath();
+          for (c = 0; c <= cols; c++) { bx = c * cw; by = r * ch;
+            dx = Math.sin(bx * 0.009 + t * 0.00046 + r * 0.28) * amp;
+            dy = Math.cos(by * 0.007 + t * 0.00035 + c * 0.19) * (amp * 0.62);
+            c === 0 ? ctx.moveTo(bx + dx, by + dy) : ctx.lineTo(bx + dx, by + dy);
+          } ctx.stroke(); }
+        for (c = 0; c <= cols; c++) { ctx.beginPath();
+          for (r = 0; r <= rows; r++) { bx = c * cw; by = r * ch;
+            dx = Math.sin(bx * 0.009 + t * 0.00046 + r * 0.28) * amp;
+            dy = Math.cos(by * 0.007 + t * 0.00035 + c * 0.19) * (amp * 0.62);
+            r === 0 ? ctx.moveTo(bx + dx, by + dy) : ctx.lineTo(bx + dx, by + dy);
+          } ctx.stroke(); }
+      }
+      const MD = 128, MD2 = MD * MD;
+      function drawNet() {
+        const n = pts.length; let i, j, p, q, dx, dy, d2, a;
+        for (i = 0; i < n; i++) { p = pts[i];
+          for (j = i + 1; j < n; j++) { q = pts[j];
+            dx = p.x - q.x; dy = p.y - q.y; d2 = dx * dx + dy * dy;
+            if (d2 < MD2) { a = (1 - Math.sqrt(d2) / MD) * 0.09;
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+              ctx.strokeStyle = `rgba(74,222,128,${a})`; ctx.lineWidth = 0.55; ctx.stroke();
+            }
+          }
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, 6.2832);
+          ctx.fillStyle = `rgba(167,243,208,${p.al})`; ctx.fill();
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < -6) p.x = W + 6; else if (p.x > W + 6) p.x = -6;
+          if (p.y < -6) p.y = H + 6; else if (p.y > H + 6) p.y = -6;
+        }
+      }
+      function frame(t) { ctx.clearRect(0, 0, W, H); drawOrbs(t); drawGrid(t); drawNet(); raf = requestAnimationFrame(frame); }
+      function staticFallback() {
+        ctx.clearRect(0, 0, W, H);
+        ORBS.forEach((o) => {
+          const r = o[2] * Math.max(W, H);
+          const g = ctx.createRadialGradient(o[0] * W, o[1] * H, 0, o[0] * W, o[1] * H, r);
+          g.addColorStop(0, `rgba(${o[5]},${o[6]},${o[7]},${o[8] * 1.6})`);
+          g.addColorStop(1, `rgba(${o[5]},${o[6]},${o[7]},0)`);
+          ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        });
+      }
+      const onResize = () => { if (raf) cancelAnimationFrame(raf); setup(); if (reduced) { staticFallback(); return; } raf = requestAnimationFrame(frame); };
+      setup();
+      window.addEventListener('resize', onResize);
+      if (reduced) staticFallback(); else raf = requestAnimationFrame(frame);
+      cleanups.push(() => { window.removeEventListener('resize', onResize); if (raf) cancelAnimationFrame(raf); });
+    }
+
+    return () => cleanups.forEach((fn) => fn());
+  }, []);
+
+  return (
+    <>
+      <div className="tl-cursor-dot"  id="tl-cursor-dot"  aria-hidden="true" />
+      <div className="tl-cursor-ring" id="tl-cursor-ring" aria-hidden="true" />
+      <canvas id="tl-bg-canvas" aria-hidden="true" />
+      <div className="tl-noise"    aria-hidden="true" />
+      <div className="tl-spotlight" id="tl-spotlight" aria-hidden="true" />
+    </>
+  );
+}
+
+/* ─── Sidebar — fixed vertical pill (hamilton, green) ──────── */
+
+function Sidebar({ activeUser, onSwitch }) {
+  const [theme, setTheme]       = useState(() => document.documentElement.getAttribute('data-theme') || 'dark');
+  const [userOpen, setUserOpen] = useState(false);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('ailabb_theme', next);
+    setTheme(next);
+  };
+
+  useEffect(() => {
+    if (!userOpen) return;
+    const close = () => setUserOpen(false);
+    const id = setTimeout(() => document.addEventListener('click', close), 0);
+    return () => { clearTimeout(id); document.removeEventListener('click', close); };
+  }, [userOpen]);
+
+  return (
+    <aside className="tl-sidebar" aria-label="Navigering">
+      <a href="../../" className="s-logo" title="AI Labb" aria-label="AI Labb">
+        <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
+          <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
+          <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
+          <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
+          <text className="logo-cls-1" style={{ fontSize: '193.17px', fontFamily: 'Montserrat-Bold, Montserrat', fontWeight: 700, opacity: 0.91 }} transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+          <text className="logo-cls-2" style={{ fontSize: '189.12px', fontFamily: 'Montserrat-Bold, Montserrat', fontWeight: 700, opacity: 0.91 }} transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+        </svg>
+      </a>
+
+      <div className="s-sep" />
+
+      <a href="../../" className="s-btn" title="Hem" aria-label="Hem">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </a>
+
+      <div className="s-sep" />
+
+      <div className="s-apps">
+        <a href="../todo/" className="s-app-item active" title="Todo" aria-current="page">
+          <div className="s-bubble ib-todo" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+          </div>
+          <span className="s-icon-label">Todo</span>
+        </a>
+        <a href="../kampanj/" className="s-app-item" title="Kampanj">
+          <div className="s-bubble ib-kampanj" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </div>
+          <span className="s-icon-label">Kampanj</span>
+        </a>
+        <a href="../seo-audit/" className="s-app-item" title="SEO">
+          <div className="s-bubble ib-seo" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <span className="s-icon-label">SEO</span>
+        </a>
+        <a href="../trackr/" className="s-app-item" title="Track3r">
+          <div className="s-bubble ib-trackr" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <span className="s-icon-label">Track3r</span>
+        </a>
+      </div>
+
+      <div className="s-spacer" />
+      <div className="s-sep" />
+
+      <div className="tl-side-user" onClick={(e) => e.stopPropagation()}>
+        <button className="s-btn s-user-btn" onClick={() => setUserOpen((o) => !o)} title={activeUser} aria-label="Användare">
+          <span className="s-avatar-el">{activeUser ? activeUser[0].toUpperCase() : '?'}</span>
+        </button>
+        {userOpen && (
+          <div className="tl-side-user-pop">
+            <div className="tl-side-user-name">{activeUser}</div>
+            <button onClick={() => { setUserOpen(false); onSwitch(); }}>
+              <LogOut size={14} />
+              Byt användare
+            </button>
+          </div>
+        )}
+      </div>
+
+      <button className="theme-toggle" onClick={toggleTheme} aria-label="Byt tema" title="Byt tema">
+        {theme === 'dark'
+          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        }
+      </button>
+    </aside>
+  );
+}
+
 /* ─── Theme Toggle ────────────────────────────────────────── */
 
 function ThemeToggle() {
@@ -681,6 +942,7 @@ export default function TodoLabb() {
     return (
       <>
         <ScopedStyles />
+        <HamiltonFX />
         <div className="tl-fullscreen-loader">Laddar…</div>
       </>
     );
@@ -689,29 +951,9 @@ export default function TodoLabb() {
   return (
     <>
       <ScopedStyles />
+      <HamiltonFX />
+      <Sidebar activeUser={activeUser} onSwitch={handleSwitch} />
       <div className="tl-app-root">
-
-        <nav className="tl-top-nav">
-          <Logo />
-          <div className="tl-nav-right">
-            <ul className="tl-menu">
-              <li><a href="../../">Hem</a></li>
-              <li className="tl-has-dropdown">
-                <a href="#" aria-haspopup="true">
-                  Appar <span className="tl-chev" aria-hidden="true">▾</span>
-                </a>
-                <ul className="tl-dropdown" role="menu">
-                  <li role="none"><a href="../todo/" role="menuitem" className="active">Todo</a></li>
-                  <li role="none"><a href="../kampanj/" role="menuitem">Kampanjplanerare</a></li>
-                  <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
-                  <li role="none"><a href="../trackr/" role="menuitem">Track3r</a></li>
-                </ul>
-              </li>
-            </ul>
-            <ThemeToggle />
-            <UserMenu activeUser={activeUser} onSwitch={handleSwitch} />
-          </div>
-        </nav>
 
         <section className="tl-hero">
           <h1>Hej {activeUser}, redo att <span className="hand">labba?</span></h1>
@@ -866,14 +1108,164 @@ function ScopedStyles() {
         background-image: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34,197,94,0.07) 0%, transparent 60%);
       }
 
+      /* ───────────────────────────────────────────────
+         Hamilton FX — custom cursor, canvas, sidebar (green)
+         ─────────────────────────────────────────────── */
+
+      /* Custom cursor */
+      @media (pointer: fine) { *, *::before, *::after { cursor: none !important; } }
+      .tl-cursor-dot {
+        position: fixed; width: 8px; height: 8px; left: 0; top: 0;
+        background: #fff;
+        box-shadow: 0 0 0 1px rgba(34,197,94,0.6), 0 0 12px rgba(74,222,128,0.7);
+        border-radius: 50%; pointer-events: none; z-index: 9999;
+        transform: translate(-50%,-50%); opacity: 0;
+        transition: width 200ms var(--ease-spring), height 200ms var(--ease-spring),
+                    box-shadow 200ms var(--ease-out), opacity 350ms var(--ease-out);
+      }
+      .tl-cursor-ring {
+        position: fixed; width: 32px; height: 32px; left: 0; top: 0;
+        border: 1.5px solid rgba(74,222,128,0.45); border-radius: 50%;
+        pointer-events: none; z-index: 9998; transform: translate(-50%,-50%); opacity: 0;
+        transition: width 300ms var(--ease-out), height 300ms var(--ease-out),
+                    border-color 300ms var(--ease-out), opacity 350ms var(--ease-out);
+      }
+      .tl-cursor-dot.visible,  .tl-cursor-ring.visible { opacity: 1; }
+      .tl-cursor-dot.hovering  { width: 11px; height: 11px; box-shadow: 0 0 0 1px rgba(34,197,94,0.85), 0 0 18px rgba(74,222,128,0.8); }
+      .tl-cursor-ring.hovering { width: 46px; height: 46px; border-color: rgba(74,222,128,0.7); }
+      .tl-cursor-dot.clicking  { width: 5px; height: 5px; }
+      .tl-cursor-ring.clicking { width: 20px; height: 20px; }
+      @media (pointer: coarse) { .tl-cursor-dot, .tl-cursor-ring { display: none; } }
+
+      /* Background canvas + texture */
+      #tl-bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
+      .tl-noise {
+        position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.028;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-repeat: repeat; background-size: 200px 200px;
+      }
+      .tl-spotlight {
+        pointer-events: none; position: fixed; inset: 0; z-index: 2; opacity: 0;
+        background: radial-gradient(700px circle at var(--mx,50%) var(--my,50%), rgba(34,197,94,0.05) 0%, transparent 65%);
+        transition: opacity 600ms var(--ease-out);
+      }
+      .tl-spotlight.visible { opacity: 1; }
+
+      /* Sidebar pill */
+      .tl-sidebar {
+        position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+        width: 72px; border-radius: 9999px;
+        background: color-mix(in oklch, var(--color-surface) 88%, transparent);
+        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--color-border);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+        display: flex; flex-direction: column; align-items: center;
+        gap: 4px; padding: 14px 0; z-index: 100;
+        animation: tl-side-in 450ms var(--ease-out) both;
+      }
+      @keyframes tl-side-in { from { opacity: 0; } to { opacity: 1; } }
+
+      .s-logo {
+        display: flex; align-items: center; justify-content: center;
+        width: 42px; height: 38px; flex-shrink: 0; margin-bottom: 2px;
+        color: var(--color-text); text-decoration: none; border: 0;
+        transition: filter var(--dur-base) var(--ease-out);
+      }
+      .s-logo:hover { filter: drop-shadow(0 0 10px rgba(74,222,128,0.55)); }
+      .s-logo svg { height: 26px; width: auto; }
+
+      .s-btn {
+        width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: var(--color-text-muted);
+        background: transparent; border: 0; outline: none; text-decoration: none;
+        flex-shrink: 0; position: relative;
+        transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+      }
+      .s-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+      .s-btn:focus-visible { box-shadow: 0 0 0 2px var(--tl-green); }
+
+      .s-sep { width: 28px; height: 1px; background: var(--color-border); margin: 5px 0; flex-shrink: 0; }
+      .s-spacer { flex: 1; min-height: 4px; }
+
+      .s-apps { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; padding: 0 4px; box-sizing: border-box; }
+      .s-app-item {
+        display: flex; flex-direction: column; align-items: center; gap: 5px;
+        text-decoration: none; color: inherit; border: 0; outline: none; cursor: pointer;
+        width: 60px; border-radius: 10px; padding: 7px 0 6px; flex-shrink: 0;
+        transition: background 180ms var(--ease-out);
+      }
+      .s-app-item:hover { background: var(--color-surface-2); }
+      .s-app-item:focus-visible { box-shadow: 0 0 0 2px var(--tl-green); }
+      .s-bubble {
+        width: 38px; height: 38px; border-radius: 11px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        transition: transform 220ms var(--ease-spring), box-shadow 200ms var(--ease-out);
+      }
+      .s-app-item:hover .s-bubble { transform: scale(1.1) translateY(-2px); box-shadow: 0 5px 14px rgba(0,0,0,0.22); }
+      .ib-home    { background: linear-gradient(135deg,rgba(255,88,45,.22),rgba(255,120,55,.32));   border: 1px solid rgba(255,88,45,.42);   color: #FF7040; }
+      .ib-todo    { background: linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.25));    border: 1px solid rgba(34,197,94,.26);   color: #4ADE80; }
+      .ib-kampanj { background: linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,191,36,.22));  border: 1px solid rgba(245,158,11,.30);  color: #FCD34D; }
+      .ib-seo     { background: linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23)); border: 1px solid rgba(99,102,241,.28);  color: #A5B4FC; }
+      .ib-trackr  { background: linear-gradient(135deg,rgba(236,72,153,.14),rgba(219,39,119,.23));  border: 1px solid rgba(236,72,153,.28);  color: #F472B6; }
+      .s-app-item.active .s-bubble { box-shadow: 0 0 0 1.5px rgba(74,222,128,0.6), 0 0 14px rgba(74,222,128,0.3); }
+      .s-app-item.active .s-icon-label { color: var(--tl-green); font-weight: 600; }
+      .s-icon-label {
+        font-size: 10px; font-family: var(--font-display); font-weight: 500;
+        color: var(--color-text-faint); text-align: center; line-height: 1;
+        transition: color 150ms var(--ease-out);
+      }
+      .s-app-item:hover .s-icon-label { color: var(--color-text-muted); }
+
+      .s-user-btn { padding: 0; }
+      .s-avatar-el {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: linear-gradient(135deg, var(--tl-green-dim), var(--tl-green));
+        color: #0f172a; font-size: 14px; font-weight: 700;
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+        box-shadow: 0 0 0 2px rgba(74,222,128,0.25);
+      }
+      .tl-side-user { position: relative; }
+      .tl-side-user-pop {
+        position: absolute; left: calc(100% + 12px); bottom: 0; min-width: 180px;
+        background: var(--color-surface); border: 1px solid var(--color-border);
+        border-radius: 10px; padding: 6px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.08); z-index: 120;
+        animation: tl-side-in 160ms var(--ease-out) both;
+      }
+      .tl-side-user-name {
+        font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--color-text-faint); padding: 6px 10px 8px;
+      }
+      .tl-side-user-pop button {
+        display: flex; align-items: center; gap: 10px; width: 100%;
+        padding: 9px 10px; background: transparent; border: 0; border-radius: 6px;
+        color: var(--color-text-muted); font-family: inherit; font-size: 13px; font-weight: 500;
+        cursor: pointer; text-align: left; transition: background 150ms, color 150ms;
+      }
+      .tl-side-user-pop button:hover { background: var(--tl-green-bg2); color: var(--tl-green); }
+
+      .theme-toggle {
+        background: transparent; border: 0; color: var(--color-text-muted);
+        padding: 0; border-radius: 50%; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        width: 40px; height: 40px; flex-shrink: 0;
+        transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), transform 300ms var(--ease-spring);
+      }
+      .theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); transform: rotate(18deg) scale(1.1); }
+      .theme-toggle:active { transform: rotate(36deg) scale(0.9); }
+
       .tl-app-root, .tl-welcome-root {
         min-height: 100vh;
-        margin: 0 auto;
         color: var(--color-text);
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
+        position: relative; z-index: 10;
       }
-      .tl-app-root { max-width: 75%; padding: 32px 24px 96px; }
+      .tl-app-root { max-width: 960px; margin: 0 auto; padding: 48px 32px 110px; }
+      .tl-welcome-root { max-width: 640px; margin: 0 auto; padding: 32px 24px 96px; display: flex; flex-direction: column; }
+      /* Clear the fixed sidebar when the centered margin is too narrow for it */
+      @media (max-width: 1184px) { .tl-app-root { margin-left: 116px; margin-right: auto; } }
       .tl-welcome-root { max-width: 640px; padding: 32px 24px 96px; display: flex; flex-direction: column; }
 
       .tl-fullscreen-loader {
@@ -1301,10 +1693,29 @@ function ScopedStyles() {
 
       /* ── Responsive ── */
       @media (max-width: 768px) { .tl-app-root { max-width: 100%; } }
+
+      /* Sidebar → bottom horizontal pill on mobile */
+      @media (max-width: 680px) {
+        .tl-sidebar {
+          left: 12px; right: 12px; top: auto; bottom: 12px; transform: none;
+          width: auto; flex-direction: row; align-items: center;
+          padding: 0 14px; height: 60px; gap: 4px;
+          justify-content: space-between;
+        }
+        .tl-sidebar .s-sep, .tl-sidebar .s-spacer { display: none; }
+        .s-apps { flex-direction: row; gap: 4px; padding: 0; }
+        .s-app-item { flex-direction: row; gap: 8px; width: auto; padding: 8px 10px; border-radius: 8px; }
+        .s-bubble { width: 28px; height: 28px; border-radius: 8px; }
+        .s-icon-label { font-size: 11px; }
+        .tl-side-user-pop { left: auto; right: 0; bottom: calc(100% + 10px); }
+        .tl-app-root { margin-left: auto; margin-right: auto; padding: 28px 18px 110px; }
+      }
+      @media (max-width: 460px) {
+        .s-app-item .s-icon-label { display: none; }
+        .s-logo { display: none; }
+      }
+
       @media (max-width: 540px) {
-        .tl-top-nav { margin-bottom: 32px; }
-        .tl-nav-right { gap: 16px; }
-        .tl-menu { gap: 16px; }
         .tl-user-chip .tl-user-name { max-width: 80px; }
         .tl-form-card { padding: 20px; }
         .tl-project-header { padding: 16px 18px 10px; flex-wrap: wrap; }
