@@ -1153,7 +1153,7 @@ function ScopedStyles() {
 
       /* Sidebar pill */
       .tl-sidebar {
-        position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+        position: fixed; left: 20px; top: 20px;
         width: 72px; border-radius: 9999px;
         background: color-mix(in oklch, var(--color-surface) 88%, transparent);
         backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
