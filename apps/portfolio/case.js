@@ -25,7 +25,12 @@
 
   var frame = document.querySelector('.cs-frame-holder iframe');
   if (frame) {
-    frame.addEventListener('load', function () { injectInto(frame); });
+    frame.addEventListener('load', function () {
+      injectInto(frame);
+      /* belt-and-suspenders for SPA navs that mount slightly later */
+      setTimeout(function () { injectInto(frame); }, 300);
+      setTimeout(function () { injectInto(frame); }, 1200);
+    });
     injectInto(frame);
   }
 
