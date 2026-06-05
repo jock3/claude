@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        portfolio: resolve(__dirname, 'apps/portfolio/index.html'),
         todo: resolve(__dirname, 'apps/todo/index.html'),
         kampanj: resolve(__dirname, 'apps/kampanj/index.html'),
         'seo-audit': resolve(__dirname, 'apps/seo-audit/index.html'),
