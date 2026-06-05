@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/claude/' : '/',
+  base: process.env.VITE_BASE ?? (process.env.GITHUB_ACTIONS ? '/claude/' : '/'),
   plugins: [react()],
   build: {
     rollupOptions: {
