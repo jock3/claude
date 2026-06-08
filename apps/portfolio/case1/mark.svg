@@ -1,0 +1,10 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Märke">
+  <!-- Seal ring (lighter than the monogram so the M is the hero) -->
+  <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-width="3.5"/>
+  <!-- M monogram, monoline, deboss/foil friendly -->
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="butt" stroke-linejoin="round">
+    <path d="M44 42 L60 64 L76 42"/>
+    <path d="M44 42 L44 78"/>
+    <path d="M76 42 L76 78"/>
+  </g>
+</svg>
