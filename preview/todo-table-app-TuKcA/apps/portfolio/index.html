@@ -493,6 +493,25 @@
       var sel = 'a, button, input';
       document.addEventListener('mouseover', function(e) { if (e.target.closest(sel)) { dot.classList.add('hovering'); ring.classList.add('hovering'); } });
       document.addEventListener('mouseout', function(e) { if (e.target.closest(sel)) { dot.classList.remove('hovering'); ring.classList.remove('hovering'); } });
+
+      /* Iframe hand-off: hide custom cursor while mouse is inside the demo,
+         snap back to the exit coordinate on leave. */
+      var stageFrame = document.getElementById('stage-iframe');
+      if (stageFrame) {
+        stageFrame.addEventListener('mouseenter', function () {
+          dot.classList.remove('visible');
+          ring.classList.remove('visible');
+          shown = false;
+        });
+        stageFrame.addEventListener('mouseleave', function (e) {
+          mx = e.clientX; my = e.clientY;
+          rx = mx; ry = my;
+          dot.style.left  = mx + 'px'; dot.style.top  = my + 'px';
+          ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+          dot.classList.add('visible'); ring.classList.add('visible');
+          shown = true;
+        });
+      }
     })();
 
     /* ─── Spotlight ─── */
