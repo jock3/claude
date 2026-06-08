@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" crossorigin href="/claude/assets/portfolio-case1-marke-CmJZBc0-.css">
+  <link rel="stylesheet" crossorigin href="/claude/assets/portfolio-case1-marke-CJHfAiPV.css">
 </head>
 <body>
 
@@ -54,6 +54,12 @@
 
     <!-- ── HERO ── -->
     <section class="hero" id="hem" aria-label="Märke">
+      <div class="hero-bg" aria-hidden="true">
+        <img src="/claude/assets/lineup-D8apREjf.webp"
+             alt=""
+             loading="eager" fetchpriority="high">
+      </div>
+      <div class="hero-overlay" aria-hidden="true"></div>
       <div class="hero-content">
         <h1 class="hero-headline rv">Hudvård.<br>Utan<br>onödigt.</h1>
         <p class="hero-tagline rv d1">
@@ -66,11 +72,6 @@
             <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
           </svg>
         </a>
-      </div>
-      <div class="hero-photo rv d1" aria-hidden="true">
-        <img src="/claude/assets/lineup-D8apREjf.webp"
-             alt="Märke produktlinje — Tvätt, Fukt, Serum och Balm"
-             loading="eager" fetchpriority="high">
       </div>
       <div class="hero-scroll" aria-hidden="true">
         <span class="hero-scroll-line"></span>
@@ -88,7 +89,9 @@
         <div class="prod-grid" role="list">
 
           <article class="prod-card rv d1" style="--pc:var(--p-tvatt)" role="listitem">
-            <div class="prod-stripe" aria-hidden="true"></div>
+            <div class="prod-img prod-img--no-photo" aria-hidden="true">
+              <svg class="prod-ph-mark" aria-hidden="true"><use href="#mark"/></svg>
+            </div>
             <div class="prod-body">
               <span class="prod-label">Rengöring · 100 ml</span>
               <h2 class="prod-name">Tvätt</h2>
@@ -101,7 +104,9 @@
           </article>
 
           <article class="prod-card rv d2" style="--pc:var(--p-fukt)" role="listitem">
-            <div class="prod-stripe" aria-hidden="true"></div>
+            <div class="prod-img" aria-hidden="true">
+              <img src="/claude/assets/fukt-lpYY4j4O.webp" alt="Fukt fuktkräm" loading="lazy">
+            </div>
             <div class="prod-body">
               <span class="prod-label">Fuktkräm · 75 ml</span>
               <h2 class="prod-name">Fukt</h2>
@@ -114,7 +119,9 @@
           </article>
 
           <article class="prod-card prod-card--hero rv d3" style="--pc:var(--p-serum)" role="listitem">
-            <div class="prod-stripe" aria-hidden="true"></div>
+            <div class="prod-img" aria-hidden="true">
+              <img src="/claude/assets/serum-BFPjTKSw.webp" alt="Serum koncentrat" loading="lazy">
+            </div>
             <div class="prod-body">
               <span class="prod-label">Koncentrat · 30 ml</span>
               <h2 class="prod-name">Serum</h2>
@@ -127,7 +134,9 @@
           </article>
 
           <article class="prod-card rv d4" style="--pc:var(--p-balm)" role="listitem">
-            <div class="prod-stripe" aria-hidden="true"></div>
+            <div class="prod-img" aria-hidden="true">
+              <img src="/claude/assets/balm-Bmi8AV1-.webp" alt="Balm after shave balsam" loading="lazy">
+            </div>
             <div class="prod-body">
               <span class="prod-label">Efter rakning · 75 ml</span>
               <h2 class="prod-name">Balm</h2>
