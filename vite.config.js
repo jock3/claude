@@ -11,6 +11,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         portfolio: resolve(__dirname, 'apps/portfolio/index.html'),
         'portfolio-case1': resolve(__dirname, 'apps/portfolio/case1/index.html'),
+        'portfolio-case1-marke': resolve(__dirname, 'apps/portfolio/case1/marke/index.html'),
         'portfolio-case2': resolve(__dirname, 'apps/portfolio/case2/index.html'),
         'portfolio-case3': resolve(__dirname, 'apps/portfolio/case3/index.html'),
         'portfolio-case4': resolve(__dirname, 'apps/portfolio/case4/index.html'),
