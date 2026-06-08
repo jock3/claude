@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Märke — Nordisk hudvård</title>
+  <meta name="description" content="Märke — avskalad hudvård för män. Fyra produkter. Inga löften. Nordisk enkelhet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- SVG mark — definieras en gång, återanvänds överallt -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="mark" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-width="3.5"/>
+      <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="butt" stroke-linejoin="round">
+        <path d="M44 42 L60 64 L76 42"/>
+        <path d="M44 42 L44 78"/>
+        <path d="M76 42 L76 78"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <!-- ══════════ HERO ══════════ -->
+  <section class="hero" aria-label="Märke — varumärke">
+    <svg class="hero-mark" role="img" aria-label="Märke sigill">
+      <use href="#mark"/>
+    </svg>
+    <h1 class="hero-wordmark">märke</h1>
+    <div class="hero-rule" aria-hidden="true"></div>
+    <p class="hero-tagline">Mindre, men bättre.</p>
+    <div class="hero-scroll" aria-hidden="true">
+      <span class="hero-scroll-lbl">Bläddra</span>
+      <span class="hero-scroll-line"></span>
+    </div>
+  </section>
+
+  <!-- Foto-remsa -->
+  <div class="photo-strip">
+    <img src="../images/lineup.webp"
+         alt="Märke produktlinje — Tvätt, Fukt, Serum och Balm uppradade på en stenhylla"
+         loading="lazy">
+  </div>
+
+  <!-- ══════════ 01 IDÉN ══════════ -->
+  <section class="s s--border" aria-labelledby="h-iden">
+    <span class="s-eye rv" id="h-iden">01 · Idén</span>
+
+    <p class="iden-body rv d1">
+      Märke är hudvård för den som vill ha en rutin, inte ett mirakel. Fyra produkter —
+      Tvätt, Fukt, Serum och Balm. Inga löften utöver det ett material kan hålla.
+      Inget av den rosa "beauty"-koden. Inget av den skrikiga machostilen.
+      Vuxet, diskret och självsäkert — apotek möter designstudio.
+    </p>
+
+    <div class="iden-props rv d2">
+      <div class="iden-prop">
+        <span class="iden-prop-k">Målgrupp</span>
+        <span class="iden-prop-v">Män 28–45</span>
+      </div>
+      <div class="iden-prop">
+        <span class="iden-prop-k">Personlighet</span>
+        <span class="iden-prop-v">Stram · taktil · lågmäld</span>
+      </div>
+      <div class="iden-prop">
+        <span class="iden-prop-k">Produkter</span>
+        <span class="iden-prop-v">4 i sortimentet</span>
+      </div>
+      <div class="iden-prop">
+        <span class="iden-prop-k">Kanal</span>
+        <span class="iden-prop-v">E-handel · direktförsäljning</span>
+      </div>
+    </div>
+
+    <blockquote class="iden-quote rv d3">Färre produkter,<br>skarpare fokus.</blockquote>
+  </section>
+
+  <!-- ══════════ 02 FÄRG ══════════ -->
+  <section class="s s--border" aria-labelledby="h-farg">
+    <span class="s-eye rv" id="h-farg">02 · Färg</span>
+
+    <div class="color-grid rv d1" role="list" aria-label="Varumärkesfärger">
+
+      <div class="swatch swatch--hero" style="--sw:#9E4E3D" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Lera</span>
+          <span class="sw-hex">#9E4E3D</span>
+          <span class="sw-role">Signatur · Accent</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#191714" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Kol</span>
+          <span class="sw-hex">#191714</span>
+          <span class="sw-role">Text · Ink</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#ECE6DA" role="listitem">
+        <div class="sw-clr" style="border-bottom:1px solid var(--linje)" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Ben</span>
+          <span class="sw-hex">#ECE6DA</span>
+          <span class="sw-role">Primär bakgrund</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#D8CDBC" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Sand</span>
+          <span class="sw-hex">#D8CDBC</span>
+          <span class="sw-role">Sekundär yta</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#8C8174" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Taupe</span>
+          <span class="sw-hex">#8C8174</span>
+          <span class="sw-role">Dämpad text</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#C9BEAD" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Linje</span>
+          <span class="sw-hex">#C9BEAD</span>
+          <span class="sw-role">Avgränsare</span>
+        </div>
+      </div>
+
+    </div><!-- /color-grid -->
+
+    <!-- Produkttoner -->
+    <div class="color-prod-grid rv d2" role="list" aria-label="Produktfärger">
+
+      <div class="swatch" style="--sw:#7C857A" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Tvätt</span>
+          <span class="sw-hex">#7C857A</span>
+          <span class="sw-role">Salvia</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#C7A98A" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Fukt</span>
+          <span class="sw-hex">#C7A98A</span>
+          <span class="sw-role">Sand</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#9E4E3D" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Serum</span>
+          <span class="sw-hex">#9E4E3D</span>
+          <span class="sw-role">Lera · Hjälte</span>
+        </div>
+      </div>
+
+      <div class="swatch" style="--sw:#44505A" role="listitem">
+        <div class="sw-clr" aria-hidden="true"></div>
+        <div class="sw-info">
+          <span class="sw-name">Balm</span>
+          <span class="sw-hex">#44505A</span>
+          <span class="sw-role">Skiffer</span>
+        </div>
+      </div>
+
+    </div><!-- /color-prod-grid -->
+  </section>
+
+  <!-- ══════════ 03 TYPOGRAFI ══════════ -->
+  <section class="s s--border" aria-labelledby="h-typo">
+    <span class="s-eye rv" id="h-typo">03 · Typografi</span>
+
+    <div class="typo-rows">
+
+      <div class="typo-row rv d1">
+        <div class="typo-meta">
+          <span class="typo-meta-name">Fraunces</span>
+          <span class="typo-meta-spec">Optisk axel 9–144<br>Vikt 500–600<br>Tracking −0.01em<br>Display · Rubriker</span>
+        </div>
+        <p class="typo-display">Nordisk enkelhet,<br>utan kompromiss.</p>
+      </div>
+
+      <div class="typo-row rv d2">
+        <div class="typo-meta">
+          <span class="typo-meta-name">Archivo</span>
+          <span class="typo-meta-spec">Vikt 400–500<br>17px / 1.65 leading<br>Brödtext · UI</span>
+        </div>
+        <p class="typo-body-ex">
+          Märke är hudvård för den som vill ha en rutin.
+          Fyra produkter — Tvätt, Fukt, Serum och Balm.
+          Inga löften utöver det ett material kan hålla.
+          Torrt och självsäkert, aldrig peppigt.
+        </p>
+      </div>
+
+      <div class="typo-row rv d3">
+        <div class="typo-meta">
+          <span class="typo-meta-name">Etikett</span>
+          <span class="typo-meta-spec">Archivo 600<br>VERSALER<br>Tracking 0.20em<br>Labels · Eyebrows</span>
+        </div>
+        <p class="typo-lbl-ex">TVÄTT · RENGÖRING · 100 ML</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 04 LOGOTYP & MÄRKE ══════════ -->
+  <section class="s s--border" aria-labelledby="h-logo">
+    <span class="s-eye rv" id="h-logo">04 · Logotyp &amp; Märke</span>
+
+    <div class="logo-cells rv d1">
+
+      <!-- Sigillet -->
+      <div class="lc lc--light">
+        <svg class="lc-mark lc-mark--lg" role="img" aria-label="Märke sigill">
+          <use href="#mark"/>
+        </svg>
+        <span class="lc-lbl">Sigillmärket</span>
+      </div>
+
+      <!-- Horisontell lockup -->
+      <div class="lc lc--light">
+        <div class="lc-lockup">
+          <svg class="lc-mark" aria-hidden="true"><use href="#mark"/></svg>
+          <span class="lc-word">märke</span>
+        </div>
+        <span class="lc-lbl">Horisontell lockup</span>
+      </div>
+
+      <!-- Staplad · mörk -->
+      <div class="lc lc--dark">
+        <div class="lc-lockup-vert">
+          <svg class="lc-mark" aria-hidden="true"><use href="#mark"/></svg>
+          <span class="lc-word">märke</span>
+        </div>
+        <span class="lc-lbl">Staplad · Mörkt</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 05 RÖST ══════════ -->
+  <section class="s s--border" aria-labelledby="h-rost">
+    <span class="s-eye rv" id="h-rost">05 · Röst &amp; Tonfall</span>
+
+    <div class="voice-split rv d1">
+
+      <div class="vc vc--do">
+        <p class="vc-hdr">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Gör
+        </p>
+        <ul class="vc-list" aria-label="Tonfall att använda">
+          <li>Tvätt. Tar bort dagen. Inget mer.</li>
+          <li>Fukt. Håller huden stabil.</li>
+          <li>Serum. Koncentrerat. Bara det.</li>
+          <li>Fungerar. Inget att förklara.</li>
+          <li>Kort, faktiskt — utan adjektivinflation.</li>
+        </ul>
+      </div>
+
+      <div class="vc vc--no">
+        <p class="vc-hdr">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Undvik
+        </p>
+        <ul class="vc-list" aria-label="Tonfall att undvika">
+          <li>Revolutionera din hudvårdsrutin!</li>
+          <li>Bli den bästa versionen av dig.</li>
+          <li>Känn skillnaden — direkt!</li>
+          <li>Vår banbrytande formula förändrar allt.</li>
+          <li>Aldrig peppig. Aldrig mirakelord.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ 06 PRODUKTLINJEN ══════════ -->
+  <section class="s s--border" aria-labelledby="h-prod">
+    <span class="s-eye rv" id="h-prod">06 · Produktlinjen</span>
+
+    <div class="prod-row rv d1" role="list" aria-label="Fyra produkter i sortimentet">
+
+      <!-- Tvätt -->
+      <div class="prod-col" style="--pc:var(--p-tvatt)" role="listitem">
+        <div class="prod-bottle" aria-hidden="true">
+          <svg class="pb-mark"><use href="#mark"/></svg>
+          <span class="pb-name">Tvätt</span>
+          <div class="pb-rule"></div>
+          <span class="pb-fn">Rengöring</span>
+          <div class="pb-vol">
+            <span class="pb-dot"></span>
+            <span class="pb-vol-num">100 ML</span>
+          </div>
+        </div>
+        <div class="prod-meta">
+          <span class="prod-meta-name">Tvätt</span>
+          <span class="prod-meta-fn">Rengöring · 100 ml</span>
+        </div>
+      </div>
+
+      <!-- Fukt -->
+      <div class="prod-col" style="--pc:var(--p-fukt)" role="listitem">
+        <div class="prod-bottle" aria-hidden="true">
+          <svg class="pb-mark"><use href="#mark"/></svg>
+          <span class="pb-name">Fukt</span>
+          <div class="pb-rule"></div>
+          <span class="pb-fn">Fuktkräm</span>
+          <div class="pb-vol">
+            <span class="pb-dot"></span>
+            <span class="pb-vol-num">75 ML</span>
+          </div>
+        </div>
+        <div class="prod-meta">
+          <span class="prod-meta-name">Fukt</span>
+          <span class="prod-meta-fn">Fuktkräm · 75 ml</span>
+        </div>
+      </div>
+
+      <!-- Serum — hjälteprodukt -->
+      <div class="prod-col" style="--pc:var(--p-serum)" role="listitem">
+        <div class="prod-bottle" aria-hidden="true">
+          <svg class="pb-mark"><use href="#mark"/></svg>
+          <span class="pb-name">Serum</span>
+          <div class="pb-rule"></div>
+          <span class="pb-fn">Koncentrat</span>
+          <div class="pb-vol">
+            <span class="pb-dot"></span>
+            <span class="pb-vol-num">30 ML</span>
+          </div>
+        </div>
+        <div class="prod-meta">
+          <span class="prod-meta-name">Serum</span>
+          <span class="prod-meta-fn">Koncentrat · 30 ml</span>
+        </div>
+      </div>
+
+      <!-- Balm -->
+      <div class="prod-col" style="--pc:var(--p-balm)" role="listitem">
+        <div class="prod-bottle" aria-hidden="true">
+          <svg class="pb-mark"><use href="#mark"/></svg>
+          <span class="pb-name">Balm</span>
+          <div class="pb-rule"></div>
+          <span class="pb-fn">Aftershave</span>
+          <div class="pb-vol">
+            <span class="pb-dot"></span>
+            <span class="pb-vol-num">75 ML</span>
+          </div>
+        </div>
+        <div class="prod-meta">
+          <span class="prod-meta-name">Balm</span>
+          <span class="prod-meta-fn">Aftershave · 75 ml</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Produktfotografi -->
+  <section class="s s--border" aria-labelledby="h-foto">
+    <span class="s-eye rv" id="h-foto">Produktfotografi</span>
+    <div class="photo-trio rv d1">
+      <div class="photo-cell">
+        <img src="../images/flatlay.webp"
+             alt="Märke — uppifrånperspektiv med samtliga produkter"
+             loading="lazy">
+      </div>
+      <div class="photo-cell">
+        <img src="../images/fukt.webp"
+             alt="Fukt — återfuktande dagskräm"
+             loading="lazy">
+      </div>
+      <div class="photo-cell">
+        <img src="../images/balm.webp"
+             alt="Balm — lugnande after-shave balsam"
+             loading="lazy">
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ 07 FÖRPACKNING ══════════ -->
+  <section class="s s--border" aria-labelledby="h-pkg">
+    <span class="s-eye rv" id="h-pkg">07 · Förpackning</span>
+
+    <div class="pkg-scene rv d1"
+         role="img"
+         aria-label="CSS-illustration av Märkes förpackningar: tub, kartong och smalare tub">
+
+      <!-- Stor tub -->
+      <div class="pkg-tube" aria-hidden="true">
+        <svg class="pt-mark"><use href="#mark"/></svg>
+        <span class="pt-word">märke</span>
+      </div>
+
+      <!-- Kartong -->
+      <div class="pkg-box" aria-hidden="true">
+        <div class="pkg-box-lid"></div>
+        <div class="pkg-box-body">
+          <svg class="pb-box-mark"><use href="#mark"/></svg>
+          <span class="pb-box-word">märke</span>
+        </div>
+      </div>
+
+      <!-- Smalare tub -->
+      <div class="pkg-tube-2" aria-hidden="true">
+        <svg class="pt-mark"><use href="#mark"/></svg>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════ FOOTER ══════════ -->
+  <footer class="site-footer">
+    <div class="foot-lockup rv">
+      <svg class="foot-mark" aria-hidden="true"><use href="#mark"/></svg>
+      <span class="foot-word">märke</span>
+    </div>
+    <p class="foot-meta rv d1">Konceptarbete</p>
+  </footer>
+
+  <script>
+    /* Scroll reveal — IntersectionObserver */
+    (function () {
+      var els = document.querySelectorAll('.rv');
+      if (!window.IntersectionObserver) {
+        els.forEach(function (el) { el.classList.add('in'); });
+        return;
+      }
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in');
+            obs.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.06, rootMargin: '0px 0px -36px 0px' });
+      els.forEach(function (el) { obs.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>
