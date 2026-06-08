@@ -4,17 +4,83 @@
   <script>(function(){var t=localStorage.getItem('ailabb_theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Case 01 — Startsida · AI Labb</title>
-  <meta name="description" content="Case study: AI Labb-startsidan — en inloggad portal med PIN-kod, byggd i vanilla JS.">
+  <title>Case 01 — Märkeprod · AI Labb</title>
+  <meta name="description" content="Case study: Märke — varumärkesidentitet och förpackningsdesign för en nordisk hudvård med fyra produkter.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    /* ── Produktgalleri för Märkeprod ── */
+    .cs-gallery {
+      position: relative;
+      display: grid;
+      grid-template-rows: 3fr 2fr;
+      gap: 8px;
+      height: clamp(440px, 66vh, 760px);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      border: 1px solid var(--color-border);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.34),
+                  0 0 0 1px rgba(var(--cs-accent-rgb), 0.08);
+    }
+
+    .cs-gal-hero {
+      margin: 0; overflow: hidden;
+      background: color-mix(in oklch, var(--cs-accent) 7%, var(--color-surface));
+    }
+    .cs-gal-hero img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 30%;
+      display: block;
+      transition: transform 700ms var(--ease-out);
+    }
+    .cs-gallery:hover .cs-gal-hero img { transform: scale(1.02); }
+
+    .cs-gal-trio {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .cs-gal-item {
+      margin: 0; overflow: hidden; position: relative;
+      background: color-mix(in oklch, var(--cs-accent) 5%, var(--color-surface));
+    }
+    .cs-gal-item img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: transform 600ms var(--ease-out);
+    }
+    .cs-gal-item:hover img { transform: scale(1.06); }
+    .cs-gal-item figcaption {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 7px 11px;
+      background: linear-gradient(to top, rgba(0,0,0,0.54) 0%, transparent 100%);
+      font-family: var(--font-display); font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* Expand button floats over the gallery */
+    .cs-gallery .cs-expand-btn {
+      position: absolute; top: 12px; right: 12px; z-index: 5;
+    }
+
+    /* Fill the viewport when expanded */
+    .cs-preview.cs-expanded .cs-gallery {
+      height: 100%; border-radius: var(--r-md);
+    }
+
+    @media (max-width: 460px) {
+      .cs-gallery { height: 72vh; }
+      .cs-gal-item figcaption { font-size: 9px; padding: 5px 8px; }
+    }
+  </style>
   <script type="module" crossorigin src="/claude/preview/todo-table-app-TuKcA/assets/modulepreload-polyfill-B5Qt9EMX.js"></script>
   <script type="module" crossorigin src="/claude/preview/todo-table-app-TuKcA/assets/case-BA8_ry3o.js"></script>
   <link rel="stylesheet" crossorigin href="/claude/preview/todo-table-app-TuKcA/assets/case-DDKPcc1t.css">
   <link rel="stylesheet" crossorigin href="/claude/preview/todo-table-app-TuKcA/assets/colors_and_type-CJJ7dSWT.css">
 </head>
-<body style="--cs-accent:#FF7040; --cs-accent-rgb:255,112,64;">
+<body style="--cs-accent:#D4875C; --cs-accent-rgb:212,135,92;">
 
   <div class="cs-bg" aria-hidden="true"></div>
   <div class="cs-noise" aria-hidden="true"></div>
@@ -22,73 +88,77 @@
   <article class="cs-scroll">
 
     <header class="cs-hero">
-      <p class="cs-eyebrow cs-anim">Case 01 — Personlig hubb</p>
-      <h1 class="cs-title cs-anim cs-d1">AI Labb — Startsida</h1>
-      <p class="cs-tagline cs-anim cs-d1">En inloggad portal som samlar fem experiment bakom en PIN-kod — och sätter tonen för hela labbet med rörelse, glas och egen markör.</p>
+      <p class="cs-eyebrow cs-anim">Case 01 — Varumärkesdesign</p>
+      <h1 class="cs-title cs-anim cs-d1">Märke — Nordisk hudvård</h1>
+      <p class="cs-tagline cs-anim cs-d1">Fyra produkter, ett varumärke — Fukt, Serum, Tvätt och Balm. Minimalistisk förpackningsdesign med nordisk estetik: lin, sten och varmt naturligt ljus.</p>
 
       <div class="cs-meta cs-anim cs-d2">
-        <div class="cs-meta-item"><span class="cs-meta-k">Roll</span><span class="cs-meta-v">Design &amp; kod</span></div>
-        <div class="cs-meta-item"><span class="cs-meta-k">Typ</span><span class="cs-meta-v">Landningssida / portal</span></div>
-        <div class="cs-meta-item"><span class="cs-meta-k">Kärna</span><span class="cs-meta-v">Vanilla JS, ingen backend</span></div>
+        <div class="cs-meta-item"><span class="cs-meta-k">Roll</span><span class="cs-meta-v">Design &amp; foto</span></div>
+        <div class="cs-meta-item"><span class="cs-meta-k">Typ</span><span class="cs-meta-v">Varumärkesidentitet</span></div>
+        <div class="cs-meta-item"><span class="cs-meta-k">Produkter</span><span class="cs-meta-v">4 i sortimentet</span></div>
       </div>
 
       <div class="cs-actions cs-anim cs-d2">
-        <a class="cs-btn-live" href="../../../" target="_blank" rel="noopener">
-          Öppna live
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-        </a>
         <div class="cs-tags">
-          <span class="cs-tag">Vanilla JS</span>
-          <span class="cs-tag">Vite</span>
-          <span class="cs-tag">Canvas 2D</span>
-          <span class="cs-tag">localStorage</span>
-          <span class="cs-tag">CSS Variables</span>
+          <span class="cs-tag">Figma</span>
+          <span class="cs-tag">Förpackningsdesign</span>
+          <span class="cs-tag">Fotografering</span>
+          <span class="cs-tag">Typografi</span>
+          <span class="cs-tag">Nordisk estetik</span>
         </div>
       </div>
     </header>
 
-    <section class="cs-preview cs-anim cs-d3" aria-label="Live-förhandsvisning">
-      <div class="cs-browser">
-        <div class="cs-browser-bar">
-          <span class="cs-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-          <span class="cs-url">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            ai-labb.se
-          </span>
-          <span class="cs-live-badge" aria-hidden="true"><i></i> Live</span>
-          <button class="cs-expand-btn" type="button" aria-pressed="false" title="Expandera demon" aria-label="Expandera demon">
-            <svg class="ic-expand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-            <svg class="ic-collapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
-            <span class="cs-expand-label"><span class="lbl-expand">Expandera</span><span class="lbl-collapse">Förminska</span></span>
-          </button>
+    <section class="cs-preview cs-anim cs-d3" aria-label="Produktgalleri">
+      <div class="cs-gallery">
+        <figure class="cs-gal-hero">
+          <img src="/claude/preview/todo-table-app-TuKcA/assets/lineup-D8apREjf.webp"
+               alt="Märke produktlinje — Tvätt, Fukt, Serum och Balm på stenhylla" loading="lazy">
+        </figure>
+        <div class="cs-gal-trio">
+          <figure class="cs-gal-item">
+            <img src="/claude/preview/todo-table-app-TuKcA/assets/fukt-lpYY4j4O.webp" alt="Fukt — återfuktande dagskräm" loading="lazy">
+            <figcaption>Fukt</figcaption>
+          </figure>
+          <figure class="cs-gal-item">
+            <img src="/claude/preview/todo-table-app-TuKcA/assets/serum-BFPjTKSw.webp" alt="Serum — uppstramande antioxidantserum" loading="lazy">
+            <figcaption>Serum</figcaption>
+          </figure>
+          <figure class="cs-gal-item">
+            <img src="/claude/preview/todo-table-app-TuKcA/assets/balm-Bmi8AV1-.webp" alt="Balm — lugnande after-shave balsam" loading="lazy">
+            <figcaption>Balm</figcaption>
+          </figure>
         </div>
-        <div class="cs-frame-holder">
-          <iframe src="../../../" title="Live: AI Labb startsida" loading="lazy"></iframe>
-        </div>
+        <button class="cs-expand-btn" type="button" aria-pressed="false"
+                title="Expandera galleriet" aria-label="Expandera galleriet">
+          <svg class="ic-expand" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+          <svg class="ic-collapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+          <span class="cs-expand-label"><span class="lbl-expand">Expandera</span><span class="lbl-collapse">Förminska</span></span>
+        </button>
       </div>
     </section>
 
     <section class="cs-grid">
       <div class="cs-card cs-anim cs-d2">
         <h2>Utmaningen</h2>
-        <p>Jag ville ha en personlig ingång till alla mina AI-experiment — något som kändes som en produkt, inte en länksamling. Knepet: snabb inloggning helt utan server, och ett gränssnitt vars första intryck redan berättar vad labbet handlar om.</p>
+        <p>Att bygga ett hudvårdsvarumärke som känns premium men äkta — nordisk enkelhet utan att bli kylig. Förpackningarna behövde bära hela berättelsen: vad produkten gör, vilken känsla den förmedlar och vem den är till för.</p>
       </div>
       <div class="cs-card cs-anim cs-d3">
-        <h2>Det jag byggde</h2>
+        <h2>Det jag skapade</h2>
         <ul class="cs-feature-list">
-          <li>PIN-baserad inloggning (4 siffror) med konton sparade i localStorage</li>
-          <li>Skapa, byt och radera användare — helt utan backend</li>
-          <li>Animerad canvas: plasma-orbar, vågigt rutnät och partikelnät</li>
-          <li>Egen markör med hover- och klick-tillstånd</li>
-          <li>Mörkt/ljust tema som följer med till alla appar</li>
-          <li>Text-scramble på rubriken vid laddning</li>
+          <li>Varumärkesstrategi och namngivning — Märke som enkelt, nordiskt kärnbegrepp</li>
+          <li>Förpackningsdesign för fyra produkter: Fukt, Serum, Tvätt och Balm</li>
+          <li>Typografisystem med ren sans-serif och generöst luftrum</li>
+          <li>Produktfotografering — lin, sten och betong som rekvisita</li>
+          <li>Färgpalett: naturvita, linbeige och varm terrakotta som accentfärg</li>
+          <li>Enhetlig estetik för e-handel och sociala medier</li>
         </ul>
       </div>
     </section>
 
     <footer class="cs-foot">
       <span>Case 01 av 05 — AI Labb</span>
-      <span>Öppna den live: <a href="../../../" target="_blank" rel="noopener">ai-labb startsida ↗</a></span>
+      <span>Designprojekt: <a href="../../../" target="_blank" rel="noopener">AI Labb ↗</a></span>
     </footer>
 
   </article>
