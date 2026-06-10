@@ -20,6 +20,7 @@ export default defineConfig({
         kampanj: resolve(__dirname, 'apps/kampanj/index.html'),
         'seo-audit': resolve(__dirname, 'apps/seo-audit/index.html'),
         trackr: resolve(__dirname, 'apps/trackr/index.html'),
+        brus: resolve(__dirname, 'apps/brus/index.html'),
       },
     },
   },
