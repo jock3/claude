@@ -2001,9 +2001,32 @@ function BoardStyles() {
         color: var(--color-text);
         font-family: var(--font-body, "Montserrat", sans-serif);
         -webkit-font-smoothing: antialiased;
+        position: relative;
         --row-h: 38px;
         --rail-w: 4px;
+        /* High-tech display-typsnitt + mjuka lager-skuggor */
+        --font-tech: "Space Grotesk", var(--font-display, "Montserrat"), sans-serif;
+        --shadow-soft:  0 1px 2px rgba(0,0,0,0.16), 0 8px 24px -8px rgba(0,0,0,0.30);
+        --shadow-float: 0 2px 6px rgba(0,0,0,0.18), 0 18px 50px -12px rgba(0,0,0,0.45);
+        --shadow-glow:  0 0 0 1px rgba(255,88,45,0.30), 0 8px 36px -6px rgba(255,88,45,0.28);
+        --grad-accent:  linear-gradient(135deg, #FF7A45 0%, var(--color-accent) 55%, #E8431B 100%);
       }
+      /* Ambient bakgrundsglow — fast bakom hela tavlan */
+      .board-root::before {
+        content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+          radial-gradient(60% 50% at 82% 0%, rgba(255,88,45,0.10), transparent 70%),
+          radial-gradient(55% 50% at 8% 12%, rgba(58,165,156,0.08), transparent 68%),
+          radial-gradient(70% 60% at 50% 108%, rgba(124,92,224,0.07), transparent 72%);
+        animation: bd-ambient 22s ease-in-out infinite alternate;
+      }
+      [data-theme="light"] .board-root::before {
+        background:
+          radial-gradient(60% 50% at 82% 0%, rgba(255,88,45,0.07), transparent 70%),
+          radial-gradient(55% 50% at 8% 12%, rgba(30,128,119,0.06), transparent 68%),
+          radial-gradient(70% 60% at 50% 108%, rgba(124,92,224,0.05), transparent 72%);
+      }
+      .board-root > * { position: relative; z-index: 1; }
       .board-root *, .board-root *::before, .board-root *::after { box-sizing: border-box; }
       .board-root button { font-family: inherit; }
       .bd-main {
@@ -2121,9 +2144,13 @@ function BoardStyles() {
         border-radius: 8px;
       }
       .bd-title h1 {
-        margin: 0; font-family: var(--font-display);
-        font-size: clamp(26px, 3.4vw, 34px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1;
+        margin: 0; font-family: var(--font-tech);
+        font-size: clamp(26px, 3.4vw, 34px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
+        background: linear-gradient(180deg, var(--color-text) 30%, color-mix(in srgb, var(--color-text) 62%, var(--color-accent)) 130%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
       }
+      .bd-eyebrow { font-family: var(--font-tech); }
       .bd-title-pen { color: var(--color-text-faint); opacity: 0; transition: opacity 150ms var(--ease-out); }
       .bd-title:hover .bd-title-pen { opacity: 1; }
       .bd-title:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
@@ -2150,10 +2177,18 @@ function BoardStyles() {
       }
       .bd-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
       .bd-btn.primary {
-        background: var(--color-accent); color: #fff;
-        box-shadow: 0 2px 10px rgba(255,88,45,0.3);
+        background: var(--grad-accent); color: #fff;
+        box-shadow: 0 2px 10px rgba(255,88,45,0.32), inset 0 1px 0 rgba(255,255,255,0.25);
+        position: relative; overflow: hidden;
       }
-      .bd-btn.primary:hover { background: var(--color-accent-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(255,88,45,0.4); }
+      /* Skimmer-svep över primärknappen */
+      .bd-btn.primary::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+        transform: translateX(-120%); transition: transform 600ms var(--ease-out);
+      }
+      .bd-btn.primary:hover::before { transform: translateX(120%); }
+      .bd-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(255,88,45,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
       .bd-btn.primary:active { transform: translateY(0); }
       .bd-btn.primary.lg { font-size: 14px; padding: 11px 18px; border-radius: 10px; }
       .bd-btn.ghost {
@@ -2171,11 +2206,12 @@ function BoardStyles() {
       .bd-btn.auto.on { color: var(--color-accent); }
       .bd-chip {
         min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
-        background: var(--color-accent); color: #fff;
+        background: var(--grad-accent); color: #fff;
         font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center;
+        box-shadow: 0 0 0 1px rgba(255,88,45,0.4), 0 2px 8px rgba(255,88,45,0.45);
         animation: bd-pop 220ms var(--ease-spring) both;
       }
-      .bd-chip.zap { background: var(--color-accent); }
+      .bd-chip.zap { background: var(--grad-accent); }
       .bd-icon-btn {
         display: inline-flex; align-items: center; justify-content: center;
         width: 28px; height: 28px; border-radius: 7px;
@@ -2210,9 +2246,11 @@ function BoardStyles() {
       /* ── Popover ── */
       .bd-pop {
         position: fixed; z-index: 600;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 10px; padding: 6px;
-        box-shadow: 0 14px 40px rgba(0,0,0,0.3), 0 3px 10px rgba(0,0,0,0.15);
+        background: color-mix(in oklch, var(--color-surface) 85%, transparent);
+        backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
+        border: 1px solid color-mix(in srgb, var(--color-border-strong) 60%, transparent);
+        border-radius: 13px; padding: 6px;
+        box-shadow: 0 24px 60px -16px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
         animation: bd-pop-in 170ms var(--ease-spring) both;
       }
       .bd-pop-list { display: flex; flex-direction: column; gap: 1px; max-height: 320px; overflow-y: auto; }
@@ -2259,19 +2297,34 @@ function BoardStyles() {
       .bd-board { display: flex; flex-direction: column; gap: 22px; overflow-x: auto; padding: 2px 2px 8px; }
       .bd-group {
         min-width: 1010px;
-        background: var(--color-surface);
+        background: color-mix(in oklch, var(--color-surface) 82%, transparent);
+        backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
         border: 1px solid var(--color-border);
-        border-radius: 12px;
+        border-radius: 16px;
         overflow: hidden;
+        box-shadow: var(--shadow-soft);
         animation: bd-rise 420ms var(--ease-out) both;
-        transition: box-shadow 250ms var(--ease-out);
+        transition: box-shadow 300ms var(--ease-out), border-color 300ms var(--ease-out), transform 300ms var(--ease-out);
       }
-      .bd-group:hover { box-shadow: var(--shadow-md); }
+      .bd-group:hover {
+        border-color: color-mix(in srgb, var(--gcolor) 40%, var(--color-border));
+        box-shadow: var(--shadow-float), 0 0 0 1px color-mix(in srgb, var(--gcolor) 22%, transparent),
+                    0 22px 60px -22px color-mix(in srgb, var(--gcolor) 55%, transparent);
+      }
       .bd-group-head {
         display: flex; align-items: center; gap: 10px;
-        padding: 11px 14px 11px 12px;
+        padding: 12px 14px 12px 12px;
         border-left: var(--rail-w) solid var(--gcolor);
+        position: relative;
+        background: linear-gradient(180deg, color-mix(in srgb, var(--gcolor) 9%, transparent), transparent 70%);
       }
+      /* Lysande accentskena längst upp i gruppen */
+      .bd-group-head::after {
+        content: ''; position: absolute; left: 0; top: 0; height: 2px; width: 100%;
+        background: linear-gradient(90deg, var(--gcolor), transparent 60%);
+        opacity: 0; transition: opacity 300ms var(--ease-out);
+      }
+      .bd-group:hover .bd-group-head::after { opacity: 0.7; }
       .bd-collapse {
         display: inline-flex; align-items: center; justify-content: center;
         width: 26px; height: 26px; border-radius: 7px; border: 0;
@@ -2321,9 +2374,9 @@ function BoardStyles() {
         display: grid; align-items: center;
         min-height: var(--row-h);
         border-left: var(--rail-w) solid var(--rail);
-        border-bottom: 1px solid var(--color-border);
+        border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
         position: relative;
-        background: var(--color-surface);
+        background: transparent;
         transition: background 130ms var(--ease-out);
       }
       .bd-row:not(.header):not(.add):not(.summary):not(.note):hover { background: var(--color-surface-2); }
@@ -2432,13 +2485,14 @@ function BoardStyles() {
 
       /* ── Cellinnehåll ── */
       .bd-status {
-        width: 100%; height: 30px; border: 0; border-radius: 6px;
+        width: 100%; height: 30px; border: 0; border-radius: 7px;
         color: #fff; font-family: inherit; font-size: 12px; font-weight: 700;
         cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,0.22);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -8px 14px -8px rgba(0,0,0,0.35);
         transition: filter 140ms, transform 140ms var(--ease-out), box-shadow 180ms;
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px;
       }
-      .bd-status:hover { filter: brightness(1.08); box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+      .bd-status:hover { filter: brightness(1.1) saturate(1.05); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 4px 14px rgba(0,0,0,0.3); }
       .bd-status:active { transform: scale(0.97); }
       .bd-status:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
       .bd-status.small { height: 24px; font-size: 11px; border-radius: 5px; }
@@ -2456,9 +2510,10 @@ function BoardStyles() {
         width: 100%; height: 26px; border: 0; border-radius: 999px;
         color: #fff; font-family: inherit; font-size: 11.5px; font-weight: 700;
         cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        transition: filter 140ms, transform 140ms var(--ease-out);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
+        transition: filter 140ms, transform 140ms var(--ease-out), box-shadow 180ms;
       }
-      .bd-prio:hover { filter: brightness(1.08); }
+      .bd-prio:hover { filter: brightness(1.1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 10px rgba(0,0,0,0.22); }
       .bd-prio.empty { background: transparent; border: 1.5px dashed var(--color-border-strong); color: var(--color-text-faint); text-shadow: none; }
       .bd-prio.empty:hover { border-color: var(--color-text-muted); color: var(--color-text-muted); }
       .bd-dash { font-weight: 600; }
@@ -2507,9 +2562,10 @@ function BoardStyles() {
         position: relative; width: 100%; height: 26px; border: 0; border-radius: 999px;
         color: #fff; cursor: pointer; overflow: hidden;
         font-family: inherit;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.22);
         transition: filter 140ms, box-shadow 180ms;
       }
-      .bd-timeline:hover { filter: brightness(1.08); box-shadow: 0 3px 10px rgba(0,0,0,0.25); }
+      .bd-timeline:hover { filter: brightness(1.1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 4px 14px rgba(0,0,0,0.28); }
       .bd-timeline:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
       .bd-timeline.empty {
         background: transparent; border: 1.5px dashed var(--color-border-strong);
@@ -2594,8 +2650,11 @@ function BoardStyles() {
       }
       .bd-modal {
         width: 660px; max-width: 100%;
-        background: var(--color-surface); border: 1px solid var(--color-border);
-        border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+        background: color-mix(in oklch, var(--color-surface) 88%, transparent);
+        backdrop-filter: blur(28px) saturate(1.4); -webkit-backdrop-filter: blur(28px) saturate(1.4);
+        border: 1px solid color-mix(in srgb, var(--color-border-strong) 55%, transparent);
+        border-radius: 20px;
+        box-shadow: 0 40px 90px -20px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
         animation: bd-modal-in 280ms var(--ease-spring) both;
       }
       .bd-modal.narrow { width: 520px; }
@@ -2659,9 +2718,10 @@ function BoardStyles() {
       .bd-bulk {
         position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
         display: flex; align-items: center; gap: 6px; z-index: 350;
-        background: #1B1B1C; border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 14px; padding: 9px 12px;
-        box-shadow: 0 18px 50px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.3);
+        background: rgba(24,24,26,0.78); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 16px; padding: 9px 12px;
+        box-shadow: 0 24px 60px -12px rgba(0,0,0,0.6), 0 4px 14px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
         animation: bd-bulk-in 300ms var(--ease-spring) both;
       }
       .bd-bulk-count {
@@ -2700,10 +2760,11 @@ function BoardStyles() {
         position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
         display: flex; align-items: center; gap: 9px; z-index: 500;
         max-width: min(520px, calc(100vw - 40px));
-        background: #1B1B1C; color: rgba(255,255,255,0.92);
-        border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+        background: rgba(24,24,26,0.8); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+        color: rgba(255,255,255,0.92);
+        border: 1px solid rgba(255,255,255,0.14); border-radius: 14px;
         padding: 11px 14px; font-size: 13px; font-weight: 500;
-        box-shadow: 0 16px 44px rgba(0,0,0,0.5);
+        box-shadow: 0 20px 50px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
         animation: bd-bulk-in 280ms var(--ease-spring) both;
       }
       .bd-toast.auto { border-color: rgba(255,88,45,0.5); }
@@ -2757,9 +2818,14 @@ function BoardStyles() {
       @keyframes bd-pulse { 0% { box-shadow: 0 0 0 0 rgba(255,88,45,0.45); } 70% { box-shadow: 0 0 0 7px rgba(255,88,45,0); } 100% { box-shadow: 0 0 0 0 rgba(255,88,45,0); } }
       @keyframes bd-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
       @keyframes bd-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+      @keyframes bd-ambient {
+        0%   { transform: translate3d(0,0,0) scale(1); opacity: 0.9; }
+        50%  { transform: translate3d(0,-2%,0) scale(1.06); opacity: 1; }
+        100% { transform: translate3d(0,1%,0) scale(1.02); opacity: 0.85; }
+      }
 
       /* ── Ljust tema ── */
-      [data-theme="light"] .bd-bulk, [data-theme="light"] .bd-toast { background: #26261F; }
+      [data-theme="light"] .bd-bulk, [data-theme="light"] .bd-toast { background: rgba(34,33,28,0.82); }
       [data-theme="light"] .bd-status, [data-theme="light"] .bd-status-opt { text-shadow: 0 1px 1px rgba(0,0,0,0.15); }
       [data-theme="light"] .bd-pop { box-shadow: 0 14px 40px rgba(0,0,0,0.14), 0 3px 10px rgba(0,0,0,0.07); }
       [data-theme="light"] .bd-group:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.07); }
