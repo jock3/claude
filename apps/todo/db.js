@@ -1,5 +1,7 @@
 import { supabase } from '../shared/supabase.js';
 
+/* ── Profiler ─────────────────────────────────────────────── */
+
 export async function getProfiles() {
   const { data } = await supabase
     .from('profiles')
@@ -24,19 +26,32 @@ export async function getOrCreateProfile(name) {
   return created;
 }
 
-export async function getProjects(profileId) {
+/* ── Tavlan (todo_boards: en rad per profil, allt i data-jsonb) ── */
+
+export async function getBoard(profileId) {
+  const { data, error } = await supabase
+    .from('todo_boards')
+    .select('data')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.data : null;
+}
+
+export async function saveBoard(profileId, boardData) {
+  const { error } = await supabase
+    .from('todo_boards')
+    .upsert({ profile_id: profileId, data: boardData, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+/* ── Legacy (gamla projects-tabellen, läses bara vid första import) ── */
+
+export async function getLegacyProjects(profileId) {
   const { data } = await supabase
     .from('projects')
     .select('*')
     .eq('profile_id', profileId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: true });
   return data || [];
-}
-
-export async function upsertProject(project) {
-  await supabase.from('projects').upsert(project);
-}
-
-export async function deleteProject(id) {
-  await supabase.from('projects').delete().eq('id', id);
 }
