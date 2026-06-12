@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback, Fragment } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus, X, Check, Trash2, ChevronDown, ChevronRight, LogOut, Search, Filter,
   ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Zap, GripVertical, Copy,
@@ -227,11 +228,12 @@ function Popover({ anchorRef, onClose, children, width = 220, align = 'left' }) 
   }, [onClose]);
 
   if (!pos) return null;
-  return (
+  return createPortal(
     <div ref={popRef} className="bd-pop" role="menu"
       style={{ top: pos.top, left: pos.left, width, transformOrigin: pos.flip ? 'bottom left' : 'top left' }}>
       {children}
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -465,6 +467,7 @@ function DateCell({ value, onChange, overdue = false }) {
       {overdue && <span className="bd-overdue-dot" title="Försenad" />}
       <input
         ref={ref} type="date" value={value || ''} aria-label="Datum"
+        onClick={(e) => { try { e.currentTarget.showPicker?.(); } catch (_) {} }}
         onChange={(e) => onChange(e.target.value || null)}
       />
     </label>
@@ -2206,7 +2209,7 @@ function BoardStyles() {
 
       /* ── Popover ── */
       .bd-pop {
-        position: fixed; z-index: 300;
+        position: fixed; z-index: 600;
         background: var(--color-surface); border: 1px solid var(--color-border);
         border-radius: 10px; padding: 6px;
         box-shadow: 0 14px 40px rgba(0,0,0,0.3), 0 3px 10px rgba(0,0,0,0.15);
