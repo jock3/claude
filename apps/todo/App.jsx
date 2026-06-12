@@ -528,23 +528,33 @@ function DistBar({ items }) {
 const gridTemplate = (cols) =>
   '34px minmax(280px, 1fr) ' + cols.map(c => c.width + 'px').join(' ') + ' 40px';
 
-function SubitemRow({ sub, groupId, itemId, color, profiles, onMutateSub, onDeleteSub }) {
+function SubitemRow({ sub, groupId, itemId, color, profiles, visibleCols, onMutateSub, onDeleteSub }) {
   const [editing, setEditing] = useState(false);
   return (
-    <div className="bd-subrow" style={{ '--rail': color }}>
-      <span className="bd-sub-elbow"><CornerDownRight size={13} strokeWidth={1.75} /></span>
-      <div className="bd-cell name">
+    <div className="bd-subrow" style={{ gridTemplateColumns: gridTemplate(visibleCols), '--rail': color }}>
+      <span className="bd-cell check sub-elbow"><CornerDownRight size={13} strokeWidth={1.75} /></span>
+      <div className="bd-cell name sub">
         {editing
           ? <EditInput value={sub.name} onCancel={() => setEditing(false)}
               onCommit={(v) => { if (v) onMutateSub(groupId, itemId, sub.id, { name: v }); setEditing(false); }} />
           : <button className="bd-name-btn sub" onClick={() => setEditing(true)} title={sub.name}>{sub.name}</button>}
       </div>
-      <div className="bd-cell"><PersonCell value={sub.person} profiles={profiles} size={22}
-        onChange={(v) => onMutateSub(groupId, itemId, sub.id, { person: v })} /></div>
-      <div className="bd-cell"><StatusCell small value={sub.status}
-        onChange={(v) => onMutateSub(groupId, itemId, sub.id, { status: v })} /></div>
-      <div className="bd-cell"><DateCell value={sub.date} overdue={isOverdue(sub)}
-        onChange={(v) => onMutateSub(groupId, itemId, sub.id, { date: v })} /></div>
+      {visibleCols.map(col => (
+        <div key={col.key} className="bd-cell">
+          {col.key === 'person' && (
+            <PersonCell value={sub.person} profiles={profiles} size={22}
+              onChange={(v) => onMutateSub(groupId, itemId, sub.id, { person: v })} />
+          )}
+          {col.key === 'status' && (
+            <StatusCell small value={sub.status}
+              onChange={(v) => onMutateSub(groupId, itemId, sub.id, { status: v })} />
+          )}
+          {col.key === 'date' && (
+            <DateCell value={sub.date} overdue={isOverdue(sub)}
+              onChange={(v) => onMutateSub(groupId, itemId, sub.id, { date: v })} />
+          )}
+        </div>
+      ))}
       <div className="bd-cell end">
         <button className="bd-icon-btn danger" onClick={() => onDeleteSub(groupId, itemId, sub.id)}
           aria-label="Ta bort underobjekt"><Trash2 size={13} /></button>
@@ -667,20 +677,24 @@ function ItemRow({
         <div className="bd-subwrap" style={{ '--rail': group.color }}>
           {subs.map(sub => (
             <SubitemRow key={sub.id} sub={sub} groupId={group.id} itemId={item.id} color={group.color}
-              profiles={profiles} onMutateSub={onMutateSub} onDeleteSub={onDeleteSub} />
+              profiles={profiles} visibleCols={visibleCols} onMutateSub={onMutateSub} onDeleteSub={onDeleteSub} />
           ))}
-          <div className="bd-subrow add">
-            <span className="bd-sub-elbow"><Plus size={12} strokeWidth={2} /></span>
-            <input
-              className="bd-add-input sub" placeholder="Lägg till underobjekt"
-              value={subInput}
-              onChange={(e) => setSubInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && subInput.trim()) { onAddSub(group.id, item.id, subInput.trim()); setSubInput(''); }
-                if (e.key === 'Escape') setSubInput('');
-              }}
-              onBlur={() => { if (subInput.trim()) { onAddSub(group.id, item.id, subInput.trim()); setSubInput(''); } }}
-            />
+          <div className="bd-subrow add" style={{ gridTemplateColumns: gridTemplate(visibleCols) }}>
+            <span className="bd-cell check sub-elbow"><Plus size={12} strokeWidth={2} /></span>
+            <div className="bd-cell name sub">
+              <input
+                className="bd-add-input sub" placeholder="Lägg till underobjekt"
+                value={subInput}
+                onChange={(e) => setSubInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && subInput.trim()) { onAddSub(group.id, item.id, subInput.trim()); setSubInput(''); }
+                  if (e.key === 'Escape') setSubInput('');
+                }}
+                onBlur={() => { if (subInput.trim()) { onAddSub(group.id, item.id, subInput.trim()); setSubInput(''); } }}
+              />
+            </div>
+            {visibleCols.map(c => <div key={c.key} className="bd-cell" />)}
+            <div className="bd-cell" />
           </div>
         </div>
       )}
@@ -2498,15 +2512,16 @@ function BoardStyles() {
         animation: bd-grow-down 220ms var(--ease-out) both;
       }
       .bd-subrow {
-        display: grid; grid-template-columns: 56px minmax(220px, 1fr) 90px 120px 116px 40px;
-        align-items: center; min-height: 32px;
+        display: grid; align-items: center; min-height: 32px;
         border-bottom: 1px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
       }
       .bd-subrow:last-child { border-bottom: 0; }
       .bd-subrow:not(.add):hover { background: var(--color-surface-2); }
-      .bd-sub-elbow { display: flex; justify-content: flex-end; padding-right: 6px; color: var(--color-text-faint); }
       .bd-subrow .bd-cell { border-right: 0; }
-      .bd-subrow.add .bd-sub-elbow { color: var(--color-text-faint); }
+      .bd-subrow .bd-cell.check.sub-elbow {
+        justify-content: flex-end; padding-right: 8px; gap: 0; color: var(--color-text-faint);
+      }
+      .bd-subrow .bd-cell.name.sub { padding-left: 4px; }
 
       /* ── Modal & automationer ── */
       .bd-overlay {
