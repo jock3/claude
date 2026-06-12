@@ -41,6 +41,7 @@ const COLUMNS = [
   { key: 'priority', label: 'Prioritet', width: 112 },
   { key: 'date',     label: 'Datum',     width: 118 },
   { key: 'timeline', label: 'Tidslinje', width: 172 },
+  { key: 'group',    label: 'Grupp',     width: 150 },
 ];
 
 const DEFAULT_AUTOMATIONS = [
@@ -504,6 +505,38 @@ function TimelineCell({ start, end, color, onChange }) {
   );
 }
 
+/* Gruppcell — visar objektets grupp och flyttar det vid byte */
+function GroupCell({ groupId, groups, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const g = groups.find(x => x.id === groupId);
+  return (
+    <>
+      <button ref={ref} className="bd-groupcell" onClick={() => setOpen(o => !o)}
+        aria-label={'Grupp: ' + (g ? g.title : 'ingen') + ' – byt för att flytta'}>
+        <span className="bd-color-dot" style={{ background: g?.color || 'var(--color-border-strong)' }} />
+        <span className="bd-groupcell-label">{g ? g.title : '–'}</span>
+        <ChevronDown size={12} strokeWidth={2.5} className="bd-groupcell-caret" />
+      </button>
+      {open && (
+        <Popover anchorRef={ref} onClose={() => setOpen(false)} width={212}>
+          <div className="bd-pop-list">
+            <div className="bd-pop-label">Flytta till grupp</div>
+            {groups.map(gr => (
+              <button key={gr.id} className="bd-pop-item"
+                onClick={() => { if (gr.id !== groupId) onChange(gr.id); setOpen(false); }}>
+                <span className="bd-color-dot" style={{ background: gr.color }} />
+                <span className="bd-pop-item-grow">{gr.title}</span>
+                {gr.id === groupId && <Check size={14} />}
+              </button>
+            ))}
+          </div>
+        </Popover>
+      )}
+    </>
+  );
+}
+
 /* Statusfördelning — gruppens "batteri" */
 function DistBar({ items }) {
   const total = items.length;
@@ -637,6 +670,10 @@ function ItemRow({
             {col.key === 'timeline' && (
               <TimelineCell start={item.start} end={item.end} color={group.color}
                 onChange={(s, e) => onMutateItem(group.id, item.id, { start: s, end: e })} />
+            )}
+            {col.key === 'group' && (
+              <GroupCell groupId={group.id} groups={groups}
+                onChange={(toGid) => onMoveItem(group.id, item.id, toGid)} />
             )}
           </div>
         ))}
@@ -772,9 +809,11 @@ function ColumnHeaderRow({ group, visibleCols, sort, onSort, allSelected, onTogg
         Objekt {sortIcon('name')}
       </button>
       {visibleCols.map(col => (
-        <button key={col.key} className="bd-cell bd-col-btn center" onClick={() => onSort(col.key)}>
-          {col.label} {sortIcon(col.key)}
-        </button>
+        col.key === 'group'
+          ? <div key={col.key} className="bd-cell bd-col-static center">{col.label}</div>
+          : <button key={col.key} className="bd-cell bd-col-btn center" onClick={() => onSort(col.key)}>
+              {col.label} {sortIcon(col.key)}
+            </button>
       ))}
       <div className="bd-cell" />
     </div>
@@ -2322,6 +2361,11 @@ function BoardStyles() {
       }
       .bd-col-btn.center { justify-content: center; }
       .bd-col-btn:hover { color: var(--color-text); }
+      .bd-col-static {
+        font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em;
+        color: var(--color-text-faint); justify-content: flex-start;
+      }
+      .bd-col-static.center { justify-content: center; }
       .bd-sort-icon { opacity: 0; transition: opacity 130ms; }
       .bd-col-btn:hover .bd-sort-icon { opacity: 0.6; }
       .bd-sort-icon.active { opacity: 1 !important; color: var(--color-accent); }
@@ -2495,6 +2539,20 @@ function BoardStyles() {
       }
       [data-theme="light"] .bd-tl-edit input[type="date"] { color-scheme: light; }
       .bd-tl-edit input[type="date"]:focus { outline: none; border-color: var(--color-accent); }
+
+      /* Gruppcell */
+      .bd-groupcell {
+        display: inline-flex; align-items: center; gap: 7px;
+        width: 100%; height: 28px; padding: 0 8px; border-radius: 6px;
+        background: transparent; border: 0; cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 600; color: var(--color-text-muted);
+        transition: background 140ms;
+      }
+      .bd-groupcell:hover { background: var(--color-surface-3); }
+      .bd-groupcell:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
+      .bd-groupcell-label { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .bd-groupcell-caret { color: var(--color-text-faint); flex-shrink: 0; opacity: 0; transition: opacity 140ms; }
+      .bd-groupcell:hover .bd-groupcell-caret { opacity: 1; }
 
       /* Fördelningsstapel */
       .bd-dist {
