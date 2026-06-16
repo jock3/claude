@@ -3,12 +3,19 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/claude/' : '/',
+  base: process.env.VITE_BASE ?? (process.env.GITHUB_ACTIONS ? '/claude/' : '/'),
   plugins: [react()],
   build: {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        portfolio: resolve(__dirname, 'apps/portfolio/index.html'),
+        'portfolio-case1': resolve(__dirname, 'apps/portfolio/case1/index.html'),
+        'portfolio-case1-marke': resolve(__dirname, 'apps/portfolio/case1/marke/index.html'),
+        'portfolio-case2': resolve(__dirname, 'apps/portfolio/case2/index.html'),
+        'portfolio-case3': resolve(__dirname, 'apps/portfolio/case3/index.html'),
+        'portfolio-case4': resolve(__dirname, 'apps/portfolio/case4/index.html'),
+        'portfolio-case5': resolve(__dirname, 'apps/portfolio/case5/index.html'),
         todo: resolve(__dirname, 'apps/todo/index.html'),
         kampanj: resolve(__dirname, 'apps/kampanj/index.html'),
         'seo-audit': resolve(__dirname, 'apps/seo-audit/index.html'),
