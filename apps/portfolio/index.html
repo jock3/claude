@@ -208,10 +208,6 @@
       transition: width 200ms var(--ease-spring);
     }
     .case-tab[data-case="home"]    { --tab-color: #FF7040; }
-    .case-tab[data-case="todo"]    { --tab-color: #4ADE80; }
-    .case-tab[data-case="kampanj"] { --tab-color: #FCD34D; }
-    .case-tab[data-case="seo"]     { --tab-color: #A5B4FC; }
-    .case-tab[data-case="trackr"]  { --tab-color: #F472B6; }
     .case-tab[data-case="musik"]   { --tab-color: #C084FC; }
 
     .case-bubble {
@@ -222,10 +218,6 @@
     .case-tab:hover .case-bubble { transform: scale(1.08) translateY(-1px); }
 
     .case-tab[data-case="home"].active    .case-bubble { box-shadow: 0 0 0 1.5px rgba(255,88,45,0.55),  0 0 14px rgba(255,88,45,0.22); }
-    .case-tab[data-case="todo"].active    .case-bubble { box-shadow: 0 0 0 1.5px rgba(74,222,128,0.55), 0 0 14px rgba(74,222,128,0.22); }
-    .case-tab[data-case="kampanj"].active .case-bubble { box-shadow: 0 0 0 1.5px rgba(252,211,77,0.55), 0 0 14px rgba(252,211,77,0.22); }
-    .case-tab[data-case="seo"].active     .case-bubble { box-shadow: 0 0 0 1.5px rgba(165,180,252,0.55),0 0 14px rgba(165,180,252,0.22); }
-    .case-tab[data-case="trackr"].active  .case-bubble { box-shadow: 0 0 0 1.5px rgba(244,114,182,0.55),0 0 14px rgba(244,114,182,0.22); }
     .case-tab[data-case="musik"].active   .case-bubble { box-shadow: 0 0 0 1.5px rgba(192,132,252,0.55),0 0 14px rgba(192,132,252,0.22); }
 
     /* "Open live" external button */
@@ -417,46 +409,10 @@
           <span class="case-label">Märkeprod</span>
         </button>
 
+        <!-- Case study lives locally (presentation only); the app itself is
+             embedded by URL from the live site, so no app code lives here. -->
         <button class="case-tab" role="tab" aria-selected="false"
-                data-case="todo" data-src="./case2/" data-live="../todo/" aria-controls="stage-iframe">
-          <div class="case-bubble ib-todo" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
-          </div>
-          <span class="case-num">02</span>
-          <span class="case-label">Todo</span>
-        </button>
-
-        <button class="case-tab" role="tab" aria-selected="false"
-                data-case="kampanj" data-src="./case3/" data-live="../kampanj/" aria-controls="stage-iframe">
-          <div class="case-bubble ib-kampanj" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          </div>
-          <span class="case-num">03</span>
-          <span class="case-label">Kampanj</span>
-        </button>
-
-        <button class="case-tab" role="tab" aria-selected="false"
-                data-case="seo" data-src="./case4/" data-live="../seo-audit/" aria-controls="stage-iframe">
-          <div class="case-bubble ib-seo" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          </div>
-          <span class="case-num">04</span>
-          <span class="case-label">SEO Audit</span>
-        </button>
-
-        <button class="case-tab" role="tab" aria-selected="false"
-                data-case="trackr" data-src="./case5/" data-live="../trackr/" aria-controls="stage-iframe">
-          <div class="case-bubble ib-trackr" aria-hidden="true">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <span class="case-num">05</span>
-          <span class="case-label">Track3r</span>
-        </button>
-
-        <!-- URL-based case: data-src/data-live point to a live site, so no app
-             code lives in this repo. Add future external cases the same way. -->
-        <button class="case-tab" role="tab" aria-selected="false"
-                data-case="musik" data-src="https://jock3.github.io/Agency/apps/musictheory/" data-live="https://jock3.github.io/Agency/apps/musictheory/" aria-controls="stage-iframe">
+                data-case="musik" data-src="./case6/" data-live="https://jock3.github.io/Agency/apps/musictheory/" aria-controls="stage-iframe">
           <div class="case-bubble ib-musik" aria-hidden="true">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
           </div>
