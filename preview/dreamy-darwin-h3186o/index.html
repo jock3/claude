@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="sv" data-theme="dark">
+<head>
+  <script>
+    (function(){
+      var t=localStorage.getItem('ailabb_theme')||'dark';
+      document.documentElement.setAttribute('data-theme',t);
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gustav Mattsson — AI Labb</title>
+  <meta name="description" content="Personlig sida med AI-experiment och verktyg byggda av Gustav Mattsson.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    [hidden] { display: none !important; }
+    html { height: 100%; overflow: hidden; }
+    body { height: 100%; }
+    html { scroll-behavior: smooth; }
+
+    /* ─── Custom cursor ─── */
+    @media (pointer: fine) { *, *::before, *::after { cursor: none !important; } }
+    .cursor-dot {
+      position: fixed; width: 8px; height: 8px;
+      background: #fff;
+      box-shadow: 0 0 0 1px rgba(255,88,45,0.55), 0 0 12px rgba(255,88,45,0.65);
+      border-radius: 50%;
+      pointer-events: none; z-index: 9999; transform: translate(-50%,-50%);
+      opacity: 0;
+      transition: width 200ms var(--ease-spring), height 200ms var(--ease-spring),
+                  box-shadow 200ms var(--ease-out), opacity 350ms var(--ease-out);
+    }
+    .cursor-ring {
+      position: fixed; width: 32px; height: 32px;
+      border: 1.5px solid rgba(255,255,255,0.42); border-radius: 50%;
+      pointer-events: none; z-index: 9998; transform: translate(-50%,-50%);
+      opacity: 0;
+      transition: width 300ms var(--ease-out), height 300ms var(--ease-out),
+                  border-color 300ms var(--ease-out), opacity 350ms var(--ease-out);
+    }
+    .cursor-dot.visible  { opacity: 1; }
+    .cursor-ring.visible { opacity: 1; }
+    .cursor-dot.hovering  { width: 11px; height: 11px; box-shadow: 0 0 0 1px rgba(255,88,45,0.8), 0 0 18px rgba(255,88,45,0.75); }
+    .cursor-ring.hovering { width: 46px; height: 46px; border-color: rgba(255,255,255,0.62); }
+    .cursor-dot.clicking  { width: 5px; height: 5px; }
+    .cursor-ring.clicking { width: 20px; height: 20px; }
+    @media (pointer: coarse) { .cursor-dot, .cursor-ring { display: none; } }
+
+    /* ─── Background canvas ─── */
+    #bg-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; display: block; }
+    .noise {
+      position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0.028;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-repeat: repeat; background-size: 200px 200px;
+    }
+    .spotlight {
+      pointer-events: none; position: fixed; inset: 0; z-index: 2; opacity: 0;
+      background: radial-gradient(700px circle at var(--mx,50%) var(--my,50%), rgba(255,88,45,0.055) 0%, transparent 65%);
+      transition: opacity 600ms var(--ease-out);
+    }
+    .spotlight.visible { opacity: 1; }
+
+    /* ─── Sidebar — fixed pill, same glass as old nav ─── */
+    .sidebar {
+      position: fixed;
+      left: 20px;
+      top: 20px;
+      width: 72px;
+      border-radius: 9999px;
+      background: color-mix(in oklch, var(--color-surface) 88%, transparent);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 0;
+      overflow: hidden;
+      z-index: 100;
+      animation: nav-drop 500ms var(--ease-spring) both;
+    }
+
+    /* Logo */
+    .s-logo {
+      display: flex; align-items: center; justify-content: center;
+      width: 42px; height: 38px; flex-shrink: 0;
+      color: var(--color-text); text-decoration: none; border: 0;
+      transition: filter var(--dur-base) var(--ease-out);
+      margin-bottom: 2px;
+    }
+    .s-logo:hover { filter: drop-shadow(0 0 10px rgba(255,88,45,0.5)); }
+    .s-logo svg { height: 26px; width: auto; }
+
+    /* Generic icon button (home, lock, theme) */
+    .s-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--color-text-muted);
+      background: transparent; border: 0; outline: none;
+      text-decoration: none; flex-shrink: 0;
+      transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+      position: relative;
+    }
+    .s-btn:hover { background: var(--color-surface-2); color: var(--color-text); }
+    .s-btn.active { color: var(--color-accent); }
+    .s-btn.active::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%;
+      transform: translateX(-50%);
+      width: 4px; height: 4px; background: var(--color-accent); border-radius: 50%;
+    }
+    .s-btn:focus-visible { box-shadow: 0 0 0 2px var(--color-link); }
+
+    /* Separator */
+    .s-sep { width: 28px; height: 1px; background: var(--color-border); margin: 5px 0; flex-shrink: 0; }
+
+    /* Spacer */
+    .s-spacer { flex: 1; }
+
+    /* ─── App items with icon + label ─── */
+    .s-apps {
+      display: flex; flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 0 4px;
+      box-sizing: border-box;
+    }
+
+    .s-app-item {
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      text-decoration: none; color: inherit; border: 0; outline: none; cursor: pointer;
+      width: 60px; border-radius: 10px; padding: 7px 0 6px;
+      flex-shrink: 0;
+      transition: background 180ms var(--ease-out);
+    }
+    .s-app-item:hover { background: var(--color-surface-2); }
+    .s-app-item:focus-visible { box-shadow: 0 0 0 2px var(--color-link); }
+    .s-app-item.locked { opacity: 0.25; pointer-events: none; filter: grayscale(0.5); }
+
+    .s-bubble {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: transform 220ms var(--ease-spring), box-shadow 200ms var(--ease-out);
+    }
+    .s-app-item:hover .s-bubble { transform: scale(1.1) translateY(-2px); box-shadow: 0 5px 14px rgba(0,0,0,0.22); }
+
+    .ib-home      { background: linear-gradient(135deg,rgba(255,88,45,.22),rgba(255,120,55,.32));   border: 1px solid rgba(255,88,45,.42);   color: #FF7040; }
+    .ib-todo      { background: linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.25));    border: 1px solid rgba(34,197,94,.26);   color: #4ADE80; }
+    .ib-kampanj   { background: linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,191,36,.22));  border: 1px solid rgba(245,158,11,.30);  color: #FCD34D; }
+    .ib-seo       { background: linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23)); border: 1px solid rgba(99,102,241,.28);  color: #A5B4FC; }
+    .ib-trackr    { background: linear-gradient(135deg,rgba(236,72,153,.14),rgba(219,39,119,.23)); border: 1px solid rgba(236,72,153,.28);  color: #F472B6; }
+    .ib-brus      { background: linear-gradient(135deg,rgba(214,255,61,.12),rgba(214,255,61,.22));  border: 1px solid rgba(214,255,61,.30);  color: #D6FF3D; }
+    .ib-brusfx    { background: linear-gradient(135deg,rgba(139,92,246,.16),rgba(34,211,238,.18));  border: 1px solid rgba(139,92,246,.32);  color: #A78BFA; }
+    .ib-portfolio { background: linear-gradient(135deg,rgba(34,211,238,.14),rgba(6,182,212,.22));  border: 1px solid rgba(34,211,238,.28);  color: #22D3EE; }
+    .s-app-item.active .s-bubble { box-shadow: 0 0 0 1.5px rgba(255,88,45,0.55), 0 0 12px rgba(255,88,45,0.22); }
+    .s-app-item.active .s-icon-label { color: var(--color-accent); font-weight: 600; }
+
+    .s-icon-label {
+      font-size: 10px; font-family: var(--font-display); font-weight: 500;
+      color: var(--color-text-faint); text-align: center; line-height: 1;
+      transition: color 150ms var(--ease-out);
+    }
+    .s-app-item:hover .s-icon-label { color: var(--color-text-muted); }
+
+    /* Stagger entrance */
+    .s-app-item:nth-child(1) { animation: fade-up 360ms var(--ease-out) 110ms both; }
+    .s-app-item:nth-child(2) { animation: fade-up 360ms var(--ease-out) 155ms both; }
+    .s-app-item:nth-child(3) { animation: fade-up 360ms var(--ease-out) 200ms both; }
+    .s-app-item:nth-child(4) { animation: fade-up 360ms var(--ease-out) 245ms both; }
+    .s-app-item:nth-child(5) { animation: fade-up 360ms var(--ease-out) 290ms both; }
+
+    /* User avatar in sidebar */
+    .s-avatar-el {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--color-accent); color: #fff;
+      font-size: 14px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 0 0 2px color-mix(in oklch, var(--color-accent) 25%, transparent);
+      animation: avatar-pulse 3s ease-in-out 2s infinite;
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      background: transparent; border: 0; color: var(--color-text-muted);
+      padding: 0; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; flex-shrink: 0;
+      transition: color var(--dur-fast) var(--ease-out),
+                  background var(--dur-fast) var(--ease-out),
+                  transform 300ms var(--ease-spring);
+    }
+    .theme-toggle:hover { color: var(--color-text); background: var(--color-surface-2); transform: rotate(18deg) scale(1.1); }
+    .theme-toggle:active { transform: rotate(36deg) scale(0.9); }
+
+    /* ─── Page — full width, content centered on entire screen ─── */
+    .page {
+      height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative; z-index: 10;
+    }
+
+    /* ─── Hero — centered on full screen (sidebar is fixed/floating, not in flow) ─── */
+    .hero-area {
+      width: 100%; max-width: 660px;
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      animation: fade-up 550ms var(--ease-out) 80ms both;
+    }
+    .hero-area .eyebrow { margin: 0 0 var(--sp-4); }
+
+    .headline {
+      font-size: clamp(28px, 3.8vw, 52px);
+      font-weight: var(--fw-bold); letter-spacing: var(--tr-tight);
+      line-height: 1.2; margin: 0 0 var(--sp-4); color: var(--color-text);
+    }
+    .headline .hand-accent {
+      font-family: var(--font-hand); font-weight: var(--fw-regular); font-size: 1.3em;
+      display: inline-block; margin-left: 6px; vertical-align: middle;
+      background: linear-gradient(135deg, var(--color-accent) 0%, #FF8C5A 50%, var(--color-accent-hover) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      animation: float 4s ease-in-out 1s infinite;
+      filter: drop-shadow(0 0 20px rgba(255,88,45,0.3));
+    }
+    .tagline {
+      font-size: var(--fs-md); color: var(--color-text-muted);
+      line-height: var(--lh-loose); max-width: 50ch; margin: 0 0 var(--sp-6);
+    }
+
+    /* ─── Login ─── */
+    #login-section { width: 100%; max-width: 340px; }
+    .login-name-row { margin-bottom: 12px; }
+    .login-name-row input {
+      width: 100%; box-sizing: border-box;
+      font-family: var(--font-display); font-size: var(--fs-md);
+      padding: 12px 16px; text-align: center;
+      background: var(--color-surface-2); border: 1px solid var(--color-border);
+      color: var(--color-text); border-radius: var(--r-md); outline: none;
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .login-name-row input:focus { border-color: var(--color-link); box-shadow: 0 0 0 3px rgba(58,165,156,0.15); }
+    .login-name-row input::placeholder { color: var(--color-text-faint); }
+    .pin-label {
+      font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+      letter-spacing: var(--tr-wider); text-transform: uppercase;
+      color: var(--color-text-faint); margin: 0 0 10px; text-align: center;
+    }
+    .pin-row { display: flex; gap: 8px; margin-bottom: 14px; justify-content: center; }
+    .pin-input {
+      width: 52px; height: 56px; text-align: center; font-size: 20px;
+      font-weight: var(--fw-bold); font-family: var(--font-display);
+      background: var(--color-surface-2); border: 1px solid var(--color-border);
+      color: var(--color-text); border-radius: var(--r-md); outline: none;
+      transition: border-color var(--dur-base) var(--ease-out),
+                  box-shadow var(--dur-base) var(--ease-out),
+                  transform 200ms var(--ease-spring);
+      -moz-appearance: textfield; color-scheme: light dark;
+    }
+    .pin-input:focus { border-color: var(--color-link); box-shadow: 0 0 0 3px rgba(58,165,156,0.15); transform: scale(1.08); }
+    .pin-input::-webkit-outer-spin-button, .pin-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pin-input.filled { border-color: color-mix(in oklch, var(--color-link) 60%, transparent); }
+    .login-error { color: var(--color-accent); font-size: var(--fs-sm); margin: 0 0 12px; min-height: 18px; text-align: center; }
+    .btn-primary {
+      width: 100%; background: var(--color-accent); color: var(--color-text-inverse);
+      border: 0; font-family: var(--font-display); font-weight: var(--fw-semibold);
+      font-size: var(--fs-sm); padding: 13px 20px; border-radius: var(--r-md); cursor: pointer;
+      transition: background var(--dur-base) var(--ease-out),
+                  transform 200ms var(--ease-spring), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .btn-primary:hover { background: var(--color-accent-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,88,45,0.35); }
+    .btn-primary:active { transform: translateY(1px) scale(0.985); box-shadow: none; transition-duration: 80ms; }
+
+    /* ─── Logged-in view ─── */
+    #loggedin-view { animation: fade-up 400ms var(--ease-out) both; }
+    .loggedin-header { display: flex; align-items: center; gap: 16px; margin-bottom: var(--sp-4); justify-content: center; }
+    .avatar-lg {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--color-accent); color: #fff;
+      font-size: 20px; font-weight: var(--fw-bold);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent) 22%, transparent);
+      animation: avatar-pulse 3s ease-in-out 2s infinite;
+    }
+    .loggedin-greeting { font-size: var(--fs-xl); font-weight: var(--fw-semibold); color: var(--color-text); margin: 0 0 6px; text-align: left; }
+    .loggedin-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-sep { color: var(--color-text-faint); font-size: var(--fs-xs); }
+    .btn-switch {
+      background: transparent; border: 0; color: var(--color-text-faint);
+      font-family: var(--font-display); font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      cursor: pointer; padding: 0;
+      transition: color var(--dur-fast) var(--ease-out);
+    }
+    .btn-switch:hover { color: var(--color-text-muted); }
+    .btn-danger-text:hover { color: var(--color-accent) !important; }
+    .loggedin-hint { font-size: var(--fs-sm); color: var(--color-text-faint); margin: 0; line-height: var(--lh-loose); }
+
+    /* ─── Keyframes ─── */
+    @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes nav-drop { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes float { 0%,100% { transform: rotate(-2deg) translateY(0); } 50% { transform: rotate(-2deg) translateY(-7px); } }
+    @keyframes avatar-pulse {
+      0%,100% { box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent) 22%, transparent); }
+      50%      { box-shadow: 0 0 0 7px color-mix(in oklch, var(--color-accent) 8%, transparent); }
+    }
+
+    /* ─── Reduced motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.05ms !important; animation-delay: 0ms !important; }
+      .aurora { animation: none; }
+      .cursor-dot, .cursor-ring { display: none; }
+    }
+
+    /* ─── Mobile — sidebar becomes horizontal pill at bottom ─── */
+    @media (max-width: 680px) {
+      .sidebar {
+        left: 12px; right: 12px; top: auto; bottom: 12px;
+        width: auto; height: 60px;
+        flex-direction: row;
+        padding: 0 14px;
+        border-radius: 9999px;
+        overflow: visible;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .s-sep { display: none; }
+      .s-spacer { display: none; }
+      .s-apps { flex-direction: row; gap: 4px; padding: 0; }
+      .s-app-item { flex-direction: row; gap: 8px; width: auto; padding: 8px 10px; border-radius: 8px; }
+      .s-icon-label { font-size: 11px; }
+      .s-bubble { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+      .page { padding-bottom: 88px; }
+    }
+    @media (max-width: 420px) {
+      .headline { font-size: 26px; }
+      .pin-row { gap: 6px; }
+      .pin-input { width: 46px; height: 50px; font-size: 18px; }
+      .s-app-item .s-icon-label { display: none; }
+    }
+    @media (max-width: 390px) {
+      .sidebar { padding: 0 8px; }
+      .s-app-item { padding: 6px; }
+      .s-bubble { width: 24px; height: 24px; border-radius: 7px; }
+    }
+  </style>
+  <link rel="stylesheet" crossorigin href="/claude/preview/dreamy-darwin-h3186o/assets/colors_and_type-CJJ7dSWT.css">
+</head>
+<body>
+
+  <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+
+  <!-- Fixed vertical pill sidebar -->
+  <aside class="sidebar" aria-label="Navigering">
+
+    <a href="/" class="s-logo" title="AI Labb">
+      <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 623.04 583.35" aria-hidden="true">
+        <defs>
+          <style>.lc1{font-size:193.17px}.lc1,.lc2{font-family:Montserrat-Bold,Montserrat;font-weight:700;opacity:.91}.lc2{font-size:189.12px}</style>
+        </defs>
+        <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
+        <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
+        <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
+        <text class="lc1" transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+        <text class="lc2" transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+      </svg>
+    </a>
+
+    <div class="s-sep"></div>
+
+    <a href="/" class="s-app-item active" id="icon-home" title="Hem" aria-label="Hem" aria-current="page">
+      <div class="s-bubble ib-home" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <span class="s-icon-label">Hem</span>
+    </a>
+
+    <div class="s-sep"></div>
+
+    <div class="s-apps">
+      <a href="./apps/todo/"      class="s-app-item locked" id="icon-todo">
+        <div class="s-bubble ib-todo" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <span class="s-icon-label">Todo</span>
+      </a>
+      <a href="./apps/kampanj/"   class="s-app-item locked" id="icon-kampanj">
+        <div class="s-bubble ib-kampanj" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <span class="s-icon-label">Kampanj</span>
+      </a>
+      <a href="./apps/seo-audit/" class="s-app-item locked" id="icon-seo">
+        <div class="s-bubble ib-seo" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <span class="s-icon-label">SEO</span>
+      </a>
+      <a href="./apps/trackr/"    class="s-app-item locked" id="icon-trackr">
+        <div class="s-bubble ib-trackr" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <span class="s-icon-label">Track3r</span>
+      </a>
+      <a href="./apps/brus/"      class="s-app-item locked" id="icon-brus">
+        <div class="s-bubble ib-brus" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M12 12h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/></svg>
+        </div>
+        <span class="s-icon-label">Brus</span>
+      </a>
+      <a href="./apps/brus-fx/"   class="s-app-item locked" id="icon-brusfx">
+        <div class="s-bubble ib-brusfx" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><circle cx="12" cy="12" r="3"/></svg>
+        </div>
+        <span class="s-icon-label">Brus FX</span>
+      </a>
+      <a href="./apps/portfolio/" class="s-app-item locked" id="icon-portfolio">
+        <div class="s-bubble ib-portfolio" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <span class="s-icon-label">Portfolio</span>
+      </a>
+    </div>
+
+    <div class="s-spacer"></div>
+    <div class="s-sep"></div>
+
+    <!-- User avatar when logged in -->
+    <button class="s-btn" id="sidebar-user-btn" hidden title="" style="background:transparent;border:0;padding:0;">
+      <span class="s-avatar-el" id="s-avatar"></span>
+    </button>
+
+    <!-- Lock when not logged in -->
+    <button class="s-btn" id="sidebar-lock-btn" title="Logga in" aria-label="Logga in">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </button>
+
+    <button class="theme-toggle" id="theme-toggle-btn" aria-label="Byt tema" title="Byt tema">
+      <svg id="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg id="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
+  </aside>
+
+  <!-- Main content — centered on full screen (sidebar is fixed, not in flow) -->
+  <div class="page">
+    <main class="hero-area">
+      <p class="eyebrow">AI · Experiment · Verktyg</p>
+      <h1 class="headline">
+        <span id="scramble-target">Välkommen till mitt</span><span class="hand-accent">AI labb!</span>
+      </h1>
+      <p class="tagline">En plats för experiment, verktyg och idéer byggda med artificiell intelligens — allt skapat av Gustav Mattsson.</p>
+
+      <!-- Not logged in -->
+      <section id="login-section" aria-label="Logga in">
+        <div class="login-name-row">
+          <input type="text" id="name-input" placeholder="Ditt namn" maxlength="40" autocomplete="off" />
+        </div>
+        <p class="pin-label">PIN-kod</p>
+        <div class="pin-row" aria-label="4-siffrig PIN-kod">
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+          <input class="pin-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+        </div>
+        <p class="login-error" id="login-error" hidden></p>
+        <button class="btn-primary" id="login-btn">Fortsätt →</button>
+      </section>
+
+      <!-- Logged in -->
+      <div id="loggedin-view" hidden>
+        <div class="loggedin-header">
+          <span class="avatar-lg" id="user-avatar-lg"></span>
+          <div>
+            <p class="loggedin-greeting">Hej, <strong id="user-name-display"></strong>!</p>
+            <div class="loggedin-actions">
+              <button class="btn-switch" id="s-logout-btn">Byt användare</button>
+              <span class="btn-sep">·</span>
+              <button class="btn-switch btn-danger-text" id="s-delete-btn">Ta bort konto</button>
+            </div>
+          </div>
+        </div>
+        <p class="loggedin-hint">Välj en app i menyn till vänster för att komma igång.</p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /* ─── Custom cursor ─── */
+    (function() {
+      if (!window.matchMedia('(pointer: fine)').matches) return;
+      var dot = document.getElementById('cursor-dot');
+      var ring = document.getElementById('cursor-ring');
+      var mx = 0, my = 0, rx = 0, ry = 0, shown = false;
+      document.addEventListener('mousemove', function(e) {
+        mx = e.clientX; my = e.clientY;
+        dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+        if (!shown) {
+          dot.classList.add('visible');
+          ring.classList.add('visible');
+          shown = true;
+        }
+      });
+      function lerp(a, b, t) { return a + (b - a) * t; }
+      var last = 0;
+      (function tick(now) {
+        var dt = Math.min(now - last || 16, 50);
+        last = now;
+        var t = 1 - Math.pow(0.78, dt / 16.67);
+        rx = lerp(rx, mx, t); ry = lerp(ry, my, t);
+        ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+        requestAnimationFrame(tick);
+      })(0);
+      document.addEventListener('mousedown', function() { dot.classList.add('clicking'); ring.classList.add('clicking'); });
+      document.addEventListener('mouseup',   function() { dot.classList.remove('clicking'); ring.classList.remove('clicking'); });
+      var sel = 'a, button, input';
+      document.addEventListener('mouseover', function(e) { if (e.target.closest(sel)) { dot.classList.add('hovering'); ring.classList.add('hovering'); } });
+      document.addEventListener('mouseout',  function(e) { if (e.target.closest(sel)) { dot.classList.remove('hovering'); ring.classList.remove('hovering'); } });
+    })();
+
+    /* ─── Spotlight ─── */
+    (function() {
+      var s = document.getElementById('spotlight'), shown = false;
+      document.addEventListener('mousemove', function(e) {
+        s.style.setProperty('--mx', e.clientX + 'px');
+        s.style.setProperty('--my', e.clientY + 'px');
+        if (!shown) { s.classList.add('visible'); shown = true; }
+      });
+      document.addEventListener('mouseleave', function() { s.classList.remove('visible'); shown = false; });
+    })();
+
+    /* ─── Text scramble ─── */
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var el = document.getElementById('scramble-target');
+      if (!el) return;
+      var final = el.textContent;
+      var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%&';
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var p = Math.min((ts - start) / 900, 1);
+        var n = Math.floor(p * final.length);
+        el.textContent = final.split('').map(function(ch, i) {
+          if (ch === ' ') return ' ';
+          if (i < n) return ch;
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join('');
+        if (p < 1) requestAnimationFrame(step); else el.textContent = final;
+      }
+      setTimeout(function() { requestAnimationFrame(step); }, 300);
+    })();
+
+    /* ─── Theme toggle ─── */
+    (function() {
+      function upd(t) {
+        document.getElementById('icon-sun').style.display  = t === 'dark'  ? '' : 'none';
+        document.getElementById('icon-moon').style.display = t === 'light' ? '' : 'none';
+      }
+      var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+      upd(cur);
+      document.getElementById('theme-toggle-btn').addEventListener('click', function() {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('ailabb_theme', next);
+        upd(next);
+      });
+    })();
+
+    /* ─── Auth ─── */
+    var ACTIVE_USER_KEY = 'ailabb_active_user';
+    var USERS_KEY = 'ailabb_users';
+
+    function stor(k, fb) {
+      try { var v = JSON.parse(localStorage.getItem(k)); return v !== null ? v : fb; } catch(e) { return fb; }
+    }
+    function storSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+    function getActiveUser() { return stor(ACTIVE_USER_KEY, null); }
+    function getUsers() {
+      var v = stor(USERS_KEY, {}); if (Array.isArray(v)) { storSet(USERS_KEY, {}); return {}; } return v;
+    }
+    function showError(msg) {
+      var el = document.getElementById('login-error');
+      el.textContent = msg || ''; el.hidden = !msg;
+    }
+    function getPinValue() {
+      return Array.from(document.querySelectorAll('.pin-input')).map(function(i) { return i.value; }).join('');
+    }
+    function handleSubmit() {
+      var name = document.getElementById('name-input').value.trim();
+      var pin  = getPinValue();
+      if (!name) { showError('Ange ett namn.'); return; }
+      if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { showError('Ange en 4-siffrig PIN-kod.'); return; }
+      var users = getUsers();
+      if (users.hasOwnProperty(name)) {
+        if (users[name] === pin) { storSet(ACTIVE_USER_KEY, name); showError(''); render(); }
+        else { showError('Fel PIN-kod.'); }
+      } else {
+        users[name] = pin; storSet(USERS_KEY, users); storSet(ACTIVE_USER_KEY, name);
+        showError(''); render();
+      }
+    }
+    function logout() { localStorage.removeItem(ACTIVE_USER_KEY); render(); }
+    function sanitize(n) { return n.replace(/[\s/\\'"]+/g, '_'); }
+    function deleteAccount() {
+      var user = getActiveUser(); if (!user) return;
+      if (!window.confirm('Ta bort kontot "' + user + '" och all dess data?')) return;
+      var users = getUsers(); delete users[user]; storSet(USERS_KEY, users);
+      localStorage.removeItem(ACTIVE_USER_KEY);
+      localStorage.removeItem('ailabb_user_' + sanitize(user) + '_campaigns');
+      localStorage.removeItem('ailabb_profile_id');
+      localStorage.removeItem('ailabb_profile_name');
+      render();
+    }
+    function resetLoginForm() {
+      document.getElementById('name-input').value = '';
+      document.querySelectorAll('.pin-input').forEach(function(i) { i.value = ''; i.classList.remove('filled'); });
+      showError('');
+      setTimeout(function() { document.getElementById('name-input').focus(); }, 0);
+    }
+    function render() {
+      var user = getActiveUser();
+      var userBtn = document.getElementById('sidebar-user-btn');
+      var lockBtn = document.getElementById('sidebar-lock-btn');
+      userBtn.hidden = !user;
+      lockBtn.hidden = !!user;
+      if (user) {
+        document.getElementById('s-avatar').textContent = user[0].toUpperCase();
+        userBtn.title = user;
+      }
+      document.querySelectorAll('.s-apps .s-app-item').forEach(function(el) {
+        el.classList.toggle('locked', !user);
+      });
+      document.getElementById('login-section').hidden  = !!user;
+      document.getElementById('loggedin-view').hidden  = !user;
+      if (user) {
+        document.getElementById('user-avatar-lg').textContent    = user[0].toUpperCase();
+        document.getElementById('user-name-display').textContent = user;
+      } else { resetLoginForm(); }
+    }
+
+    document.getElementById('sidebar-lock-btn').addEventListener('click', function() {
+      var inp = document.getElementById('name-input');
+      if (inp) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var nameInput = document.getElementById('name-input');
+      var pinInputs = Array.from(document.querySelectorAll('.pin-input'));
+
+      pinInputs.forEach(function(input, i) {
+        input.addEventListener('input', function() {
+          input.value = input.value.replace(/[^0-9]/g, '').slice(-1);
+          input.classList.toggle('filled', !!input.value);
+          if (input.value && i < pinInputs.length - 1) pinInputs[i + 1].focus();
+        });
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !input.value && i > 0) {
+            pinInputs[i-1].value = ''; pinInputs[i-1].classList.remove('filled'); pinInputs[i-1].focus();
+          }
+          if (e.key === 'Enter') handleSubmit();
+        });
+        input.addEventListener('paste', function(e) {
+          e.preventDefault();
+          var digits = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').slice(0, 4);
+          digits.split('').forEach(function(d, j) {
+            if (pinInputs[i+j]) { pinInputs[i+j].value = d; pinInputs[i+j].classList.add('filled'); }
+          });
+          pinInputs[Math.min(i + digits.length, pinInputs.length - 1)].focus();
+        });
+      });
+
+      nameInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); pinInputs[0].focus(); }
+      });
+
+      document.getElementById('login-btn').addEventListener('click', handleSubmit);
+      document.getElementById('s-logout-btn').addEventListener('click', logout);
+      document.getElementById('s-delete-btn').addEventListener('click', deleteAccount);
+
+      render();
+    });
+  </script>
+  <script>
+    /* ─── Canvas background: plasma orbs + warped grid + particle net ─── */
+    (function() {
+      var cvs = document.getElementById('bg-canvas');
+      if (!cvs) return;
+      var ctx = cvs.getContext('2d', { alpha: true });
+      var W, H, dpr, pts, raf;
+      var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ox, oy, radius(rel max(W,H)), speed, phase, r, g, b, alpha */
+      var ORBS = [
+        [0.14, 0.22, 0.42, 0.00014, 0.0,  255,  88,  45, 0.085],
+        [0.78, 0.63, 0.36, 0.00010, 2.1,   58, 165, 156, 0.065],
+        [0.48, 0.85, 0.31, 0.00017, 4.0,  120,  55, 240, 0.055],
+        [0.86, 0.13, 0.27, 0.00012, 1.3,  255, 155,  35, 0.050],
+        [0.24, 0.76, 0.24, 0.00019, 3.4,  230,  65, 150, 0.045],
+      ];
+
+      function Pt() {
+        this.x  = Math.random() * W;
+        this.y  = Math.random() * H;
+        this.vx = (Math.random() - 0.5) * 0.38;
+        this.vy = (Math.random() - 0.5) * 0.38;
+        this.sz = Math.random() * 1.1 + 0.4;
+        this.al = Math.random() * 0.28 + 0.10;
+      }
+
+      function setup() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        W = window.innerWidth; H = window.innerHeight;
+        cvs.width  = W * dpr; cvs.height = H * dpr;
+        cvs.style.width = W + 'px'; cvs.style.height = H + 'px';
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        pts = [];
+        var n = W < 768 ? 48 : 82;
+        for (var i = 0; i < n; i++) pts.push(new Pt());
+      }
+
+      function drawOrbs(t) {
+        ORBS.forEach(function(o) {
+          var x = (o[0] + Math.sin(t * o[3] + o[4]) * 0.22) * W;
+          var y = (o[1] + Math.cos(t * o[3] * 0.73 + o[4] * 1.1) * 0.18) * H;
+          var r = o[2] * Math.max(W, H);
+          var g = ctx.createRadialGradient(x, y, 0, x, y, r);
+          g.addColorStop(0,   'rgba(' + o[5] + ',' + o[6] + ',' + o[7] + ',' + (o[8] * 2.4) + ')');
+          g.addColorStop(0.38,'rgba(' + o[5] + ',' + o[6] + ',' + o[7] + ',' + o[8] + ')');
+          g.addColorStop(1,   'rgba(' + o[5] + ',' + o[6] + ',' + o[7] + ',0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+        });
+      }
+
+      function drawGrid(t) {
+        var cols = 14, rows = 9, amp = 20;
+        var cw = W / cols, ch = H / rows;
+        ctx.lineWidth = 0.85;
+        ctx.strokeStyle = 'rgba(80,155,210,0.045)';
+        var r, c, bx, by, dx, dy;
+        for (r = 0; r <= rows; r++) {
+          ctx.beginPath();
+          for (c = 0; c <= cols; c++) {
+            bx = c * cw; by = r * ch;
+            dx = Math.sin(bx * 0.009 + t * 0.00046 + r * 0.28) * amp;
+            dy = Math.cos(by * 0.007 + t * 0.00035 + c * 0.19) * (amp * 0.62);
+            c === 0 ? ctx.moveTo(bx + dx, by + dy) : ctx.lineTo(bx + dx, by + dy);
+          }
+          ctx.stroke();
+        }
+        for (c = 0; c <= cols; c++) {
+          ctx.beginPath();
+          for (r = 0; r <= rows; r++) {
+            bx = c * cw; by = r * ch;
+            dx = Math.sin(bx * 0.009 + t * 0.00046 + r * 0.28) * amp;
+            dy = Math.cos(by * 0.007 + t * 0.00035 + c * 0.19) * (amp * 0.62);
+            r === 0 ? ctx.moveTo(bx + dx, by + dy) : ctx.lineTo(bx + dx, by + dy);
+          }
+          ctx.stroke();
+        }
+      }
+
+      var MD = 128, MD2 = MD * MD;
+      function drawNet() {
+        var n = pts.length, i, j, p, q, dx, dy, d2, a;
+        for (i = 0; i < n; i++) {
+          p = pts[i];
+          for (j = i + 1; j < n; j++) {
+            q = pts[j];
+            dx = p.x - q.x; dy = p.y - q.y; d2 = dx * dx + dy * dy;
+            if (d2 < MD2) {
+              a = (1 - Math.sqrt(d2) / MD) * 0.092;
+              ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y);
+              ctx.strokeStyle = 'rgba(255,130,68,' + a + ')';
+              ctx.lineWidth = 0.55; ctx.stroke();
+            }
+          }
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.sz, 0, 6.2832);
+          ctx.fillStyle = 'rgba(255,205,165,' + p.al + ')'; ctx.fill();
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < -6) p.x = W + 6; else if (p.x > W + 6) p.x = -6;
+          if (p.y < -6) p.y = H + 6; else if (p.y > H + 6) p.y = -6;
+        }
+      }
+
+      function frame(t) {
+        ctx.clearRect(0, 0, W, H);
+        drawOrbs(t);
+        drawGrid(t);
+        drawNet();
+        raf = requestAnimationFrame(frame);
+      }
+
+      function staticFallback() {
+        ctx.clearRect(0, 0, W, H);
+        ORBS.forEach(function(o) {
+          var r = o[2] * Math.max(W, H);
+          var g = ctx.createRadialGradient(o[0]*W, o[1]*H, 0, o[0]*W, o[1]*H, r);
+          g.addColorStop(0, 'rgba(' + o[5] + ',' + o[6] + ',' + o[7] + ',' + (o[8] * 1.6) + ')');
+          g.addColorStop(1, 'rgba(' + o[5] + ',' + o[6] + ',' + o[7] + ',0)');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        });
+      }
+
+      setup();
+      window.addEventListener('resize', function() {
+        if (raf) cancelAnimationFrame(raf);
+        setup();
+        if (reduced) { staticFallback(); return; }
+        raf = requestAnimationFrame(frame);
+      });
+
+      if (reduced) { staticFallback(); return; }
+      raf = requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
