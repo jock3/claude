@@ -19,6 +19,8 @@ export default defineConfig({
         trackr: resolve(__dirname, 'apps/trackr/index.html'),
         brus: resolve(__dirname, 'apps/brus/index.html'),
         'brus-fx': resolve(__dirname, 'apps/brus-fx/index.html'),
+        tracker: resolve(__dirname, 'apps/tracker/index.html'),
+        musictheory: resolve(__dirname, 'apps/musictheory/index.html'),
       },
     },
   },
