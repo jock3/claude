@@ -294,7 +294,7 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
 }
 
 /* ── Bento header (TopNav + DateBar wrapper) ──────────────────────────────── */
-.t3-bento-header { max-width: 1400px; margin: 0 auto; padding: 28px 28px 0; }
+.t3-bento-header { max-width: 1400px; margin: 0 auto; padding: 14px 12px 0; }
 
 /* ── Settings panel inside bento ─────────────────────────────────────────── */
 .t3-m .t3-settings-mobile { display: flex; }
@@ -302,31 +302,31 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
 /* ── Bento grid layout ────────────────────────── */
 .t3-bento {
   display: grid;
-  grid-template-columns: 280px 1fr 1fr;
+  grid-template-columns: 240px 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 14px;
-  padding: 16px;
+  gap: 8px;
+  padding: 12px;
   align-items: start;
   max-width: 1400px;
   margin: 0 auto;
-  min-height: calc(100vh - 120px);
+  min-height: calc(100vh - 80px);
 }
 
 .t3-m {
-  border-radius: 18px;
+  border-radius: 6px;
   overflow: hidden;
-  padding: 20px;
-  min-height: 120px;
+  padding: 12px;
+  min-height: 80px;
   position: relative;
 }
 
 .t3-m-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.45;
-  margin-bottom: 14px;
+  letter-spacing: 0.12em;
+  opacity: 0.4;
+  margin-bottom: 8px;
 }
 
 /* Grid placement — 2-row bento, no empty cells */
