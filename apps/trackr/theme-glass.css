@@ -1,10 +1,10 @@
 html[data-ui-theme="glass"],
 html[data-ui-theme="glass"] body {
-  background: #060606;
+  background: #060608;
   color: rgba(255, 255, 255, 0.88);
 }
 
-/* Silk base texture — diagonal weave lines, doubled brightness */
+/* Silk diagonal weave */
 html[data-ui-theme="glass"] body::after {
   content: '';
   position: fixed;
@@ -12,15 +12,15 @@ html[data-ui-theme="glass"] body::after {
   background-image:
     repeating-linear-gradient(
       -52deg,
-      rgba(255,255,255,0.035) 0px,
-      rgba(255,255,255,0.035) 1px,
+      rgba(255,255,255,0.032) 0px,
+      rgba(255,255,255,0.032) 1px,
       transparent 1px,
       transparent 9px
     ),
     repeating-linear-gradient(
       52deg,
-      rgba(255,255,255,0.022) 0px,
-      rgba(255,255,255,0.022) 1px,
+      rgba(255,255,255,0.020) 0px,
+      rgba(255,255,255,0.020) 1px,
       transparent 1px,
       transparent 9px
     );
@@ -28,36 +28,30 @@ html[data-ui-theme="glass"] body::after {
   z-index: 0;
 }
 
-/* Silk light reflections — bright diagonal sweeps + 3 radial light blobs */
+/*
+ * Large bright light blobs — these are what make glass visible.
+ * backdrop-filter: blur() blurs what is BEHIND the panel. On a near-black
+ * background that blur just produces dark grey. These blobs create real
+ * bright zones so the blur produces a genuine frosted glass effect.
+ */
 html[data-ui-theme="glass"] body::before {
   content: '';
   position: fixed;
-  inset: -20%;
+  inset: 0;
   background:
-    linear-gradient(
-      128deg,
-      transparent 0%,
-      rgba(255,255,255,0.16) 20%,
-      rgba(255,255,255,0.26) 26%,
-      rgba(255,255,255,0.12) 32%,
-      transparent 42%,
-      rgba(255,255,255,0.08) 58%,
-      rgba(255,255,255,0.20) 64%,
-      rgba(255,255,255,0.10) 70%,
-      transparent 80%
-    ),
-    radial-gradient(ellipse 70% 55% at 18% 25%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 40%, transparent 70%),
-    radial-gradient(ellipse 55% 65% at 82% 72%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%),
-    radial-gradient(ellipse 50% 40% at 55% 10%, rgba(255,255,255,0.14) 0%, transparent 65%);
+    radial-gradient(ellipse 58% 48% at 16% 22%, rgba(255,255,255,0.52) 0%, rgba(255,255,255,0.18) 38%, transparent 65%),
+    radial-gradient(ellipse 50% 60% at 86% 78%, rgba(255,255,255,0.44) 0%, rgba(255,255,255,0.12) 42%, transparent 68%),
+    radial-gradient(ellipse 42% 36% at 58% 4%,  rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.08) 42%, transparent 66%),
+    linear-gradient(145deg, rgba(255,255,255,0.05) 0%, transparent 40%, rgba(255,255,255,0.07) 100%);
   pointer-events: none;
   z-index: 0;
-  animation: silk-shift 22s ease-in-out infinite alternate;
+  animation: silk-shift 26s ease-in-out infinite alternate;
 }
 
 @keyframes silk-shift {
-  0%   { transform: rotate(0deg) scale(1);   opacity: 0.80; }
-  40%  { transform: rotate(1deg) scale(1.04); opacity: 1; }
-  100% { transform: rotate(-1deg) scale(0.97); opacity: 0.85; }
+  0%   { transform: scale(1)    translate(0, 0);        opacity: 0.85; }
+  50%  { transform: scale(1.06) translate(-2%, 1.5%);   opacity: 1;    }
+  100% { transform: scale(0.97) translate(1.5%, -1%);   opacity: 0.88; }
 }
 
 html[data-ui-theme="glass"] .t3-bento {
@@ -66,19 +60,19 @@ html[data-ui-theme="glass"] .t3-bento {
   z-index: 1;
 }
 
-/* True glass — frosted panel over bright silk background */
+/* True glass — frosted panel over bright background */
 html[data-ui-theme="glass"] .t3-m {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.20);
+  background: rgba(255, 255, 255, 0.09);
+  backdrop-filter: blur(40px) saturate(160%);
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.40),
-    inset 1px 0 0 rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
     inset -1px 0 0 rgba(255, 255, 255, 0.05),
-    0 2px 8px rgba(0, 0, 0, 0.5),
-    0 12px 40px rgba(0, 0, 0, 0.45);
+    0 2px 8px rgba(0, 0, 0, 0.45),
+    0 12px 40px rgba(0, 0, 0, 0.40);
   color: rgba(255, 255, 255, 0.90);
   position: relative;
   z-index: 1;
@@ -203,6 +197,17 @@ html[data-ui-theme="glass"] [class*="t3-fab"] {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
 }
 
+html[data-ui-theme="glass"] .t3-water-cup {
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.30) !important;
+  border-radius: 8px !important;
+}
+html[data-ui-theme="glass"] .t3-water-cup.filled {
+  background: rgba(255,255,255,0.22) !important;
+  border-color: rgba(255,255,255,0.50) !important;
+  color: rgba(255,255,255,0.95) !important;
+}
 html[data-ui-theme="glass"] [class*="cup"],
 html[data-ui-theme="glass"] [class*="water"] svg,
 html[data-ui-theme="glass"] [class*="drop"] {
