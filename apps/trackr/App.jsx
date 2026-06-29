@@ -2109,7 +2109,7 @@ function Logo() {
   );
 }
 
-function TopNav({ theme, onToggleTheme, userName, onLogout }) {
+function TopNav({ theme, onToggleTheme, uiTheme, onToggleUiTheme, userName, onLogout }) {
   const [userOpen, setUserOpen] = useState(false);
 
   useEffect(() => {
@@ -2142,6 +2142,14 @@ function TopNav({ theme, onToggleTheme, userName, onLogout }) {
             ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
             : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           }
+        </button>
+        <button
+          className="t3-theme-btn"
+          onClick={onToggleUiTheme}
+          title={uiTheme === 'glass' ? 'Byt till Shadow-tema' : 'Byt till Glass-tema'}
+          aria-label={uiTheme === 'glass' ? 'Byt till Shadow-tema' : 'Byt till Glass-tema'}
+        >
+          {uiTheme === 'glass' ? '◼' : '◻'}
         </button>
         <div className="t3-user-wrap" onClick={(e) => e.stopPropagation()}>
           <button className="t3-user-chip2" onClick={() => setUserOpen(!userOpen)}>
@@ -2449,6 +2457,9 @@ function LoadingScreen() {
 export default function TrackrApp() {
   const savedTheme = localStorage.getItem('ailabb_theme') || 'dark';
   const [theme, setTheme] = useState(savedTheme);
+  const [uiTheme, setUiTheme] = useState(
+    () => localStorage.getItem('trackr_ui_theme') || 'shadow'
+  );
   const [userName, setUserName] = useState(null);
   const [profileId, setProfileId] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -2523,6 +2534,12 @@ export default function TrackrApp() {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     localStorage.setItem('ailabb_theme', next);
+  };
+
+  const toggleUiTheme = () => {
+    const next = uiTheme === 'glass' ? 'shadow' : 'glass';
+    setUiTheme(next);
+    localStorage.setItem('trackr_ui_theme', next);
   };
 
   const flash = (msg, icon) => {
@@ -2628,53 +2645,43 @@ export default function TrackrApp() {
   return (
     <CC.Provider value={C}>
       <div className="t3-root">
-        <div className={`t3-stage t3-tab-${tab}`}>
-          <TopNav theme={theme} onToggleTheme={toggleTheme} userName={userName} onLogout={logout} />
+        <div className="t3-bento-header">
+          <TopNav theme={theme} onToggleTheme={toggleTheme} uiTheme={uiTheme} onToggleUiTheme={toggleUiTheme} userName={userName} onLogout={logout} />
           <DateBar selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
             onExport={openExport} onUpdateGoals={openGoals} />
+        </div>
 
-          <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
-
-          <div className="t3-main">
-            <Panel className="t3-main-left">
-              <div className="t3-panel-head t3-desktop-only">
-                <Segmented value={panelTab} onChange={setTab} options={[
-                  { value: 'food', label: 'Mat', icon: 'utensils' },
-                  { value: 'training', label: 'Träning', icon: 'dumbbell' },
-                ]} />
-                <span className="t3-panel-sub">
-                  {panelTab === 'food'
-                    ? `${day.meals.length} måltid${day.meals.length === 1 ? '' : 'er'} loggade`
-                    : `${day.workouts.length} pass loggade`}
-                </span>
-              </div>
-              {panelTab === 'food'
-                ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} water={water} onWaterChange={setWater} />
-                : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onManageRoutines={() => setRoutineMgr(true)} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
-            </Panel>
-
-            <Panel className="t3-main-right">
-              <div className="t3-panel-head">
-                <h2 className="t3-panel-title">Historik</h2>
-                <span className="t3-panel-sub">Senaste 30 dagarna · klicka en dag för att ladda den</span>
-              </div>
-              <HistoryPanel days={state.days} goals={state.goals} selectedKey={selectedKey}
-                onSelectDay={setSelectedKey} units={units} weekStart="mon" />
-            </Panel>
+        <div className="t3-bento" data-ui-theme={uiTheme}>
+          <div className="t3-m t3-m-cal">
+            <div className="t3-m-label">Kalorier idag</div>
+            <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
           </div>
 
-          <SettingsPanel theme={theme} onToggleTheme={toggleTheme} onUpdateGoals={openGoals}
-            onExport={openExport} userName={userName} onLogout={logout} />
+          <div className="t3-m t3-m-meals">
+            <div className="t3-m-label">Mat & Vatten</div>
+            <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} water={water} onWaterChange={setWater} />
+          </div>
 
-          <BottomNav tab={tab} onChange={t => {
-            setTab(t);
-            if (t === 'food' || t === 'training') { /* panelTab syncs automatically */ }
-          }} />
+          <div className="t3-m t3-m-train">
+            <div className="t3-m-label">Träning</div>
+            <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onManageRoutines={() => setRoutineMgr(true)} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />
+          </div>
 
-          <FAB tab={tab}
-            onAddMeal={() => setModal({ type: 'meal', data: null })}
-            onStartTraining={startSession} />
+          <div className="t3-m t3-m-hist">
+            <div className="t3-m-label">Historik</div>
+            <HistoryPanel days={state.days} goals={state.goals} selectedKey={selectedKey}
+              onSelectDay={setSelectedKey} units={units} weekStart="mon" />
+          </div>
         </div>
+
+        <BottomNav tab={tab} onChange={t => {
+          setTab(t);
+          if (t === 'food' || t === 'training') { /* panelTab syncs automatically */ }
+        }} />
+
+        <FAB tab={tab}
+          onAddMeal={() => setModal({ type: 'meal', data: null })}
+          onStartTraining={startSession} />
 
         {!state.goalsSet && (
           <GoalsModal mode="onboard" currentGoals={state.goals} latestWeight={latestLoggedWeight(state.days)}
