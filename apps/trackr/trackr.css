@@ -302,8 +302,8 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
 /* ── Bento grid layout ────────────────────────── */
 .t3-bento {
   display: grid;
-  grid-template-columns: 240px 1fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: 200px 1fr 1fr 1fr;
+  grid-template-rows: auto auto auto;
   gap: 8px;
   padding: 12px;
   align-items: start;
@@ -313,9 +313,9 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
 }
 
 .t3-m {
-  border-radius: 6px;
+  border-radius: 14px;
   overflow: hidden;
-  padding: 12px;
+  padding: 14px 16px;
   min-height: 80px;
   position: relative;
 }
@@ -325,26 +325,30 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  opacity: 0.4;
-  margin-bottom: 8px;
+  opacity: 0.45;
+  margin-bottom: 10px;
 }
 
-/* Grid placement — 2-row bento, no empty cells */
-.t3-m-cal   { grid-column: 1; grid-row: 1 / 3; }
-.t3-m-meals { grid-column: 2 / 4; grid-row: 1; }
-.t3-m-train { grid-column: 2; grid-row: 2; }
-.t3-m-hist  { grid-column: 3; grid-row: 2; }
+/* Grid placement — 3-row bento */
+.t3-m-summary  { grid-column: 1;     grid-row: 1 / 3; }
+.t3-m-meals    { grid-column: 2 / 4; grid-row: 1; }
+.t3-m-water    { grid-column: 4;     grid-row: 1; }
+.t3-m-train    { grid-column: 2;     grid-row: 2; }
+.t3-m-stats    { grid-column: 3 / 5; grid-row: 2; }
+.t3-m-calendar { grid-column: 1 / 5; grid-row: 3; }
 
 /* Tablet */
 @media (max-width: 960px) {
   .t3-bento {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: auto;
   }
-  .t3-m-cal   { grid-column: 1 / 3; grid-row: 1; }
-  .t3-m-meals { grid-column: 1 / 3; grid-row: 2; }
-  .t3-m-train { grid-column: 1; grid-row: 3; }
-  .t3-m-hist  { grid-column: 2; grid-row: 3; }
+  .t3-m-summary  { grid-column: 1 / 4; grid-row: 1; }
+  .t3-m-meals    { grid-column: 1 / 3; grid-row: 2; }
+  .t3-m-water    { grid-column: 3;     grid-row: 2; }
+  .t3-m-train    { grid-column: 1;     grid-row: 3; }
+  .t3-m-stats    { grid-column: 2 / 4; grid-row: 3; }
+  .t3-m-calendar { grid-column: 1 / 4; grid-row: 4; }
 }
 
 /* Mobile */
@@ -354,7 +358,8 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
     gap: 10px;
     padding: 10px;
   }
-  .t3-m-cal, .t3-m-meals, .t3-m-train, .t3-m-hist {
+  .t3-m-summary, .t3-m-meals, .t3-m-water,
+  .t3-m-train, .t3-m-stats, .t3-m-calendar {
     grid-column: 1;
     grid-row: auto;
   }

@@ -933,7 +933,7 @@ function Macro({ name, value, goal, color }) {
   );
 }
 
-function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterdayCount, water, onWaterChange }) {
+function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterdayCount }) {
   const C = useC();
   const totals = dayTotals(day);
   const left = Math.max(0, goals.kcal - totals.kcal);
@@ -954,9 +954,7 @@ function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterd
         </div>
       </div>
 
-      <div style={{ height: '0.5px', background: C.line, margin: '2px 0' }} />
-      <WaterRow water={water} onChange={onWaterChange} />
-      <div style={{ height: '0.5px', background: C.line, margin: '2px 0' }} />
+      <div style={{ height: '0.5px', background: C.line, margin: '8px 0' }} />
 
       <div className="t3-scroll" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         {meals.length === 0 ? (
@@ -1975,7 +1973,7 @@ function TrendCard({ label, value, unit, delta, deltaColor, children }) {
   );
 }
 
-function HistoryPanel({ days, goals, selectedKey, onSelectDay, units, weekStart }) {
+function HistoryPanel({ days, goals, selectedKey, onSelectDay, units, weekStart, mode = 'both' }) {
   const C = useC();
   const end = todayKey();
   const kcalS = series(days, goals, end, 30, 'kcal');
@@ -2008,71 +2006,77 @@ function HistoryPanel({ days, goals, selectedKey, onSelectDay, units, weekStart 
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-        <TrendCard label="Kalorier · 30d" value={grp(kcalAvg)} unit="avg">
-          <Spark data={kcalS} color={C.ink2} />
-        </TrendCard>
-        <TrendCard label="Steg · 30d" value={grp(stepAvg)} unit="avg">
-          <Spark data={stepS} color={C.tealLight} />
-        </TrendCard>
-        <TrendCard label="Vikt · 30d" value={wLast != null ? wDisp(wLast, units) : '–'} unit={units}
-          delta={wDelta != null ? `${wDelta <= 0 ? '−' : '+'}${Math.abs(wDisp(Math.abs(wDelta), units)).toFixed(1)}` : null}
-          deltaColor={wDelta != null && wDelta <= 0 ? C.teal : C.amber}>
-          <Spark data={wS} color={C.teal} />
-        </TrendCard>
-        <TrendCard label="Träning · 30d" value={trCount} unit="pass">
-          <Spark data={trS} color={C.tealDeep} bars />
-        </TrendCard>
-      </div>
+      {(mode === 'both' || mode === 'stats') && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+          <TrendCard label="Kalorier · 30d" value={grp(kcalAvg)} unit="avg">
+            <Spark data={kcalS} color={C.ink2} />
+          </TrendCard>
+          <TrendCard label="Steg · 30d" value={grp(stepAvg)} unit="avg">
+            <Spark data={stepS} color={C.tealLight} />
+          </TrendCard>
+          <TrendCard label="Vikt · 30d" value={wLast != null ? wDisp(wLast, units) : '–'} unit={units}
+            delta={wDelta != null ? `${wDelta <= 0 ? '−' : '+'}${Math.abs(wDisp(Math.abs(wDelta), units)).toFixed(1)}` : null}
+            deltaColor={wDelta != null && wDelta <= 0 ? C.teal : C.amber}>
+            <Spark data={wS} color={C.teal} />
+          </TrendCard>
+          <TrendCard label="Träning · 30d" value={trCount} unit="pass">
+            <Spark data={trS} color={C.tealDeep} bars />
+          </TrendCard>
+        </div>
+      )}
 
-      <div style={{ height: '0.5px', background: C.line, margin: '16px 0 12px' }} />
+      {mode === 'both' && <div style={{ height: '0.5px', background: C.line, margin: '16px 0 12px' }} />}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 10, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: '-0.01em', color: C.ink }}>{MO_LONG[month]} {year}</h3>
-          <div style={{ display: 'inline-flex', gap: 1 }}>
-            <IconButton icon="chevron-left" label="Föregående månad" onClick={() => stepMonth(-1)} size={28} />
-            <IconButton icon="chevron-right" label="Nästa månad" onClick={() => stepMonth(1)} size={28} />
+      {(mode === 'both' || mode === 'calendar') && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, letterSpacing: '-0.01em', color: C.ink }}>{MO_LONG[month]} {year}</h3>
+              <div style={{ display: 'inline-flex', gap: 1 }}>
+                <IconButton icon="chevron-left" label="Föregående månad" onClick={() => stepMonth(-1)} size={28} />
+                <IconButton icon="chevron-right" label="Nästa månad" onClick={() => stepMonth(1)} size={28} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: C.ink3, flexWrap: 'wrap' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.teal }} />kcal i mål</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.tealLight }} />steg ≥ mål</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.amber }} />träning</span>
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: C.ink3, flexWrap: 'wrap' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.teal }} />kcal i mål</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.tealLight }} />steg ≥ mål</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 7, height: 7, borderRadius: 999, background: C.amber }} />träning</span>
-        </div>
-      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.ink4 }}>
-          {dows.map(d => <span key={d} style={{ textAlign: 'center' }}>{d}</span>)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', gap: 4, flex: 1, minHeight: 0 }}>
-          {cells.map((d, i) => {
-            if (d == null) return <div key={i} />;
-            const k = `${year}-${pad2(month+1)}-${pad2(d)}`;
-            const day = days[k];
-            const isToday = k === end;
-            const isSel = k === selectedKey;
-            const kGoal = kcalInGoal(day, goals);
-            const sGoal = stepsHit(day, goals);
-            const session = day && day.workouts.length > 0;
-            const future = parseKey(k) > parseKey(end);
-            return (
-              <button key={i} onClick={() => !future && onSelectDay(k)} disabled={future}
-                style={{ border: `1px solid ${isSel ? C.teal : C.line}`, background: isSel ? C.tealMist : C.surface, borderRadius: 6, padding: '5px 6px', cursor: future ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', gap: 3, minHeight: 0, overflow: 'hidden', opacity: future ? 0.35 : 1, textAlign: 'left', fontFamily: 'inherit', transition: 'border-color 120ms, background 120ms' }}>
-                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-                  <span style={{ fontSize: 11, fontWeight: isToday || isSel ? 700 : 500, color: isToday ? C.teal : C.ink, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: isToday ? 16 : 'auto', height: isToday ? 16 : 'auto', borderRadius: 999, border: isToday ? `1.25px solid ${C.teal}` : 'none' }}>{d}</span>
-                  <span style={{ display: 'inline-flex', gap: 2 }}>
-                    {kGoal && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.teal }} />}
-                    {sGoal && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.tealLight }} />}
-                    {session && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.amber }} />}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.ink4 }}>
+              {dows.map(d => <span key={d} style={{ textAlign: 'center' }}>{d}</span>)}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr', gap: 4, flex: 1, minHeight: 0 }}>
+              {cells.map((d, i) => {
+                if (d == null) return <div key={i} />;
+                const k = `${year}-${pad2(month+1)}-${pad2(d)}`;
+                const day = days[k];
+                const isToday = k === end;
+                const isSel = k === selectedKey;
+                const kGoal = kcalInGoal(day, goals);
+                const sGoal = stepsHit(day, goals);
+                const session = day && day.workouts.length > 0;
+                const future = parseKey(k) > parseKey(end);
+                return (
+                  <button key={i} onClick={() => !future && onSelectDay(k)} disabled={future}
+                    style={{ border: `1px solid ${isSel ? C.teal : C.line}`, background: isSel ? C.tealMist : C.surface, borderRadius: 6, padding: '5px 6px', cursor: future ? 'default' : 'pointer', display: 'flex', flexDirection: 'column', gap: 3, minHeight: 0, overflow: 'hidden', opacity: future ? 0.35 : 1, textAlign: 'left', fontFamily: 'inherit', transition: 'border-color 120ms, background 120ms' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                      <span style={{ fontSize: 11, fontWeight: isToday || isSel ? 700 : 500, color: isToday ? C.teal : C.ink, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: isToday ? 16 : 'auto', height: isToday ? 16 : 'auto', borderRadius: 999, border: isToday ? `1.25px solid ${C.teal}` : 'none' }}>{d}</span>
+                      <span style={{ display: 'inline-flex', gap: 2 }}>
+                        {kGoal && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.teal }} />}
+                        {sGoal && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.tealLight }} />}
+                        {session && <span style={{ width: 4, height: 4, borderRadius: 999, background: C.amber }} />}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -2663,14 +2667,19 @@ export default function TrackrApp() {
         </div>
 
         <div className="t3-bento" data-ui-theme={uiTheme}>
-          <div className="t3-m t3-m-cal">
+          <div className="t3-m t3-m-summary">
             <div className="t3-m-label">Kalorier idag</div>
             <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
           </div>
 
           <div className="t3-m t3-m-meals">
-            <div className="t3-m-label">Mat & Vatten</div>
-            <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} water={water} onWaterChange={setWater} />
+            <div className="t3-m-label">Mat</div>
+            <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} />
+          </div>
+
+          <div className="t3-m t3-m-water">
+            <div className="t3-m-label">Vatten</div>
+            <WaterRow water={water} onChange={setWater} />
           </div>
 
           <div className="t3-m t3-m-train">
@@ -2678,10 +2687,16 @@ export default function TrackrApp() {
             <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onManageRoutines={() => setRoutineMgr(true)} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />
           </div>
 
-          <div className="t3-m t3-m-hist">
-            <div className="t3-m-label">Historik</div>
+          <div className="t3-m t3-m-stats">
+            <div className="t3-m-label">Trender · 30 dagar</div>
             <HistoryPanel days={state.days} goals={state.goals} selectedKey={selectedKey}
-              onSelectDay={setSelectedKey} units={units} weekStart="mon" />
+              onSelectDay={setSelectedKey} units={units} weekStart="mon" mode="stats" />
+          </div>
+
+          <div className="t3-m t3-m-calendar">
+            <div className="t3-m-label">Kalender</div>
+            <HistoryPanel days={state.days} goals={state.goals} selectedKey={selectedKey}
+              onSelectDay={setSelectedKey} units={units} weekStart="mon" mode="calendar" />
           </div>
         </div>
 
