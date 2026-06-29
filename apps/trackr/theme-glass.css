@@ -1,102 +1,306 @@
-[data-ui-theme="glass"] {
-  --t3-glass-text: #1A1A1A;
-  --t3-glass-text2: #4A4A4A;
-  --t3-glass-text3: #7A7A7A;
-  --t3-glass-border: rgba(0,0,0,0.08);
-  --t3-glass-surface: rgba(255,255,255,0.5);
+html[data-ui-theme="glass"],
+html[data-ui-theme="glass"] body {
+  background: #080808;
+  color: rgba(255, 255, 255, 0.88);
 }
 
-[data-ui-theme="glass"] .t3-bento {
-  background: linear-gradient(135deg, #EEF7F5 0%, #F0EDF8 40%, #F7EEF0 100%);
-  border-radius: 0;
-  padding: 20px;
-  color: #1A1A1A;
+html[data-ui-theme="glass"] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 15%, rgba(255,255,255,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 85% 80%, rgba(255,255,255,0.05) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 35% at 55% 45%, rgba(255,255,255,0.03) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: orb-breathe 14s ease-in-out infinite alternate;
 }
 
-[data-ui-theme="glass"] .t3-m {
+html[data-ui-theme="glass"] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 40% at 70% 20%, rgba(255,255,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 35% 30% at 30% 75%, rgba(255,255,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+  animation: orb-breathe 18s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes orb-breathe {
+  0%   { transform: scale(1) translate(0, 0); opacity: 1; }
+  50%  { transform: scale(1.08) translate(20px, 15px); opacity: 0.85; }
+  100% { transform: scale(0.95) translate(-15px, 25px); opacity: 1; }
+}
+
+html[data-ui-theme="glass"] .t3-bento {
+  background: transparent;
   position: relative;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.65);
+  z-index: 1;
+}
+
+html[data-ui-theme="glass"] .t3-m {
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(48px) saturate(140%);
+  -webkit-backdrop-filter: blur(48px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 24px;
   box-shadow:
-    0 4px 24px rgba(0,0,0,0.06),
-    0 1px 4px rgba(0,0,0,0.04),
-    inset 0 1px 0 rgba(255,255,255,0.85);
-  border-radius: 20px;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 0.5px rgba(255, 255, 255, 0.06),
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 32px 64px rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.88);
+  position: relative;
+  z-index: 1;
+  transition: box-shadow 0.3s ease, transform 0.3s ease, background 0.3s ease;
   overflow: hidden;
 }
 
-[data-ui-theme="glass"] .t3-m:hover {
+html[data-ui-theme="glass"] .t3-m::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.06) 0%,
+    rgba(255,255,255,0.01) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+html[data-ui-theme="glass"] .t3-m:hover {
+  background: rgba(255, 255, 255, 0.065);
   box-shadow:
-    0 8px 32px rgba(0,0,0,0.09),
-    0 2px 8px rgba(0,0,0,0.05),
-    inset 0 1px 0 rgba(255,255,255,0.9);
-  transform: translateY(-1px);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    0 12px 40px rgba(0, 0, 0, 0.55),
+    0 40px 80px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
 }
 
-[data-ui-theme="glass"] .t3-m-cal {
-  background: rgba(178, 225, 215, 0.38);
-}
-
-[data-ui-theme="glass"] .t3-m-meals {
-  background: rgba(248, 200, 200, 0.28);
-}
-
-[data-ui-theme="glass"] .t3-m-train {
-  background: rgba(200, 185, 250, 0.28);
-}
-
-[data-ui-theme="glass"] .t3-m-hist {
-  background: rgba(168, 210, 175, 0.28);
-}
-
-[data-ui-theme="glass"] .t3-m-cal::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 2px;
-  background: linear-gradient(90deg, #14B8A6, #5EEAD4);
-  border-radius: 0 0 2px 2px;
-  opacity: 0.6;
-}
-
-[data-ui-theme="glass"] .t3-m-meals::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 2px;
-  background: linear-gradient(90deg, #F43F5E, #FB7185);
-  border-radius: 0 0 2px 2px;
-  opacity: 0.5;
-}
-
-[data-ui-theme="glass"] .t3-m-train::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 2px;
-  background: linear-gradient(90deg, #8B5CF6, #A78BFA);
-  border-radius: 0 0 2px 2px;
-  opacity: 0.5;
-}
-
-[data-ui-theme="glass"] .t3-m-hist::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 20px; right: 20px;
-  height: 2px;
-  background: linear-gradient(90deg, #22C55E, #4ADE80);
-  border-radius: 0 0 2px 2px;
-  opacity: 0.5;
-}
-
-[data-ui-theme="glass"] .t3-m-label {
-  color: #3A3A3A;
-  font-size: 10px;
+html[data-ui-theme="glass"] .t3-m-label {
+  font-size: 9px;
   font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.55;
-  margin-bottom: 14px;
+  color: rgba(255, 255, 255, 0.35);
+  margin-bottom: 16px;
+}
+
+html[data-ui-theme="glass"] .t3-root,
+html[data-ui-theme="glass"] .t3-bento {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+html[data-ui-theme="glass"] .t3-header,
+html[data-ui-theme="glass"] .t3-topnav {
+  background: rgba(8, 8, 8, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+html[data-ui-theme="glass"] .t3-ring circle,
+html[data-ui-theme="glass"] [class*="ring"] circle {
+  stroke: rgba(255, 255, 255, 0.15) !important;
+}
+html[data-ui-theme="glass"] .t3-ring circle.t3-ring-fill,
+html[data-ui-theme="glass"] [class*="ring-fill"],
+html[data-ui-theme="glass"] [class*="ring"] circle:last-child {
+  stroke: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-ui-theme="glass"] [class*="bar"],
+html[data-ui-theme="glass"] [class*="progress"] {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+html[data-ui-theme="glass"] [class*="bar-fill"],
+html[data-ui-theme="glass"] [class*="bar"] > div,
+html[data-ui-theme="glass"] [class*="progress"] > div {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+
+html[data-ui-theme="glass"] [class*="kcal"],
+html[data-ui-theme="glass"] [class*="cal-big"],
+html[data-ui-theme="glass"] [class*="num"],
+html[data-ui-theme="glass"] [class*="total"] {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+html[data-ui-theme="glass"] [class*="label"],
+html[data-ui-theme="glass"] [class*="meta"],
+html[data-ui-theme="glass"] [class*="sub"],
+html[data-ui-theme="glass"] [class*="hint"],
+html[data-ui-theme="glass"] [class*="caption"] {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-ui-theme="glass"] .t3-m button,
+html[data-ui-theme="glass"] .t3-m .t3-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+html[data-ui-theme="glass"] .t3-m button:hover,
+html[data-ui-theme="glass"] .t3-m .t3-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+html[data-ui-theme="glass"] [class*="add-btn"],
+html[data-ui-theme="glass"] [class*="primary"],
+html[data-ui-theme="glass"] [class*="t3-fab"] {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-ui-theme="glass"] [class*="cup"],
+html[data-ui-theme="glass"] [class*="water"] svg,
+html[data-ui-theme="glass"] [class*="drop"] {
+  color: rgba(255, 255, 255, 0.55) !important;
+  fill: rgba(255, 255, 255, 0.55) !important;
+}
+html[data-ui-theme="glass"] [class*="cup-filled"],
+html[data-ui-theme="glass"] [class*="cup"][data-filled="true"],
+html[data-ui-theme="glass"] [class*="drop-filled"] {
+  color: rgba(255, 255, 255, 0.90) !important;
+  fill: rgba(255, 255, 255, 0.90) !important;
+}
+
+html[data-ui-theme="glass"] [class*="divider"],
+html[data-ui-theme="glass"] hr {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-ui-theme="glass"] [class*="meal-row"],
+html[data-ui-theme="glass"] [class*="meal-item"],
+html[data-ui-theme="glass"] [class*="workout-row"],
+html[data-ui-theme="glass"] [class*="workout-item"],
+html[data-ui-theme="glass"] [class*="item-row"],
+html[data-ui-theme="glass"] [class*="log-item"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.82);
+}
+html[data-ui-theme="glass"] [class*="meal-row"]:hover,
+html[data-ui-theme="glass"] [class*="workout-row"]:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-ui-theme="glass"] [class*="tag"],
+html[data-ui-theme="glass"] [class*="badge"],
+html[data-ui-theme="glass"] [class*="chip"],
+html[data-ui-theme="glass"] [class*="pill"] {
+  background: rgba(255, 255, 255, 0.10) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+html[data-ui-theme="glass"] [class*="streak"] {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html[data-ui-theme="glass"] [class*="dot"],
+html[data-ui-theme="glass"] [class*="cal-dot"],
+html[data-ui-theme="glass"] [class*="marker"] {
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+html[data-ui-theme="glass"] [class*="dot-hit"],
+html[data-ui-theme="glass"] [class*="dot-filled"] {
+  background: rgba(255, 255, 255, 0.90) !important;
+}
+
+html[data-ui-theme="glass"] [class*="cal-day"],
+html[data-ui-theme="glass"] [class*="day-cell"] {
+  color: rgba(255, 255, 255, 0.70);
+}
+html[data-ui-theme="glass"] [class*="cal-day"]:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+html[data-ui-theme="glass"] [class*="today"],
+html[data-ui-theme="glass"] [class*="selected"] {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+html[data-ui-theme="glass"] [class*="spark"] path,
+html[data-ui-theme="glass"] [class*="spark"] polyline,
+html[data-ui-theme="glass"] [class*="spark"] line,
+html[data-ui-theme="glass"] [class*="chart"] path {
+  stroke: rgba(255, 255, 255, 0.65) !important;
+}
+html[data-ui-theme="glass"] [class*="spark"] polygon,
+html[data-ui-theme="glass"] [class*="spark"] [class*="area"] {
+  fill: rgba(255, 255, 255, 0.10) !important;
+}
+
+html[data-ui-theme="glass"] input,
+html[data-ui-theme="glass"] select,
+html[data-ui-theme="glass"] textarea {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  border-radius: 10px;
+}
+html[data-ui-theme="glass"] input::placeholder {
+  color: rgba(255, 255, 255, 0.30) !important;
+}
+
+html[data-ui-theme="glass"] [class*="modal"],
+html[data-ui-theme="glass"] [class*="overlay-panel"],
+html[data-ui-theme="glass"] [class*="drawer"] {
+  background: rgba(12, 12, 12, 0.85) !important;
+  backdrop-filter: blur(40px) !important;
+  -webkit-backdrop-filter: blur(40px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+html[data-ui-theme="glass"] [class*="toast"] {
+  background: rgba(255, 255, 255, 0.10) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: rgba(255, 255, 255, 0.90) !important;
+}
+
+html[data-ui-theme="glass"] [class*="bottom-nav"],
+html[data-ui-theme="glass"] [class*="t3-nav"] {
+  background: rgba(8, 8, 8, 0.75) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+html[data-ui-theme="glass"] .t3-m * {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+html[data-ui-theme="glass"] .t3-m [style*="color"] {
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+html[data-ui-theme="glass"] .t3-m [style*="background-color"] {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-ui-theme="glass"] .t3-m [style*="background:"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+html[data-ui-theme="glass"] .t3-m [style*="stroke"] svg circle,
+html[data-ui-theme="glass"] .t3-m svg [style*="stroke"] {
+  stroke: rgba(255, 255, 255, 0.80) !important;
+}
+html[data-ui-theme="glass"] .t3-m svg [style*="fill"] {
+  fill: rgba(255, 255, 255, 0.80) !important;
 }
