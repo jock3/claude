@@ -185,7 +185,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
       >
         {/* ── Month header row ── */}
         <div
-          className={`${cellClass} sticky left-0 z-10 bg-[#F2F2F2] text-[#1C1C1C] font-semibold text-sm col-span-${INFO_COL_COUNT}`}
+          className={`${cellClass} sticky left-0 z-10 bg-white text-[#1C1C1C] font-semibold text-sm col-span-${INFO_COL_COUNT}`}
           style={{ gridColumn: `1 / span ${INFO_COL_COUNT}` }}
         >
           {plan.campaign_name}
@@ -193,7 +193,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
         {months.map((m) => (
           <div
             key={m.label}
-            className={`${cellClass} ${headerBg} font-medium justify-center`}
+            className={`${cellClass} bg-[#1C1C1C] text-white font-semibold justify-center`}
             style={{ gridColumn: `span ${m.spanCols}` }}
           >
             {m.label}
@@ -978,36 +978,48 @@ function BudgetSummaryRow({
 }) {
   const totalReach = plan.categories.reduce((sum, cat) => sum + calcCategoryReach(cat.lines), 0);
 
+  const summaryBorder = "border-t-2 border-[#1C1C1C]";
+
   return (
     <>
-      <div
-        className={`${cellClass} ${stickyClass} bg-[#F2F2F2] border-t-2 border-[#1C1C1C]`}
-        style={{ gridColumn: `1 / span ${infoColCount - 1}` }}
-      >
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Budget</span>
-          {!readOnly ? (
-            <InlineEdit
-              value={plan.planned_budget ? String(plan.planned_budget) : ""}
-              onSave={(v) => onPlanUpdate({ planned_budget: v ? Number(v) : null })}
-              type="number"
-              placeholder="Ange budget"
-              className="text-sm font-bold text-[#1C1C1C]"
-            />
-          ) : (
-            <span className="text-sm font-bold text-[#1C1C1C]">
-              {plan.planned_budget ? formatSEK(plan.planned_budget) : "–"}
-            </span>
-          )}
-        </div>
+      {/* Col 1: "Budget" label — matches Kanal/Plattform column */}
+      <div className={`${cellClass} ${stickyClass} bg-white ${summaryBorder}`}>
+        <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Budget</span>
       </div>
-      <div className={`${cellClass} bg-[#F2F2F2] border-t-2 border-[#1C1C1C] justify-end`}>
-        <div className="flex flex-col items-end gap-0.5">
-          <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Räckvidd</span>
-          <span className="text-sm font-bold text-[#1C1C1C]">{formatReach(totalReach)}</span>
-        </div>
+
+      {/* Middle info cols (full) or just Totalt col (compact) */}
+      {!compact && (
+        <>
+          <div className={`${cellClass} bg-white ${summaryBorder}`} />
+          <div className={`${cellClass} bg-white ${summaryBorder}`} />
+          <div className={`${cellClass} bg-white ${summaryBorder}`} />
+        </>
+      )}
+
+      {/* Totalt col */}
+      <div className={`${cellClass} bg-white ${summaryBorder} justify-end`}>
+        {!readOnly ? (
+          <InlineEdit
+            value={plan.planned_budget ? String(plan.planned_budget) : ""}
+            onSave={(v) => onPlanUpdate({ planned_budget: v ? Number(v) : null })}
+            type="number"
+            placeholder="–"
+            className="text-sm font-bold text-[#1C1C1C] text-right w-full"
+          />
+        ) : (
+          <span className="text-sm font-bold text-[#1C1C1C]">
+            {plan.planned_budget ? formatSEK(plan.planned_budget) : "–"}
+          </span>
+        )}
       </div>
-      <div style={{ gridColumn: `span ${weekCount}` }} className="bg-[#F2F2F2] border-t-2 border-[#1C1C1C]" />
+
+      {/* Räckvidd col */}
+      <div className={`${cellClass} bg-white ${summaryBorder} justify-end`}>
+        <span className="text-sm font-bold text-[#1C1C1C]">{formatReach(totalReach)}</span>
+      </div>
+
+      {/* Timeline area — white, no gray */}
+      <div style={{ gridColumn: `span ${weekCount}` }} className={`bg-white ${summaryBorder}`} />
     </>
   );
 }
