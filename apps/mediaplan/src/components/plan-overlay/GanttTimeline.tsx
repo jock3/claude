@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
-import { format } from "date-fns";
+import { format, differenceInWeeks } from "date-fns";
 import type { FullMediaPlan, MediaPlan, MediaLine, MediaConcept, MediaCategory, MediaDeadline } from "@/lib/types";
 import { getPlanWeeks, getMonthGroups, dateRangeToGridSpan, WeekColumn } from "@/lib/utils/dates";
 import { calcLineTotal, calcCategoryTotal, calcCategoryReach, formatSEK, formatReach } from "@/lib/utils/budget";
@@ -209,6 +209,18 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
         <button onClick={() => setErrorMsg(null)} className="font-semibold opacity-70 hover:opacity-100 transition-opacity">✕</button>
       </div>
     )}
+
+    {(() => {
+      const planWeeks = differenceInWeeks(new Date(plan.period_end), new Date(plan.period_start));
+      if (planWeeks > 52) {
+        return (
+          <div className="mx-4 mt-2 mb-0 px-3 py-2 rounded-md bg-yellow-50 border border-yellow-300 text-yellow-800 text-xs font-medium hidden md:block">
+            Obs: planen sträcker sig över {planWeeks} veckor — stora Ganttar kan vara långsamma.
+          </div>
+        );
+      }
+      return null;
+    })()}
 
     <div className="overflow-x-auto scrollbar-thin px-4 py-2 hidden md:block">
       <div
@@ -504,7 +516,7 @@ function GanttCategorySection({
     <>
       {/* Category header — spans first (infoColCount-1) cols */}
       <div
-        className={`${cellClass} ${stickyClass} font-semibold text-xs`}
+        className={`${cellClass} ${stickyClass} font-bold text-sm`}
         style={{
           gridColumn: `1 / span ${infoColCount - 1}`,
           backgroundColor: category.color + "22",
@@ -523,7 +535,7 @@ function GanttCategorySection({
             <InlineEdit
               value={category.name}
               onSave={(name) => onCategoryUpdate({ name })}
-              className="font-semibold text-xs"
+              className="font-bold text-sm"
               style={{ color: category.color }}
             />
             <span className="ml-auto text-xs" style={{ color: category.color, opacity: 0.7 }}>{formatSEK(total)}</span>
@@ -901,10 +913,14 @@ function GanttLineRow({
         {!readOnly && !line.deadline_date && !isDragging && (
           <button
             onClick={handleAddDeadline}
-            style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", fontSize: "11px", color: "#d1d5db", zIndex: 6, userSelect: "none" }}
-            className="hover:!text-red-400"
+            style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", zIndex: 6, userSelect: "none" }}
+            className="text-gray-300 hover:text-[#E60330]"
             title="Lägg till deadline"
-          >📌</button>
+          >
+            <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 inline-block">
+              <path d="M9.828.722a.5.5 0 0 1 .354.146l4.95 4.95a.5.5 0 0 1 0 .707c-.48.48-1.072.654-1.646.632-.572-.022-1.073-.262-1.36-.35l-3.01 3.01c.171.592.274 1.237.046 1.845-.158.419-.429.733-.741.985L5.17 14.396a.5.5 0 0 1-.707-.707l1.965-1.965-.656-.657-1.965 1.966a.5.5 0 0 1-.707-.708l1.757-1.757-1.072-1.072-1.757 1.757a.5.5 0 0 1-.707-.707l2.028-2.028c.252-.311.566-.583.985-.74.608-.228 1.253-.126 1.845.045l3.01-3.01c-.088-.287-.328-.788-.35-1.36-.022-.574.152-1.165.632-1.645a.5.5 0 0 1 .353-.147z"/>
+            </svg>
+          </button>
         )}
 
         {displaySpan ? (

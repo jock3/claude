@@ -40,7 +40,7 @@ export default function ShareView({ plan }: { plan: FullMediaPlan }) {
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <div className="bg-[#1C1C1C] text-white px-6 py-4">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
+        <div className="max-w-screen-2xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
             <MilouLogo className="h-7 w-auto text-white" />
             <div className="min-w-0">
@@ -50,12 +50,12 @@ export default function ShareView({ plan }: { plan: FullMediaPlan }) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 shrink-0">
-            <div className="text-right">
+          <div className="flex items-center gap-4 shrink-0 mt-2 sm:mt-0">
+            <div className="hidden sm:block text-right">
               <div className="text-xs text-gray-400">Total budget</div>
               <div className="text-sm font-bold text-white">{formatSEK(calcPlanTotal(plan))}</div>
             </div>
-            <div className="text-right">
+            <div className="hidden sm:block text-right">
               <div className="text-xs text-gray-400">Beräknad räckvidd</div>
               <div className="text-sm font-bold text-white">{formatReach(calcPlanReach(plan))}</div>
             </div>
@@ -86,7 +86,26 @@ export default function ShareView({ plan }: { plan: FullMediaPlan }) {
       )}
 
       {/* Gantt capture area */}
-      <div ref={captureRef} className="bg-white">
+      <div ref={captureRef} className="bg-white overflow-x-auto">
+        {/* Export header — appears in PNG export */}
+        <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
+          <div>
+            <h2 className="text-base font-bold text-[#1C1C1C]">{plan.campaign_name}</h2>
+            <p className="text-xs text-[#6C6C6C]">
+              {formatSwedishDateFull(plan.period_start)} – {formatSwedishDateFull(plan.period_end)}
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+            <div>
+              <div className="text-xs text-[#AAAAAA]">Total budget</div>
+              <div className="text-sm font-bold text-[#1C1C1C]">{formatSEK(calcPlanTotal(plan))}</div>
+            </div>
+            <div>
+              <div className="text-xs text-[#AAAAAA]">Beräknad räckvidd</div>
+              <div className="text-sm font-bold text-[#1C1C1C]">{formatReach(calcPlanReach(plan))}</div>
+            </div>
+          </div>
+        </div>
         <div className="max-w-screen-2xl mx-auto">
           <GanttTimeline plan={plan} readOnly compact onPlanChanged={() => {}} />
         </div>

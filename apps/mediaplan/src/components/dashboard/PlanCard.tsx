@@ -8,10 +8,11 @@ interface Props {
   onOpen: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  onDuplicate?: () => void;
   archived?: boolean;
 }
 
-export default function PlanCard({ plan, onOpen, onArchive, onDelete, archived }: Props) {
+export default function PlanCard({ plan, onOpen, onArchive, onDelete, onDuplicate, archived }: Props) {
   return (
     <div
       className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer group overflow-hidden"
@@ -25,11 +26,26 @@ export default function PlanCard({ plan, onOpen, onArchive, onDelete, archived }
           <h2 className="font-semibold text-gray-900 text-base leading-tight line-clamp-2 group-hover:text-milou-500 transition-colors">
             {plan.campaign_name}
           </h2>
-          {archived && (
-            <span className="shrink-0 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-              Arkiverad
-            </span>
-          )}
+          <div className="flex shrink-0 items-center gap-1.5">
+            {!archived && (
+              <span
+                className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  plan.status === 'approved'
+                    ? 'bg-blue-100 text-blue-700'
+                    : plan.status === 'active'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {plan.status === 'approved' ? 'Godkänd' : plan.status === 'active' ? 'Aktiv' : 'Utkast'}
+              </span>
+            )}
+            {archived && (
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                Arkiverad
+              </span>
+            )}
+          </div>
         </div>
 
         <p className="text-sm text-gray-500 mt-1">
@@ -53,6 +69,15 @@ export default function PlanCard({ plan, onOpen, onArchive, onDelete, archived }
         </button>
 
         <div className="flex items-center gap-3">
+          {onDuplicate && (
+            <button
+              onClick={onDuplicate}
+              title="Duplicera"
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              Duplicera
+            </button>
+          )}
           <button
             onClick={onArchive}
             title={archived ? "Återställ" : "Arkivera"}

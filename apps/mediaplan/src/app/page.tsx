@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getPlans, createPlan, archivePlan, deletePlan } from "@/lib/api/plans";
+import { getPlans, createPlan, archivePlan, deletePlan, duplicatePlan } from "@/lib/api/plans";
 import type { MediaPlan } from "@/lib/types";
 import PlanCard from "@/components/dashboard/PlanCard";
 import NewPlanModal from "@/components/dashboard/NewPlanModal";
@@ -43,6 +43,11 @@ export default function Dashboard() {
     if (!confirm("Är du säker på att du vill ta bort denna mediaplan?")) return;
     await deletePlan(id);
     setPlans((prev) => prev.filter((p) => p.id !== id));
+  };
+
+  const handleDuplicate = async (id: string) => {
+    const newPlan = await duplicatePlan(id);
+    setPlans((prev) => [newPlan, ...prev]);
   };
 
   const active = plans.filter((p) => !p.archived);
@@ -96,6 +101,7 @@ export default function Dashboard() {
                   onOpen={() => setActivePlanId(plan.id)}
                   onArchive={() => handleArchive(plan.id, true)}
                   onDelete={() => handleDelete(plan.id)}
+                  onDuplicate={() => handleDuplicate(plan.id)}
                 />
               ))}
             </div>

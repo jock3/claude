@@ -7,6 +7,7 @@ export interface MediaPlan {
   share_token: string | null;
   client_id: string | null;
   planned_budget: number | null;
+  status: 'draft' | 'active' | 'approved';
   created_at: string;
   updated_at: string;
 }

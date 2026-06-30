@@ -18,7 +18,7 @@ export default function LoginPage({ searchParams }: Props) {
           <div>
             <h1 className="text-lg font-semibold text-gray-900">Välkommen</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Ange ditt kund-ID för att visa din mediaplan, eller adminlösenordet för att komma åt adminvyn.
+              Ange ditt kund-ID (t.ex. G-001) för att se din mediaplan, eller lösenordet för att logga in som admin.
             </p>
           </div>
 
@@ -30,7 +30,7 @@ export default function LoginPage({ searchParams }: Props) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Kund-ID eller lösenord
+              Kund-ID / lösenord
             </label>
             <input
               type="text"

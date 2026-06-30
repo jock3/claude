@@ -105,7 +105,7 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
 
       <div className="relative flex flex-col bg-white w-full h-full overflow-hidden">
         {/* Header */}
-        <div className="bg-gray-900 text-white px-6 py-3 flex items-center justify-between shrink-0 gap-4">
+        <div className="bg-[#1C1C1C] text-white px-6 py-3 flex items-center justify-between shrink-0 gap-4">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             {loading || !plan ? (
               <div className="h-5 w-48 bg-gray-700 rounded animate-pulse" />
@@ -125,14 +125,14 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
                       type="date"
                       value={plan.period_start}
                       onChange={(e) => handlePeriodUpdate("period_start", e.target.value)}
-                      className="text-xs bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1"
+                      className="text-xs bg-[#2B2B2B] text-gray-300 border border-[#3a3a3a] rounded px-2 py-1"
                     />
                     <span className="text-gray-500">→</span>
                     <input
                       type="date"
                       value={plan.period_end}
                       onChange={(e) => handlePeriodUpdate("period_end", e.target.value)}
-                      className="text-xs bg-gray-800 text-gray-300 border border-gray-700 rounded px-2 py-1"
+                      className="text-xs bg-[#2B2B2B] text-gray-300 border border-[#3a3a3a] rounded px-2 py-1"
                     />
                   </div>
                 )}
@@ -160,19 +160,19 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
                     defaultValue={plan?.client_id ?? ""}
                     onBlur={(e) => plan && handleClientIdUpdate(e.target.value)}
                     placeholder="G-001"
-                    className="text-xs bg-gray-800 text-gray-200 border border-gray-700 rounded px-2 py-1 w-20 focus:outline-none focus:border-milou-500"
+                    className="text-xs bg-[#2B2B2B] text-gray-200 border border-[#3a3a3a] rounded px-2 py-1 w-20 focus:outline-none focus:border-milou-500"
                   />
                 </div>
                 <button
                   onClick={handleExportImage}
                   disabled={exporting}
-                  className="text-sm bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm bg-[#2B2B2B] hover:bg-gray-700 disabled:opacity-50 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   {exporting ? "Exporterar…" : "📷 Exportera bild"}
                 </button>
                 <button
                   onClick={handleShare}
-                  className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="text-sm bg-[#2B2B2B] hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   {copyDone ? "✓ Länk kopierad!" : "🔗 Dela länk"}
                 </button>
@@ -214,6 +214,21 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
             </div>
           ) : (
             <div ref={captureRef}>
+              {/* Export header — appears in PNG export */}
+              <div className="px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-white">
+                <div>
+                  <h2 className="text-base font-bold text-[#1C1C1C]">{plan.campaign_name}</h2>
+                  <p className="text-xs text-[#6C6C6C]">
+                    {formatSwedishDateFull(plan.period_start)} – {formatSwedishDateFull(plan.period_end)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div>
+                    <div className="text-xs text-[#AAAAAA]">Total budget</div>
+                    <div className="text-sm font-bold text-[#1C1C1C]">{formatSEK(calcPlanTotal(plan))}</div>
+                  </div>
+                </div>
+              </div>
               <GanttTimeline
                 plan={plan}
                 readOnly={readOnly}
@@ -250,7 +265,7 @@ function EditableName({ value, onSave }: { value: string; onSave: (v: string) =>
           if (e.key === "Enter") commit();
           if (e.key === "Escape") { setDraft(value); setEditing(false); }
         }}
-        className="text-base font-semibold bg-gray-800 text-white border border-gray-600 rounded px-2 py-0.5 min-w-48"
+        className="text-base font-semibold bg-[#2B2B2B] text-white border border-gray-600 rounded px-2 py-0.5 min-w-48"
       />
     );
   }

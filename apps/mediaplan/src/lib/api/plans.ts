@@ -6,7 +6,8 @@ export async function getPlans(): Promise<MediaPlan[]> {
   const { data, error } = await sb
     .from("media_plans")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(200);
   if (error) throw error;
   return data ?? [];
 }
@@ -110,7 +111,54 @@ export async function getShareTokenByClientId(clientId: string): Promise<string 
     .from("media_plans")
     .select("share_token")
     .eq("client_id", clientId)
+    .eq("archived", false)
+    .order("updated_at", { ascending: false })
+    .limit(1);
+  if (error || !data || data.length === 0 || !data[0].share_token) return null;
+  return data[0].share_token;
+}
+
+export async function duplicatePlan(id: string): Promise<MediaPlan> {
+  const sb = getSupabaseClient();
+  const original = await getFullPlan(id);
+  if (!original) throw new Error("Plan not found");
+
+  const { data: newPlan, error: planErr } = await sb
+    .from("media_plans")
+    .insert({
+      campaign_name: original.campaign_name + " (kopia)",
+      period_start: original.period_start,
+      period_end: original.period_end,
+    })
+    .select()
     .single();
-  if (error || !data?.share_token) return null;
-  return data.share_token;
+  if (planErr) throw planErr;
+
+  for (const cat of original.categories) {
+    const { data: newCat, error: catErr } = await sb
+      .from("media_categories")
+      .insert({ plan_id: newPlan.id, name: cat.name, color: cat.color, budget: cat.budget, sort_order: cat.sort_order })
+      .select()
+      .single();
+    if (catErr) throw catErr;
+
+    if (cat.lines.length > 0) {
+      const newLines = cat.lines.map((l) => ({
+        category_id: newCat.id,
+        platform_name: l.platform_name,
+        cost_per_unit: l.cost_per_unit,
+        unit_type: l.unit_type,
+        quantity: l.quantity,
+        color: l.color,
+        start_date: l.start_date,
+        end_date: l.end_date,
+        sort_order: l.sort_order,
+        estimated_reach: l.estimated_reach,
+      }));
+      const { error: lineErr } = await sb.from("media_lines").insert(newLines);
+      if (lineErr) throw lineErr;
+    }
+  }
+
+  return newPlan;
 }

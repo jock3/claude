@@ -23,6 +23,10 @@ export default function NewPlanModal({ onClose, onCreate }: Props) {
       setError("Ange ett kampanjnamn");
       return;
     }
+    if (start > end) {
+      setError("Startdatumet kan inte vara efter slutdatumet.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
