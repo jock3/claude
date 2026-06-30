@@ -6,7 +6,7 @@ import type { FullMediaPlan, MediaPlan, MediaLine, MediaConcept, MediaCategory, 
 import { getPlanWeeks, getMonthGroups, dateRangeToGridSpan, WeekColumn } from "@/lib/utils/dates";
 import { calcLineTotal, calcCategoryTotal, calcCategoryReach, formatSEK, formatReach } from "@/lib/utils/budget";
 import { updatePlan } from "@/lib/api/plans";
-import { updateLine, createLine, deleteLine } from "@/lib/api/lines";
+import { updateLine, createLine, deleteLine, reorderLines } from "@/lib/api/lines";
 import { updateCategory, createCategory, deleteCategory } from "@/lib/api/categories";
 import { updateConcept, createConcept, deleteConcept } from "@/lib/api/concepts";
 import { createDeadline, updateDeadline, deleteDeadline } from "@/lib/api/deadlines";
@@ -56,9 +56,17 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
   const stickyClass = "sticky left-0 z-10 bg-white";
   const headerBg = "bg-[#F2F2F2] text-[#1C1C1C]";
 
-  // ── Undo toast ──────────────────────────────────────────
+  // ── Toasts ──────────────────────────────────────────────
   const [undoToast, setUndoToast] = useState<{ revert: () => void } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showError = useCallback((msg: string) => {
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    setErrorMsg(msg);
+    errorTimerRef.current = setTimeout(() => setErrorMsg(null), 5000);
+  }, []);
 
   const showUndo = useCallback((revert: () => void) => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -84,8 +92,12 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
       const prev = Object.fromEntries(Object.keys(updates).map((k) => [k, line[k as keyof MediaLine]])) as Partial<MediaLine>;
       showUndo(() => updateLine(lineId, prev).then(onPlanChanged));
     }
-    await updateLine(lineId, updates);
-    onPlanChanged();
+    try {
+      await updateLine(lineId, updates);
+      onPlanChanged();
+    } catch {
+      showError("Kunde inte spara ändringen. Försök igen.");
+    }
   };
 
   const handleConceptUpdate = async (conceptId: string, updates: Partial<MediaConcept>) => {
@@ -111,18 +123,30 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
     if (swapIdx < 0 || swapIdx >= category.lines.length) return;
     const newOrder = [...category.lines];
     [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
-    await Promise.all(newOrder.map((line, i) => updateLine(line.id, { sort_order: i })));
-    onPlanChanged();
+    try {
+      await reorderLines(newOrder.map((line, i) => ({ id: line.id, sort_order: i })));
+      onPlanChanged();
+    } catch {
+      showError("Kunde inte ändra ordningen. Försök igen.");
+    }
   };
 
   const handleDeleteLine = async (lineId: string) => {
-    await deleteLine(lineId);
-    onPlanChanged();
+    try {
+      await deleteLine(lineId);
+      onPlanChanged();
+    } catch {
+      showError("Kunde inte ta bort raden. Försök igen.");
+    }
   };
 
   const handleAddCategory = async () => {
-    await createCategory(plan.id, "Ny kategori", plan.categories.length);
-    onPlanChanged();
+    try {
+      await createCategory(plan.id, "Ny kategori", plan.categories.length);
+      onPlanChanged();
+    } catch {
+      showError("Kunde inte lägga till kategori. Försök igen.");
+    }
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
@@ -175,6 +199,14 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
         <button onClick={handleUndo} className="font-semibold text-milou-300 hover:text-milou-200 transition-colors">
           Ångra
         </button>
+      </div>
+    )}
+
+    {/* Error toast */}
+    {errorMsg && (
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-3 bg-[#E60330] text-white text-sm px-4 py-2.5 rounded-xl shadow-lg">
+        <span>{errorMsg}</span>
+        <button onClick={() => setErrorMsg(null)} className="font-semibold opacity-70 hover:opacity-100 transition-opacity">✕</button>
       </div>
     )}
 
@@ -652,10 +684,10 @@ function GanttLineRow({
     const onUp = () => {
       const finalSpan = displaySpanRef.current;
       if (finalSpan) {
-        onUpdateRef.current({
-          start_date: colToStartDate(finalSpan.colStart, weeks),
-          end_date: colToEndDate(finalSpan.colEnd, weeks),
-        });
+        // Clamp to plan period (weeks already derived from it, but be explicit)
+        const start = colToStartDate(Math.max(1, finalSpan.colStart), weeks);
+        const end = colToEndDate(Math.min(weekCount + 1, finalSpan.colEnd), weeks);
+        onUpdateRef.current({ start_date: start, end_date: end });
       }
       dragStateRef.current = null;
       setIsDragging(false);
@@ -927,12 +959,16 @@ function GanttLineRow({
                 <input
                   type="date"
                   value={line.start_date ?? ""}
+                  min={plan.period_start}
+                  max={plan.period_end}
                   onChange={(e) => onUpdate({ start_date: e.target.value })}
                   className="border-0 bg-transparent text-xs text-gray-500 cursor-pointer"
                 />
                 <input
                   type="date"
                   value={line.end_date ?? ""}
+                  min={plan.period_start}
+                  max={plan.period_end}
                   onChange={(e) => onUpdate({ end_date: e.target.value })}
                   className="border-0 bg-transparent text-xs text-gray-500 cursor-pointer"
                 />

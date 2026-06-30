@@ -38,3 +38,11 @@ export async function deleteLine(id: string): Promise<void> {
   const { error } = await sb.from("media_lines").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function reorderLines(lines: { id: string; sort_order: number }[]): Promise<void> {
+  const sb = getSupabaseClient();
+  const { error } = await sb
+    .from("media_lines")
+    .upsert(lines, { onConflict: "id" });
+  if (error) throw error;
+}
