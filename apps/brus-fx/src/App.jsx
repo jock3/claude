@@ -3,7 +3,7 @@ import {
   SPAR, NUMMER, KURATORER, sparMedId, kuratorMedId,
   kastTarning, kontrastPoang, profilFranSpar, profilFranText, bytSpar,
   tid, dekadLabel,
-} from '../../brus/src/data.js';
+} from './data.js';
 
 const FART = 8; // demo: simulerad speltid går 8× fortare
 
@@ -301,15 +301,13 @@ export default function App() {
           <a href="#kuratorer">kuratorer</a>
           <a href="#byt">byt spår</a>
         </div>
-        <a className="nav__variant" href="../brus/" title="Till den brutalistiska versionen">
-          brutalist ↗
-        </a>
+        <span className="nav__variant">brus°</span>
       </nav>
 
       {/* HERO — pulsen */}
       <header className="hero" id="hem">
         <div className="hero__inre">
-          <p className="hero__tagg">redesign-utforskning · samma motor, ny kostym</p>
+          <p className="hero__tagg">musik utanför algoritmen · tryck. lyssna. döm sen.</p>
           <h1 className="hero__titel">
             musik utanför<br /><em>algoritmen</em>
           </h1>
@@ -576,7 +574,7 @@ export default function App() {
           </div>
         </div>
         <p className="fot__rad">
-          brus° flow — redesign-utforskning · <a href="../brus/">brutalistiska originalet ↗</a>
+          brus° — musik utanför algoritmen
         </p>
       </footer>
 

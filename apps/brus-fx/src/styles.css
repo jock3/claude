@@ -1,19 +1,15 @@
 /* ============================================================
-   BRUS° FLOW — redesign-utforskning.
-   Motsatsen till brutalisten: flytande gradienter, glas, glöd,
-   mjuka kurvor och så mycket rörelse som smaken tål.
+   BRUS — brutalistisk färgpalett, flytande form.
    ============================================================ */
 
 :root {
-  --bg:      #07060C;
-  --yta:     rgba(255, 255, 255, 0.05);
-  --kant:    rgba(255, 255, 255, 0.10);
-  --text:    #F2EFFF;
-  --dim:     #9A93B8;
-  --violett: #8B5CF6;
-  --cyan:    #22D3EE;
-  --rosa:    #F472B6;
-  --gradient: linear-gradient(120deg, var(--violett), var(--cyan), var(--rosa), var(--violett));
+  --bg:      #0A0A0A;
+  --yta:     rgba(255, 255, 255, 0.04);
+  --kant:    rgba(255, 255, 255, 0.09);
+  --text:    #F5F5F0;
+  --dim:     #8A8A85;
+  --syra:    #D6FF3D;
+  --gradient: linear-gradient(120deg, var(--syra), #B8E832, var(--syra));
   --mjuk:    cubic-bezier(0.22, 0.8, 0.24, 1);
   --font-display: "Syne", sans-serif;
   --font-body:    "Space Grotesk", sans-serif;
@@ -38,12 +34,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: var(--violett); color: #fff; }
+::selection { background: var(--syra); color: #0A0A0A; }
 
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--syra); outline-offset: 3px; border-radius: 4px; }
 
 .app { position: relative; min-height: 100vh; }
 .hero, .sektion, .fot { position: relative; z-index: 2; }
@@ -67,17 +63,17 @@ a { color: inherit; text-decoration: none; }
   will-change: transform;
 }
 .aurora__blob--a {
-  background: radial-gradient(circle at 35% 35%, var(--violett), transparent 62%);
+  background: radial-gradient(circle at 35% 35%, rgba(214, 255, 61, 0.55), transparent 62%);
   top: -8%; left: -6%;
   animation: driva-a 38s ease-in-out infinite alternate;
 }
 .aurora__blob--b {
-  background: radial-gradient(circle at 60% 40%, var(--cyan), transparent 60%);
+  background: radial-gradient(circle at 60% 40%, rgba(184, 232, 50, 0.3), transparent 60%);
   bottom: -12%; right: -10%;
   animation: driva-b 46s ease-in-out infinite alternate;
 }
 .aurora__blob--c {
-  background: radial-gradient(circle at 50% 55%, var(--rosa), transparent 58%);
+  background: radial-gradient(circle at 50% 55%, rgba(214, 255, 61, 0.18), transparent 58%);
   top: 32%; left: 38%;
   width: 44vmax; height: 44vmax;
   opacity: 0.3;
@@ -114,7 +110,7 @@ a { color: inherit; text-decoration: none; }
   top: -3px; left: -3px;
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--syra);
   z-index: 90;
   pointer-events: none;
   mix-blend-mode: difference;
@@ -124,7 +120,7 @@ a { color: inherit; text-decoration: none; }
   top: -170px; left: -170px;
   width: 340px; height: 340px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.07) 45%, transparent 68%);
+  background: radial-gradient(circle, rgba(214, 255, 61, 0.10), rgba(184, 232, 50, 0.04) 45%, transparent 68%);
   z-index: 1;
   pointer-events: none;
 }
@@ -136,9 +132,7 @@ a { color: inherit; text-decoration: none; }
   top: 0; left: 0;
   height: 3px;
   width: calc(var(--framsteg, 0) * 100%);
-  background: var(--gradient);
-  background-size: 200%;
-  animation: gradient-skift 5s linear infinite;
+  background: var(--syra);
   z-index: 80;
   border-radius: 0 999px 999px 0;
 }
@@ -169,12 +163,7 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.02em;
 }
 .nav__logo span {
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-skift 6s linear infinite;
+  color: var(--syra);
 }
 .nav__lankar { display: flex; gap: 1.1rem; }
 .nav__lankar a {
@@ -190,7 +179,7 @@ a { color: inherit; text-decoration: none; }
   bottom: -4px;
   height: 2px;
   border-radius: 999px;
-  background: var(--gradient);
+  background: var(--syra);
   transition: right 0.4s var(--mjuk);
 }
 .nav__lankar a:hover { color: var(--text); }
@@ -204,9 +193,9 @@ a { color: inherit; text-decoration: none; }
   transition: color 0.35s var(--mjuk), border-color 0.35s var(--mjuk), box-shadow 0.35s var(--mjuk);
 }
 .nav__variant:hover {
-  color: var(--text);
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.35);
+  color: var(--syra);
+  border-color: rgba(214, 255, 61, 0.4);
+  box-shadow: 0 0 24px rgba(214, 255, 61, 0.2);
 }
 
 /* ---------- hero med parallax + magnetisk orb ---------- */
@@ -246,12 +235,7 @@ a { color: inherit; text-decoration: none; }
 }
 .hero__titel em {
   font-style: normal;
-  background: var(--gradient);
-  background-size: 220%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-skift 7s linear infinite;
+  color: var(--syra);
 }
 .hero__under {
   color: var(--dim);
@@ -277,8 +261,8 @@ a { color: inherit; text-decoration: none; }
 .orb:hover {
   transform: scale(1.05);
   box-shadow:
-    0 0 80px rgba(139, 92, 246, 0.45),
-    0 0 160px rgba(34, 211, 238, 0.22);
+    0 0 80px rgba(214, 255, 61, 0.35),
+    0 0 160px rgba(184, 232, 50, 0.15);
 }
 .orb:active { transform: scale(0.97); }
 .orb[disabled] { cursor: wait; }
@@ -286,7 +270,7 @@ a { color: inherit; text-decoration: none; }
   position: absolute;
   inset: -9px;
   border-radius: 50%;
-  background: conic-gradient(var(--violett), var(--cyan), var(--rosa), var(--violett));
+  background: conic-gradient(var(--syra), #B8E832, var(--syra));
   -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   mask: radial-gradient(closest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
   animation: rotera 7s linear infinite;
@@ -335,7 +319,7 @@ a { color: inherit; text-decoration: none; }
   display: inline-block;
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: var(--gradient);
+  background: var(--syra);
   margin-right: 0.6rem;
   vertical-align: 1px;
 }
@@ -351,11 +335,7 @@ a { color: inherit; text-decoration: none; }
 .sektion__status {
   margin-top: 1rem;
   font-size: 0.85rem;
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
   width: fit-content;
 }
 
@@ -376,9 +356,7 @@ a { color: inherit; text-decoration: none; }
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: var(--gradient);
-  background-size: 220%;
-  animation: gradient-skift 6s linear infinite;
+  background: var(--syra);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
@@ -438,31 +416,28 @@ a { color: inherit; text-decoration: none; }
 }
 .knapp:hover:not([disabled]) {
   transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow: 0 10px 32px rgba(139, 92, 246, 0.25);
+  background: rgba(214, 255, 61, 0.08);
+  border-color: rgba(214, 255, 61, 0.4);
+  box-shadow: 0 10px 32px rgba(214, 255, 61, 0.12);
 }
 .knapp:active:not([disabled]) { transform: translateY(0) scale(0.97); }
 .knapp[disabled] { opacity: 0.45; cursor: wait; }
 .knapp--primar {
-  background: var(--gradient);
-  background-size: 200%;
+  background: var(--syra);
   border: none;
-  color: #0B0714;
+  color: #0A0A0A;
   font-weight: 600;
   transition:
     transform 0.35s var(--mjuk),
-    background-position 0.6s var(--mjuk),
     box-shadow 0.35s var(--mjuk);
 }
 .knapp--primar:hover:not([disabled]) {
-  background-position: 80% 50%;
-  box-shadow: 0 12px 44px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 12px 44px rgba(214, 255, 61, 0.35);
 }
 .knapp--vald {
-  background: rgba(244, 114, 182, 0.16);
-  border-color: var(--rosa);
-  color: #FFD9EC;
+  background: rgba(214, 255, 61, 0.12);
+  border-color: var(--syra);
+  color: var(--syra);
 }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
@@ -491,10 +466,8 @@ a { color: inherit; text-decoration: none; }
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--gradient);
-  background-size: 200%;
-  animation: gradient-skift 4s linear infinite;
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.55);
+  background: var(--syra);
+  box-shadow: 0 0 16px rgba(214, 255, 61, 0.4);
   transition: width 0.25s linear;
 }
 
@@ -520,11 +493,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 0.78rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
   width: fit-content;
   margin-bottom: 0.8rem;
 }
@@ -582,12 +551,7 @@ a { color: inherit; text-decoration: none; }
   line-height: 1;
   margin-top: auto;
   padding-top: 1.2rem;
-  background: var(--gradient);
-  background-size: 220%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: gradient-skift 6s linear infinite;
+  color: var(--syra);
 }
 .varfor__tal em { font-style: normal; font-size: 0.5em; }
 .varfor__delar { color: var(--dim); font-size: 0.82rem; margin-top: 0.5rem; }
@@ -628,11 +592,11 @@ a { color: inherit; text-decoration: none; }
   transform: translateY(-8px);
   box-shadow:
     0 20px 50px rgba(0, 0, 0, 0.5),
-    0 0 44px rgba(139, 92, 246, 0.18);
+    0 0 44px rgba(214, 255, 61, 0.1);
 }
 .kort--aktiv {
-  border-color: rgba(139, 92, 246, 0.65);
-  box-shadow: 0 0 36px rgba(139, 92, 246, 0.28);
+  border-color: rgba(214, 255, 61, 0.55);
+  box-shadow: 0 0 36px rgba(214, 255, 61, 0.18);
 }
 .kort--last { opacity: 0.55; filter: saturate(0.4); cursor: default; }
 .kort__nr { font-family: var(--font-display); font-weight: 700; color: var(--dim); font-size: 0.95rem; }
@@ -640,11 +604,7 @@ a { color: inherit; text-decoration: none; }
 .kort__artist { color: var(--dim); font-size: 0.88rem; }
 .kort__meta {
   font-size: 0.78rem;
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
   width: fit-content;
 }
 .kort__kommentar {
@@ -688,11 +648,7 @@ a { color: inherit; text-decoration: none; }
 .kuratorkort__manifest { color: var(--text); font-size: 0.95rem; margin-top: 0.3rem; }
 .kuratorkort__statistik {
   font-size: 0.8rem;
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
   width: fit-content;
 }
 .kuratorkort .knapp { margin-top: auto; align-self: flex-start; }
@@ -728,8 +684,8 @@ a { color: inherit; text-decoration: none; }
   outline: none;
   border-color: transparent;
   box-shadow:
-    0 0 0 2px rgba(139, 92, 246, 0.65),
-    0 0 34px rgba(34, 211, 238, 0.25);
+    0 0 0 2px rgba(214, 255, 61, 0.5),
+    0 0 34px rgba(214, 255, 61, 0.12);
 }
 
 .riktning {
@@ -755,11 +711,7 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.5rem;
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
 }
 .riktning__kol .knapp { margin-top: 0.8rem; align-self: flex-start; }
 .riktning__pil {
@@ -787,13 +739,9 @@ a { color: inherit; text-decoration: none; }
 }
 .fot__rad { color: var(--dim); font-size: 0.85rem; margin-top: 2.2rem; }
 .fot__rad a {
-  background: var(--gradient);
-  background-size: 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--syra);
 }
-.fot__rad a:hover { text-decoration: underline; text-decoration-color: var(--violett); }
+.fot__rad a:hover { text-decoration: underline; text-decoration-color: var(--syra); }
 
 /* ---------- flytande dock-spelare ---------- */
 
@@ -823,15 +771,14 @@ a { color: inherit; text-decoration: none; }
   text-overflow: ellipsis;
   transition: color 0.3s var(--mjuk);
 }
-.dock__titel:hover { color: var(--cyan); }
+.dock__titel:hover { color: var(--syra); }
 .dock__stapel { flex: 0 0 90px; height: 4px; }
 .dock__knapp {
   flex: none;
   width: 42px; height: 42px;
   border-radius: 50%;
-  background: var(--gradient);
-  background-size: 200%;
-  color: #0B0714;
+  background: var(--syra);
+  color: #0A0A0A;
   font-size: 0.78rem;
   display: grid;
   place-items: center;
@@ -839,16 +786,15 @@ a { color: inherit; text-decoration: none; }
 }
 .dock__knapp:hover {
   transform: scale(1.1);
-  box-shadow: 0 0 26px rgba(139, 92, 246, 0.55);
+  box-shadow: 0 0 26px rgba(214, 255, 61, 0.4);
 }
 
 /* ---------- keyframes ---------- */
 
-@keyframes gradient-skift { to { background-position: 200% 50%; } }
 @keyframes rotera { to { transform: rotate(360deg); } }
 @keyframes puls {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.35); }
-  50% { box-shadow: 0 0 60px 6px rgba(139, 92, 246, 0.22); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(214, 255, 61, 0.25); }
+  50% { box-shadow: 0 0 60px 6px rgba(214, 255, 61, 0.14); }
 }
 @keyframes suddig {
   0%, 100% { filter: blur(0); opacity: 1; }
