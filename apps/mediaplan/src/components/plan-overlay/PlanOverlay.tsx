@@ -63,14 +63,16 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
     setExporting(true);
     try {
       const html2canvas = (await import("html2canvas")).default;
+      const gridEl = captureRef.current.querySelector("[style*='grid']") as HTMLElement | null;
+      const tableWidth = gridEl ? gridEl.scrollWidth : captureRef.current.scrollWidth;
       const canvas = await html2canvas(captureRef.current, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
-        windowWidth: captureRef.current.scrollWidth,
-        width: captureRef.current.scrollWidth,
+        windowWidth: tableWidth,
+        width: tableWidth,
       });
       const link = document.createElement("a");
       link.download = `${plan.campaign_name.replace(/\s+/g, "-")}.png`;

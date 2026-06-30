@@ -21,14 +21,17 @@ export default function SharePage() {
     setExporting(true);
     try {
       const html2canvas = (await import("html2canvas")).default;
+      // Use the actual grid's natural width, not the viewport width
+      const gridEl = captureRef.current.querySelector("[style*='grid']") as HTMLElement | null;
+      const tableWidth = gridEl ? gridEl.scrollWidth : captureRef.current.scrollWidth;
       const canvas = await html2canvas(captureRef.current, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
-        windowWidth: captureRef.current.scrollWidth,
-        width: captureRef.current.scrollWidth,
+        windowWidth: tableWidth,
+        width: tableWidth,
       });
       const link = document.createElement("a");
       link.download = `${plan.campaign_name.replace(/\s+/g, "-")}.png`;
@@ -67,17 +70,7 @@ export default function SharePage() {
   return (
     <>
       {/* Print styles */}
-      <style>{`
-        @media print {
-          @page { size: A4 landscape; margin: 1cm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .no-print { display: none !important; }
-          .print-overflow { overflow: visible !important; }
-          .print-full { max-width: none !important; }
-        }
-      `}</style>
-
-      <div className="min-h-screen flex flex-col bg-white">
+<div className="min-h-screen flex flex-col bg-white">
         {/* Header */}
         <div className="bg-gray-900 text-white px-6 py-4">
           <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
@@ -108,12 +101,6 @@ export default function SharePage() {
                 className="no-print text-xs bg-milou-500 hover:bg-milou-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition-colors"
               >
                 {exporting ? "Exporterar…" : "Exportera bild"}
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="no-print text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors border border-white/20"
-              >
-                Exportera A4
               </button>
             </div>
           </div>
