@@ -984,7 +984,7 @@ function BudgetSummaryRow({
     <>
       {/* Col 1: "Budget" label — matches Kanal/Plattform column */}
       <div className={`${cellClass} ${stickyClass} bg-white ${summaryBorder}`}>
-        <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Budget</span>
+        <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Totalt</span>
       </div>
 
       {/* Middle info cols (full) or just Totalt col (compact) */}
