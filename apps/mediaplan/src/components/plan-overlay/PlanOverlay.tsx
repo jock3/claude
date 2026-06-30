@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { getFullPlan, updatePlan, generateShareToken } from "@/lib/api/plans";
 import type { FullMediaPlan } from "@/lib/types";
 import GanttTimeline from "./GanttTimeline";
@@ -18,6 +18,8 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
   const [loading, setLoading] = useState(true);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [copyDone, setCopyDone] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
 
   const loadPlan = useCallback(async () => {
     const data = await getFullPlan(planId);
@@ -54,6 +56,29 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
     if (!plan) return;
     await updatePlan(plan.id, { campaign_name: name });
     setPlan((p) => p ? { ...p, campaign_name: name } : p);
+  };
+
+  const handleExportImage = async () => {
+    if (!captureRef.current || !plan) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(captureRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: captureRef.current.scrollWidth,
+        width: captureRef.current.scrollWidth,
+      });
+      const link = document.createElement("a");
+      link.download = `${plan.campaign_name.replace(/\s+/g, "-")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleClientIdUpdate = async (value: string) => {
@@ -137,6 +162,13 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
                   />
                 </div>
                 <button
+                  onClick={handleExportImage}
+                  disabled={exporting}
+                  className="text-sm bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                >
+                  {exporting ? "Exporterar…" : "📷 Exportera bild"}
+                </button>
+                <button
                   onClick={handleShare}
                   className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
@@ -169,7 +201,7 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
         )}
 
         {/* Plan content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={captureRef}>
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-gray-400 animate-pulse">Laddar mediaplan…</div>

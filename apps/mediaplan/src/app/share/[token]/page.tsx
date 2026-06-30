@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { getFullPlanByToken } from "@/lib/api/plans";
 import type { FullMediaPlan } from "@/lib/types";
@@ -13,6 +13,31 @@ export default function SharePage() {
   const params = useParams();
   const token = typeof params.token === "string" ? params.token : "";
   const [plan, setPlan] = useState<FullMediaPlan | null | undefined>(undefined);
+  const [exporting, setExporting] = useState(false);
+  const captureRef = useRef<HTMLDivElement>(null);
+
+  const handleExportImage = async () => {
+    if (!captureRef.current || !plan) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const canvas = await html2canvas(captureRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: captureRef.current.scrollWidth,
+        width: captureRef.current.scrollWidth,
+      });
+      const link = document.createElement("a");
+      link.download = `${plan.campaign_name.replace(/\s+/g, "-")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -52,7 +77,7 @@ export default function SharePage() {
         }
       `}</style>
 
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-white" ref={captureRef}>
         {/* Header */}
         <div className="bg-gray-900 text-white px-6 py-4">
           <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
@@ -77,6 +102,13 @@ export default function SharePage() {
               <span className="text-xs bg-milou-900 text-milou-300 px-2 py-1 rounded-full shrink-0 no-print">
                 Visningsläge
               </span>
+              <button
+                onClick={handleExportImage}
+                disabled={exporting}
+                className="no-print text-xs bg-milou-500 hover:bg-milou-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg transition-colors"
+              >
+                {exporting ? "Exporterar…" : "Exportera bild"}
+              </button>
               <button
                 onClick={() => window.print()}
                 className="no-print text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition-colors border border-white/20"
