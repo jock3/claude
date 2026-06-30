@@ -56,6 +56,13 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
     setPlan((p) => p ? { ...p, campaign_name: name } : p);
   };
 
+  const handleClientIdUpdate = async (value: string) => {
+    if (!plan) return;
+    const trimmed = value.trim() || null;
+    await updatePlan(plan.id, { client_id: trimmed });
+    setPlan((p) => p ? { ...p, client_id: trimmed } : p);
+  };
+
   const handlePeriodUpdate = async (field: "period_start" | "period_end", value: string) => {
     if (!plan) return;
     await updatePlan(plan.id, { [field]: value });
@@ -118,12 +125,24 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
                 Visningsläge
               </span>
             ) : (
-              <button
-                onClick={handleShare}
-                className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
-              >
-                {copyDone ? "✓ Länk kopierad!" : "🔗 Dela länk"}
-              </button>
+              <>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-gray-500">Kund-ID:</span>
+                  <input
+                    type="text"
+                    defaultValue={plan?.client_id ?? ""}
+                    onBlur={(e) => plan && handleClientIdUpdate(e.target.value)}
+                    placeholder="G-001"
+                    className="text-xs bg-gray-800 text-gray-200 border border-gray-700 rounded px-2 py-1 w-20 focus:outline-none focus:border-milou-500"
+                  />
+                </div>
+                <button
+                  onClick={handleShare}
+                  className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
+                >
+                  {copyDone ? "✓ Länk kopierad!" : "🔗 Dela länk"}
+                </button>
+              </>
             )}
 
             <button

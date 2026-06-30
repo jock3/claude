@@ -16,23 +16,28 @@ export default function LoginPage({ searchParams }: Props) {
 
         <form method="POST" action="/api/auth/login" className="p-6 flex flex-col gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Logga in</h1>
-            <p className="text-sm text-gray-500 mt-1">Ange lösenordet för att komma åt adminvyn.</p>
+            <h1 className="text-lg font-semibold text-gray-900">Välkommen</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Ange ditt kund-ID för att visa din mediaplan, eller adminlösenordet för att komma åt adminvyn.
+            </p>
           </div>
 
           {hasError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-              Fel lösenord, försök igen.
+              Fel kod eller ID, försök igen.
             </p>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lösenord</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Kund-ID eller lösenord
+            </label>
             <input
-              type="password"
+              type="text"
               name="password"
               autoFocus
-              autoComplete="current-password"
+              autoComplete="off"
+              placeholder="t.ex. G-001"
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-milou-500"
             />
@@ -42,7 +47,7 @@ export default function LoginPage({ searchParams }: Props) {
             type="submit"
             className="w-full px-4 py-2 rounded-lg bg-milou-500 text-white text-sm font-medium hover:bg-milou-600 transition-colors"
           >
-            Logga in
+            Fortsätt
           </button>
         </form>
       </div>

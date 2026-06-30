@@ -5,6 +5,7 @@ export interface MediaPlan {
   period_end: string;
   archived: boolean;
   share_token: string | null;
+  client_id: string | null;
   planned_budget: number | null;
   created_at: string;
   updated_at: string;
@@ -58,10 +59,4 @@ export interface FullMediaPlan extends MediaPlan {
   concepts: MediaConcept[];
   categories: Array<MediaCategory & { lines: MediaLine[] }>;
   deadlines: MediaDeadline[];
-}
-
-export interface PlanSummary extends MediaPlan {
-  total_budget: number;
-  line_count: number;
-  category_count: number;
 }

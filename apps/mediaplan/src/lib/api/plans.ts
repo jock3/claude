@@ -97,3 +97,14 @@ export async function generateShareToken(id: string): Promise<string> {
   if (error) throw error;
   return data.share_token;
 }
+
+export async function getShareTokenByClientId(clientId: string): Promise<string | null> {
+  const sb = getSupabaseClient();
+  const { data, error } = await sb
+    .from("media_plans")
+    .select("share_token")
+    .eq("client_id", clientId)
+    .single();
+  if (error || !data?.share_token) return null;
+  return data.share_token;
+}
