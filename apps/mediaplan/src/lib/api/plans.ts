@@ -14,19 +14,25 @@ export async function getPlans(): Promise<MediaPlan[]> {
 export async function getFullPlan(id: string): Promise<FullMediaPlan | null> {
   const sb = getSupabaseClient();
 
-  const [planRes, conceptsRes, categoriesRes, linesRes, deadlinesRes] = await Promise.all([
+  // Step 1: fetch plan + categories + concepts + deadlines in parallel
+  const [planRes, conceptsRes, categoriesRes, deadlinesRes] = await Promise.all([
     sb.from("media_plans").select("*").eq("id", id).single(),
     sb.from("media_concepts").select("*").eq("plan_id", id).order("sort_order"),
     sb.from("media_categories").select("*").eq("plan_id", id).order("sort_order"),
-    sb.from("media_lines").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true }),
     sb.from("media_deadlines").select("*").eq("plan_id", id).order("created_at", { ascending: true }),
   ]);
 
   if (planRes.error || !planRes.data) return null;
 
-  const categories = (categoriesRes.data ?? []).map((cat) => ({
+  // Step 2: fetch only lines belonging to this plan's categories
+  const categoryIds = (categoriesRes.data ?? []).map((c: { id: string }) => c.id);
+  const linesRes = categoryIds.length > 0
+    ? await sb.from("media_lines").select("*").in("category_id", categoryIds).order("sort_order", { ascending: true }).order("created_at", { ascending: true }).order("id", { ascending: true })
+    : { data: [] };
+
+  const categories = (categoriesRes.data ?? []).map((cat: { id: string }) => ({
     ...cat,
-    lines: (linesRes.data ?? []).filter((l) => l.category_id === cat.id),
+    lines: (linesRes.data ?? []).filter((l: { category_id: string }) => l.category_id === cat.id),
   }));
 
   return {
