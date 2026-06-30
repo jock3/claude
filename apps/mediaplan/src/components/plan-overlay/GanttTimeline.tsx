@@ -185,7 +185,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
       >
         {/* ── Month header row ── */}
         <div
-          className={`${cellClass} sticky left-0 z-10 bg-white text-[#1C1C1C] font-semibold text-sm col-span-${INFO_COL_COUNT}`}
+          className={`${cellClass} sticky left-0 z-10 bg-white text-[#1C1C1C] font-bold text-lg col-span-${INFO_COL_COUNT}`}
           style={{ gridColumn: `1 / span ${INFO_COL_COUNT}` }}
         >
           {plan.campaign_name}
