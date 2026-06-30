@@ -4,10 +4,14 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 const PALETTE = [
-  "#ef4444", "#f97316", "#f59e0b", "#eab308",
-  "#84cc16", "#22c55e", "#10b981", "#14b8a6",
-  "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6",
-  "#a855f7", "#ec4899", "#f43f5e", "#64748b",
+  // Primära
+  "#E60330", "#1C1C1C", "#FFDED0", "#2B2B2B", "#F2F2F2",
+  // Sekundära
+  "#FCBEB7", "#FF999C", "#931644", "#5B173C", "#35132B",
+  // Gråskala
+  "#AAAAAA", "#6C6C6C",
+  // Tertiära (teal)
+  "#16917A", "#C2EDE5", "#052D26",
 ];
 
 interface Props {
@@ -54,7 +58,7 @@ export default function ColorDot({ color, onChange }: Props) {
         <div
           ref={panelRef}
           style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-xl p-2 grid grid-cols-4 gap-1 w-24"
+          className="bg-white border border-gray-200 rounded-xl shadow-xl p-2 grid grid-cols-5 gap-1 w-32"
         >
           {PALETTE.map((c) => (
             <button
