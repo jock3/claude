@@ -333,6 +333,24 @@ function Sidebar({ activeUser, onSwitch }) {
           </div>
           <span className="s-icon-label">Track3r</span>
         </a>
+        <a href="../brus-fx/" className="s-app-item" title="Brus">
+          <div className="s-bubble ib-brus" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M12 12h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/></svg>
+          </div>
+          <span className="s-icon-label">Brus</span>
+        </a>
+        <a href="../portfolio/" className="s-app-item" title="Portfolio">
+          <div className="s-bubble ib-portfolio" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <span className="s-icon-label">Portfolio</span>
+        </a>
+        <a href="../musictheory/" className="s-app-item" title="Musikteori">
+          <div className="s-bubble ib-musik" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <span className="s-icon-label">Musik</span>
+        </a>
       </div>
       <div className="s-spacer" />
       <div className="s-sep" />
@@ -2082,10 +2100,13 @@ function BoardStyles() {
         transition: transform 220ms var(--ease-spring), box-shadow 200ms var(--ease-out);
       }
       .s-app-item:hover .s-bubble { transform: scale(1.1) translateY(-2px); box-shadow: 0 5px 14px rgba(0,0,0,0.22); }
-      .ib-todo    { background: linear-gradient(135deg,rgba(255,88,45,.18),rgba(255,120,55,.28)); border: 1px solid rgba(255,88,45,.4); color: #FF7040; }
-      .ib-kampanj { background: linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,191,36,.22)); border: 1px solid rgba(245,158,11,.30); color: #FCD34D; }
-      .ib-seo     { background: linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23)); border: 1px solid rgba(99,102,241,.28); color: #A5B4FC; }
-      .ib-trackr  { background: linear-gradient(135deg,rgba(236,72,153,.14),rgba(219,39,119,.23)); border: 1px solid rgba(236,72,153,.28); color: #F472B6; }
+      .ib-todo      { background: linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.25)); border: 1px solid rgba(34,197,94,.26); color: #4ADE80; }
+      .ib-kampanj   { background: linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,191,36,.22)); border: 1px solid rgba(245,158,11,.30); color: #FCD34D; }
+      .ib-seo       { background: linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23)); border: 1px solid rgba(99,102,241,.28); color: #A5B4FC; }
+      .ib-trackr    { background: linear-gradient(135deg,rgba(236,72,153,.14),rgba(219,39,119,.23)); border: 1px solid rgba(236,72,153,.28); color: #F472B6; }
+      .ib-brus      { background: linear-gradient(135deg,rgba(214,255,61,.12),rgba(184,232,50,.18)); border: 1px solid rgba(214,255,61,.28); color: #D6FF3D; }
+      .ib-portfolio { background: linear-gradient(135deg,rgba(34,211,238,.14),rgba(6,182,212,.22)); border: 1px solid rgba(34,211,238,.28); color: #22D3EE; }
+      .ib-musik     { background: linear-gradient(135deg,rgba(168,85,247,.16),rgba(99,102,241,.22)); border: 1px solid rgba(168,85,247,.30); color: #C084FC; }
       .s-app-item.active .s-bubble { box-shadow: 0 0 0 1.5px rgba(255,88,45,0.55), 0 0 14px rgba(255,88,45,0.28); }
       .s-app-item.active .s-icon-label { color: var(--color-accent); font-weight: 600; }
       .s-icon-label {
