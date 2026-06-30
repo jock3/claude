@@ -77,7 +77,7 @@ export default function SharePage() {
         }
       `}</style>
 
-      <div className="min-h-screen flex flex-col bg-white" ref={captureRef}>
+      <div className="min-h-screen flex flex-col bg-white">
         {/* Header */}
         <div className="bg-gray-900 text-white px-6 py-4">
           <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
@@ -119,27 +119,30 @@ export default function SharePage() {
           </div>
         </div>
 
-        {/* Category legend */}
-        {plan.categories.length > 0 && (
-          <div className="px-6 py-2 border-b border-gray-100 flex flex-wrap gap-x-5 gap-y-1">
-            {plan.categories.map((cat) => (
-              <div key={cat.id} className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: cat.color }} />
-                <span className="text-xs text-gray-600 font-medium">{cat.name}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Gantt capture area */}
+        <div ref={captureRef} className="bg-white">
+          {/* Category legend */}
+          {plan.categories.length > 0 && (
+            <div className="px-6 py-2 border-b border-gray-100 flex flex-wrap gap-x-5 gap-y-1">
+              {plan.categories.map((cat) => (
+                <div key={cat.id} className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: cat.color }} />
+                  <span className="text-xs text-gray-600 font-medium">{cat.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
-        {/* Plan */}
-        <div className="flex-1 overflow-x-auto print-overflow">
-          <div className="max-w-screen-2xl mx-auto print-full">
-            <GanttTimeline
-              plan={plan}
-              readOnly
-              compact
-              onPlanChanged={() => {}}
-            />
+          {/* Plan */}
+          <div className="overflow-x-visible print-overflow">
+            <div className="max-w-screen-2xl mx-auto print-full">
+              <GanttTimeline
+                plan={plan}
+                readOnly
+                compact
+                onPlanChanged={() => {}}
+              />
+            </div>
           </div>
         </div>
 

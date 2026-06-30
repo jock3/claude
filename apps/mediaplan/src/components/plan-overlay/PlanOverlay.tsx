@@ -201,7 +201,7 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
         )}
 
         {/* Plan content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden" ref={captureRef}>
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-gray-400 animate-pulse">Laddar mediaplan…</div>
@@ -211,11 +211,13 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
               Kunde inte ladda planen
             </div>
           ) : (
-            <GanttTimeline
-              plan={plan}
-              readOnly={readOnly}
-              onPlanChanged={loadPlan}
-            />
+            <div ref={captureRef}>
+              <GanttTimeline
+                plan={plan}
+                readOnly={readOnly}
+                onPlanChanged={loadPlan}
+              />
+            </div>
           )}
         </div>
       </div>
