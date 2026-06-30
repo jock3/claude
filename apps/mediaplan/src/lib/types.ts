@@ -61,3 +61,43 @@ export interface FullMediaPlan extends MediaPlan {
   categories: Array<MediaCategory & { lines: MediaLine[] }>;
   deadlines: MediaDeadline[];
 }
+
+export interface CampaignPlan {
+  id: string;
+  name: string;
+  period_start: string;
+  period_end: string;
+  archived: boolean;
+  share_token: string;
+  client_id: string | null;
+  status: 'draft' | 'active' | 'approved';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Campaign {
+  id: string;
+  plan_id: string;
+  name: string;
+  budget: number | null;
+  color: string;
+  sort_order: number;
+}
+
+export type CampaignPlatformStatus = 'inaktiv' | 'schemalagd' | 'aktiv' | 'klar';
+
+export interface CampaignPlatform {
+  id: string;
+  campaign_id: string;
+  platform_name: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: CampaignPlatformStatus;
+  budget: number | null;
+  color: string;
+  sort_order: number;
+}
+
+export interface FullCampaignPlan extends CampaignPlan {
+  campaigns: Array<Campaign & { platforms: CampaignPlatform[] }>;
+}

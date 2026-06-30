@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     if (passwordMatch) {
       const token = await computeAdminToken(cookieSecret);
-      const response = NextResponse.redirect(new URL("/", request.url), { status: 303 });
+      const response = NextResponse.redirect(new URL("/mediaplan", request.url), { status: 303 });
       response.cookies.set("admin_session", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -39,18 +39,41 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 2. Check client ID — look up matching plan's share_token
+  // 2. Check client ID — look up matching media plan's share_token
   try {
     const sb = getSupabaseServerClient();
     const { data } = await sb
       .from("media_plans")
       .select("share_token")
       .eq("client_id", submitted)
-      .single();
+      .eq("archived", false)
+      .order("updated_at", { ascending: false })
+      .limit(1);
 
-    if (data?.share_token) {
+    if (data && data.length > 0 && data[0].share_token) {
       return NextResponse.redirect(
-        new URL(`/share/${data.share_token}`, request.url),
+        new URL(`/share/${data[0].share_token}`, request.url),
+        { status: 303 }
+      );
+    }
+  } catch {
+    // Supabase env vars not set or query failed — fall through to next check
+  }
+
+  // 3. Check client ID — look up matching campaign plan's share_token
+  try {
+    const sb = getSupabaseServerClient();
+    const { data } = await sb
+      .from("campaign_plans")
+      .select("share_token")
+      .eq("client_id", submitted)
+      .eq("archived", false)
+      .order("updated_at", { ascending: false })
+      .limit(1);
+
+    if (data && data.length > 0 && data[0].share_token) {
+      return NextResponse.redirect(
+        new URL(`/share/kampanj/${data[0].share_token}`, request.url),
         { status: 303 }
       );
     }
