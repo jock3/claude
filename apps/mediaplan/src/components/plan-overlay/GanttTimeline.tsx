@@ -201,7 +201,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
         ))}
 
         {/* ── Column headers (info + week labels) ── */}
-        {(compact ? ["Kanal/Plattform", "Totalt", "Räckvidd"] : ["Kanal/Plattform", "Pris/enhet", "Enhet", "Antal", "Totalt", "Räckvidd"]).map((h, i) => (
+        {(compact ? ["Kanal/Plattform", "Kostnad", "Räckvidd"] : ["Kanal/Plattform", "Pris/enhet", "Enhet", "Antal", "Kostnad", "Räckvidd"]).map((h, i) => (
           <div
             key={h}
             className={`${cellClass} ${stickyClass} bg-white text-[#E60330] text-sm font-bold border-b-2 border-[#E60330]`}
