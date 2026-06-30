@@ -5,178 +5,7 @@ import zxingReaderWasm from 'zxing-wasm/reader/zxing_reader.wasm?url';
 import * as db from './db.js';
 import { searchFoods, getProductByBarcode } from './off.js';
 import { searchExercises } from './exercises.js';
-
-/* ── Scoped styles ────────────────────────────────────────────────────────── */
-function ScopedStyles() {
-  return (
-    <style>{`
-      .t3-root { font-family: var(--font-body, 'Montserrat', sans-serif); min-height: 100vh; background: var(--color-bg); color: var(--color-text); -webkit-font-smoothing: antialiased; }
-      .t3-stage { max-width: 1480px; margin: 0 auto; padding: 28px 28px 64px; display: flex; flex-direction: column; gap: 18px; min-height: 100vh; }
-
-      .t3-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-      .t3-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-
-      .t3-datesel { display: flex; align-items: center; gap: 4px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; padding: 4px 6px; }
-
-      .t3-summary { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 14px 22px; display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-      .t3-summary-eyebrow { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; white-space: nowrap; }
-      .t3-vsplit { width: 1px; height: 26px; background: var(--color-border); flex: none; }
-      .t3-summary-spacer { flex: 1; min-width: 12px; }
-      .t3-stat { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
-      .t3-stat-lbl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--color-text-muted); }
-      .t3-stat-num { font-size: 22px; font-weight: 900; letter-spacing: -0.02em; line-height: 1; }
-      .t3-stat-unit { color: var(--color-text-muted); font-size: 12px; font-weight: 500; }
-      .t3-stat-delta { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-left: 2px; }
-
-      .t3-main { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; align-items: stretch; flex: 1; min-height: 0; }
-      .t3-panel { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-height: 560px; }
-      .t3-panel-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-      .t3-panel-title { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
-      .t3-panel-sub { color: var(--color-text-muted); font-size: 12px; }
-
-      .t3-input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 14px; color: var(--color-text); padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg); outline: none; transition: border-color 140ms, box-shadow 140ms; }
-      .t3-input:focus { border-color: var(--color-link); box-shadow: 0 0 0 3px rgba(58,165,156,0.14); }
-      select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23888787' d='M0 0h10L5 6z'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-color: var(--color-bg); }
-      /* iOS Safari auto-zooms when a focused field is < 16px. Bump to 16px on
-         touch devices to stop the zoom; desktop keeps the denser 14px. */
-      @media (pointer: coarse) { .t3-input { font-size: 16px; } }
-
-      .t3-editnum { outline: none; border-bottom: 1px dashed transparent; border-radius: 3px; padding: 0 2px; margin: 0 -2px; transition: background 120ms, border-color 120ms; font-variant-numeric: tabular-nums; display: inline; cursor: text; }
-      .t3-editnum:hover { border-bottom-color: var(--color-border); }
-      .t3-editnum:focus { border-bottom-color: var(--color-link); outline: none; }
-
-      .t3-row { transition: background 120ms; border-radius: 6px; }
-      .t3-row:hover { background: var(--color-surface-2, rgba(128,128,128,0.06)); }
-
-      .t3-scroll { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; overflow-y: auto; }
-      .t3-scroll::-webkit-scrollbar { width: 6px; }
-      .t3-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-
-      .t3-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; animation: t3-fade 160ms ease; }
-      .t3-modal { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 14px; width: 100%; max-width: 480px; display: flex; flex-direction: column; box-shadow: 0 24px 64px rgba(0,0,0,0.35); animation: t3-sheet 200ms cubic-bezier(0.2,0.7,0.2,1); max-height: 92vh; overflow-y: auto; }
-      .t3-modal-head { padding: 20px 22px 0; }
-      .t3-modal-body { padding: 18px 22px; }
-      .t3-modal-foot { padding: 14px 22px 20px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--color-border); }
-
-      .t3-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: opacity 120ms, box-shadow 120ms, background 120ms; white-space: nowrap; text-decoration: none; }
-      .t3-btn:active { opacity: 0.85; }
-      .t3-btn-primary { background: var(--color-accent); color: var(--color-text-inverse); border-color: var(--color-accent); }
-      .t3-btn-primary:hover { background: var(--color-accent-hover); opacity: 1; }
-      .t3-btn-secondary { background: transparent; color: var(--color-text); border-color: var(--color-border); }
-      .t3-btn-secondary:hover { background: var(--color-surface-2, rgba(128,128,128,0.06)); }
-      .t3-btn-ghost { background: transparent; color: var(--color-text-muted); border-color: transparent; }
-      .t3-btn-ghost:hover { color: var(--color-text); background: var(--color-surface-2, rgba(128,128,128,0.06)); }
-      .t3-btn-dark { background: var(--color-text); color: var(--color-bg); border-color: var(--color-text); }
-      .t3-btn-dark:hover { opacity: 0.88; }
-      .t3-btn-danger { background: transparent; color: #e05c5c; border-color: rgba(224,92,92,0.35); }
-      .t3-btn-danger:hover { background: rgba(224,92,92,0.08); }
-      .t3-btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 7px; }
-
-      .t3-iconbtn { display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: transparent; border: none; cursor: pointer; color: var(--color-text-muted); transition: background 120ms, color 120ms; flex-shrink: 0; padding: 4px; }
-      .t3-iconbtn:hover { background: var(--color-surface-2, rgba(128,128,128,0.08)); color: var(--color-text); }
-
-      .t3-seg { display: inline-flex; background: var(--color-bg); border: 1px solid var(--color-border); border-radius: 10px; padding: 3px; gap: 2px; }
-      .t3-seg-opt { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; background: transparent; color: var(--color-text-muted); transition: background 140ms, color 140ms; }
-      .t3-seg-opt.active { background: var(--color-surface); color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
-
-      .t3-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; border: 1px solid transparent; white-space: nowrap; }
-      .t3-chip-teal  { background: rgba(58,165,156,0.13); color: var(--color-link); border-color: rgba(58,165,156,0.25); }
-      .t3-chip-amber { background: rgba(232,123,45,0.13); color: #E87B2D; border-color: rgba(232,123,45,0.25); }
-      .t3-chip-outline { background: transparent; color: var(--color-text-muted); border-color: var(--color-border); }
-
-      .t3-field { display: flex; flex-direction: column; gap: 5px; }
-      .t3-field.span2 { grid-column: span 2; }
-      .t3-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-muted); }
-      .t3-hint { font-size: 11px; color: var(--color-text-muted); }
-      .t3-input-invalid { border-color: #e05c5c !important; box-shadow: 0 0 0 3px rgba(224,92,92,0.14) !important; }
-      .t3-search-wrap { position: relative; }
-      .t3-search-results { position: absolute; z-index: 50; top: calc(100% + 4px); left: 0; right: 0; max-height: 248px; overflow-y: auto; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.28); padding: 4px; }
-      .t3-search-item { display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left; padding: 8px 10px; border: none; background: transparent; border-radius: 7px; cursor: pointer; font-family: inherit; color: var(--color-text); transition: background 110ms; }
-      .t3-search-item:hover, .t3-search-item:focus { background: var(--color-bg); outline: none; }
-      .t3-search-name { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
-      .t3-search-meta { font-size: 11.5px; color: var(--color-text-muted); font-weight: 600; }
-      .t3-search-empty { padding: 12px 10px; font-size: 12.5px; color: var(--color-text-muted); font-weight: 600; }
-      @keyframes t3-spin { to { transform: rotate(360deg); } }
-      .t3-spin { animation: t3-spin 800ms linear infinite; }
-
-      /* Full-screen live workout ("active session") */
-      .t3-active { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; background: var(--color-bg); animation: t3-slide-up 240ms cubic-bezier(0.16,1,0.3,1); }
-      @keyframes t3-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
-      .t3-active-head { display: flex; align-items: center; gap: 8px; padding: max(12px, env(safe-area-inset-top)) 12px 12px; border-bottom: 0.5px solid var(--color-border); flex-shrink: 0; }
-      .t3-start-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; padding: 22px 14px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); color: var(--color-text); cursor: pointer; font-family: inherit; transition: all 130ms; }
-      .t3-start-card:hover { border-color: var(--color-text-muted); transform: translateY(-1px); }
-      .t3-routine-act { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 8px; border: none; background: transparent; color: var(--color-text); font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background 120ms; }
-      .t3-routine-act:hover { background: var(--color-bg); }
-
-      .t3-tag { display: inline-flex; align-items: center; padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); background: transparent; color: var(--color-text-muted); transition: all 120ms; }
-      .t3-tag.on { border-color: var(--color-link); background: rgba(58,165,156,0.12); color: var(--color-link); }
-
-      .t3-toast { position: fixed; bottom: 28px; left: 50%; transform: translate(-50%, 0); background: var(--color-text); color: var(--color-bg); border-radius: 10px; padding: 11px 18px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; z-index: 9999; white-space: nowrap; animation: t3-toast 200ms ease; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-
-      .t3-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--color-accent); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; letter-spacing: -0.02em; flex-shrink: 0; }
-
-      .t3-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
-      .t3-login-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px; padding: 36px 32px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 22px; }
-
-      .t3-trend-card { border: 1px solid var(--color-border); border-radius: 8px; padding: 11px 13px; display: flex; flex-direction: column; gap: 7px; background: var(--color-bg); }
-
-      @keyframes t3-fade  { from { opacity: 0 } to { opacity: 1 } }
-      @keyframes t3-sheet { from { opacity: 0; transform: translateY(10px) scale(0.99) } to { opacity: 1; transform: none } }
-      @keyframes t3-toast { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
-
-      /* Top nav */
-      .t3-top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; gap: 16px; }
-      .t3-nav-right { display: flex; align-items: center; gap: 32px; }
-      .t3-logo { display: inline-flex; align-items: center; height: 36px; color: var(--color-text); text-decoration: none; transition: opacity 200ms; border: 0; }
-      .t3-logo:hover { opacity: 0.85; }
-      .t3-logo svg { height: 100%; width: auto; }
-      .t3-nav-menu { display: flex; gap: 32px; list-style: none; margin: 0; padding: 0; }
-      .t3-nav-menu a { font-size: 14px; font-weight: 500; color: var(--color-text-muted); text-decoration: none; transition: color 200ms; position: relative; border: 0; padding-bottom: 4px; }
-      .t3-nav-menu a:hover, .t3-nav-menu a.active { color: var(--color-text); }
-      .t3-nav-menu a.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: var(--color-accent); border-radius: 2px; }
-      .t3-has-dd { position: relative; }
-      .t3-has-dd > a { display: inline-flex; align-items: center; gap: 6px; }
-      .t3-nav-chev { font-size: 9px; line-height: 1; transition: transform 200ms; }
-      .t3-has-dd:hover .t3-nav-chev, .t3-has-dd:focus-within .t3-nav-chev { transform: rotate(180deg); }
-      .t3-nav-dd { position: absolute; top: calc(100% + 10px); right: 0; min-width: 200px; list-style: none; margin: 0; padding: 6px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06); opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity 200ms, visibility 200ms, transform 200ms; z-index: 20; }
-      .t3-nav-dd::before { content: ''; position: absolute; top: -10px; left: 0; right: 0; height: 10px; }
-      .t3-has-dd:hover .t3-nav-dd, .t3-has-dd:focus-within .t3-nav-dd { opacity: 1; visibility: visible; transform: translateY(0); }
-      .t3-nav-dd li { display: block; }
-      .t3-nav-dd a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--color-text-muted); border: 0; transition: background 150ms, color 150ms; }
-      .t3-nav-dd a:hover, .t3-nav-dd a.active { background: var(--color-surface-2); color: var(--color-text); }
-      .t3-nav-dd a::after { display: none; }
-      .t3-theme-btn { background: transparent; border: none; color: var(--color-text-muted); padding: 6px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: color 200ms, background 200ms; }
-      .t3-theme-btn:hover { color: var(--color-text); background: var(--color-surface-2, rgba(128,128,128,0.08)); }
-      .t3-user-wrap { position: relative; }
-      .t3-user-chip2 { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 200ms; }
-      .t3-user-chip2:hover { border-color: var(--color-border-strong); background: var(--color-surface-2); }
-      .t3-avatar-sm { width: 22px; height: 22px; border-radius: 50%; background: var(--color-accent); color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
-      .t3-chip-name { white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-      .t3-user-dd2 { position: absolute; top: calc(100% + 8px); right: 0; min-width: 160px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); padding: 4px; z-index: 50; }
-      .t3-user-dd2 button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--color-text-muted); cursor: pointer; transition: all 150ms; }
-      .t3-user-dd2 button:hover { background: var(--color-surface-2); color: var(--color-text); }
-      /* Date bar */
-      .t3-date-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-      .t3-date-bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
-
-      @media (max-width: 1060px) {
-        .t3-main { grid-template-columns: 1fr; }
-        .t3-panel { min-height: auto; }
-      }
-      @media (max-width: 680px) {
-        .t3-stage { padding: 16px 16px 48px; gap: 14px; }
-        .t3-top-nav { margin-bottom: 16px; }
-        .t3-nav-right { gap: 16px; }
-        .t3-nav-menu { gap: 16px; }
-        .t3-summary { gap: 12px 16px; }
-        .t3-summary .t3-vsplit { display: none; }
-        .t3-summary-spacer { flex-basis: 100%; height: 0; }
-        .t3-stat { flex: 1 1 42%; }
-        .t3-stat-num { font-size: 19px; }
-      }
-    `}</style>
-  );
-}
+import './trackr.css';
 
 /* ── Color tokens (for inline SVG / computed colors) ──────────────────────── */
 function mkC(dark) {
@@ -497,8 +326,8 @@ function IconButton({ icon, label, onClick, size = 36, style }) {
   );
 }
 
-function Panel({ children }) {
-  return <section className="t3-panel">{children}</section>;
+function Panel({ children, className }) {
+  return <section className={`t3-panel${className ? ' ' + className : ''}`}>{children}</section>;
 }
 
 // Tracks modal nesting so Escape only closes the topmost modal (e.g. the
@@ -644,6 +473,27 @@ function Toast({ toast }) {
     <div className="t3-toast">
       {toast.icon && <Icon name={toast.icon} size={15} stroke={2.5} />}
       {toast.msg}
+    </div>
+  );
+}
+
+/* ── Water tracker ────────────────────────────────────────────────────────── */
+const WATER_GOAL = 8;
+
+function WaterRow({ water, onChange }) {
+  return (
+    <div className="t3-water-row">
+      <div className="t3-water-cups">
+        {Array.from({ length: WATER_GOAL }, (_, i) => (
+          <button
+            key={i}
+            className={`t3-water-cup${i < water ? ' filled' : ''}`}
+            onClick={() => onChange(i < water ? i : i + 1)}
+            aria-label={`${i + 1} glas vatten`}
+          >💧</button>
+        ))}
+      </div>
+      <span className="t3-water-count">{water}/{WATER_GOAL} glas</span>
     </div>
   );
 }
@@ -1083,7 +933,7 @@ function Macro({ name, value, goal, color }) {
   );
 }
 
-function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterdayCount }) {
+function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterdayCount, water, onWaterChange }) {
   const C = useC();
   const totals = dayTotals(day);
   const left = Math.max(0, goals.kcal - totals.kcal);
@@ -1104,6 +954,8 @@ function FoodPanel({ day, goals, onAddMeal, onEditMeal, onCopyYesterday, yesterd
         </div>
       </div>
 
+      <div style={{ height: '0.5px', background: C.line, margin: '2px 0' }} />
+      <WaterRow water={water} onChange={onWaterChange} />
       <div style={{ height: '0.5px', background: C.line, margin: '2px 0' }} />
 
       <div className="t3-scroll" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
@@ -2510,6 +2362,76 @@ function ExportModal({ profileId, onClose, onDone }) {
   );
 }
 
+/* ── Bottom nav (mobile only) ─────────────────────────────────────────────── */
+const BNAV_TABS = [
+  { id: 'food',     icon: 'utensils',  label: 'Mat'      },
+  { id: 'training', icon: 'dumbbell',  label: 'Träning'  },
+  { id: 'history',  icon: 'activity',  label: 'Historik' },
+  { id: 'settings', icon: 'target',    label: 'Mål'      },
+];
+
+function BottomNav({ tab, onChange }) {
+  return (
+    <nav className="t3-bottom-nav" aria-label="Navigering">
+      {BNAV_TABS.map(t => (
+        <button
+          key={t.id}
+          className={`t3-bnav-tab${tab === t.id ? ' active' : ''}`}
+          onClick={() => onChange(t.id)}
+          aria-label={t.label}
+        >
+          <Icon name={t.icon} size={22} stroke={tab === t.id ? 2.25 : 1.75} />
+          <span>{t.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+/* ── FAB (mobile only) ────────────────────────────────────────────────────── */
+function FAB({ tab, onAddMeal, onStartTraining }) {
+  if (tab !== 'food' && tab !== 'training') return null;
+  return (
+    <button
+      className="t3-fab"
+      onClick={tab === 'food' ? onAddMeal : onStartTraining}
+      aria-label={tab === 'food' ? 'Lägg till måltid' : 'Starta träning'}
+    >
+      <Plus size={24} strokeWidth={2.25} />
+    </button>
+  );
+}
+
+/* ── Settings panel (mobile only) ────────────────────────────────────────── */
+function SettingsPanel({ theme, onToggleTheme, onUpdateGoals, onExport, userName, onLogout }) {
+  const C = useC();
+  return (
+    <div className="t3-settings-mobile" style={{ flexDirection: 'column', gap: 0, padding: '8px 0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0 16px' }}>
+        <div className="t3-avatar">{(userName || '?').slice(0, 2).toUpperCase()}</div>
+        <span style={{ fontWeight: 700, fontSize: 16 }}>{userName}</span>
+      </div>
+      <div style={{ height: 1, background: 'var(--color-border)', marginBottom: 8 }} />
+      {[
+        { label: theme === 'dark' ? 'Ljust tema' : 'Mörkt tema', icon: theme === 'dark' ? 'sun' : 'moon', action: onToggleTheme },
+        { label: 'Uppdatera mål', icon: 'target', action: onUpdateGoals },
+        { label: 'Exportera data', icon: 'download', action: onExport },
+      ].map(row => (
+        <button key={row.label} onClick={row.action}
+          style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '14px 4px', background: 'transparent', border: 'none', borderBottom: `1px solid var(--color-border)`, color: 'var(--color-text)', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
+          <Icon name={row.icon} size={18} stroke={1.75} color="var(--color-text-muted)" />
+          {row.label}
+        </button>
+      ))}
+      <button onClick={onLogout}
+        style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '14px 4px', background: 'transparent', border: 'none', color: '#e05c5c', fontFamily: 'inherit', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left', marginTop: 8 }}>
+        <Icon name="log-out" size={18} stroke={1.75} />
+        Byt användare
+      </button>
+    </div>
+  );
+}
+
 /* ── Loading screen ───────────────────────────────────────────────────────── */
 function LoadingScreen() {
   const C = useC();
@@ -2531,7 +2453,8 @@ export default function TrackrApp() {
   const [profileId, setProfileId] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [selectedKey, setSelectedKey] = useState(todayKey());
-  const [tab, setTab] = useState('food');
+  const [tab, setTab] = useState('food'); // 'food' | 'training' | 'history' | 'settings'
+  const [waterMap, setWaterMap] = useState({}); // water cups per date key
   const [modal, setModal] = useState(null);
   const [toast, setToast] = useState(null);
   const [units] = useState('kg');
@@ -2543,6 +2466,9 @@ export default function TrackrApp() {
   const store = useStore(profileId);
   const { state, loading } = store;
   const day = state.days[selectedKey] || emptyDay();
+  const water = waterMap[selectedKey] ?? 0;
+  const setWater = n => setWaterMap(m => ({ ...m, [selectedKey]: n }));
+  const panelTab = (tab === 'food' || tab === 'training') ? tab : 'food';
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -2690,43 +2616,44 @@ export default function TrackrApp() {
     return (
       <CC.Provider value={C}>
         <div className="t3-root">
-          <ScopedStyles />
           <LoadingScreen />
         </div>
       </CC.Provider>
     );
   }
 
+  const openGoals = () => setModal({ type: 'goals' });
+  const openExport = () => setModal({ type: 'export' });
+
   return (
     <CC.Provider value={C}>
       <div className="t3-root">
-        <ScopedStyles />
-        <div className="t3-stage">
+        <div className={`t3-stage t3-tab-${tab}`}>
           <TopNav theme={theme} onToggleTheme={toggleTheme} userName={userName} onLogout={logout} />
           <DateBar selectedKey={selectedKey} onStep={stepDay} onToday={() => setSelectedKey(todayKey())}
-            onExport={() => setModal({ type: 'export' })} onUpdateGoals={() => setModal({ type: 'goals' })} />
+            onExport={openExport} onUpdateGoals={openGoals} />
 
           <Summary day={day} goals={state.goals} selectedKey={selectedKey} days={state.days} units={units} store={store} />
 
           <div className="t3-main">
-            <Panel>
-              <div className="t3-panel-head">
-                <Segmented value={tab} onChange={setTab} options={[
+            <Panel className="t3-main-left">
+              <div className="t3-panel-head t3-desktop-only">
+                <Segmented value={panelTab} onChange={setTab} options={[
                   { value: 'food', label: 'Mat', icon: 'utensils' },
                   { value: 'training', label: 'Träning', icon: 'dumbbell' },
                 ]} />
                 <span className="t3-panel-sub">
-                  {tab === 'food'
+                  {panelTab === 'food'
                     ? `${day.meals.length} måltid${day.meals.length === 1 ? '' : 'er'} loggade`
                     : `${day.workouts.length} pass loggade`}
                 </span>
               </div>
-              {tab === 'food'
-                ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} />
+              {panelTab === 'food'
+                ? <FoodPanel day={day} goals={state.goals} onAddMeal={() => setModal({ type: 'meal', data: null })} onEditMeal={m => setModal({ type: 'meal', data: m })} onCopyYesterday={copyYesterday} yesterdayCount={yesterdayMeals.length} water={water} onWaterChange={setWater} />
                 : <TrainingPanel day={day} days={state.days} selectedKey={selectedKey} onStartSession={startSession} onManageRoutines={() => setRoutineMgr(true)} onAddWorkout={() => setModal({ type: 'workout', data: null })} onEditWorkout={w => setModal({ type: 'workout', data: w })} />}
             </Panel>
 
-            <Panel>
+            <Panel className="t3-main-right">
               <div className="t3-panel-head">
                 <h2 className="t3-panel-title">Historik</h2>
                 <span className="t3-panel-sub">Senaste 30 dagarna · klicka en dag för att ladda den</span>
@@ -2735,6 +2662,18 @@ export default function TrackrApp() {
                 onSelectDay={setSelectedKey} units={units} weekStart="mon" />
             </Panel>
           </div>
+
+          <SettingsPanel theme={theme} onToggleTheme={toggleTheme} onUpdateGoals={openGoals}
+            onExport={openExport} userName={userName} onLogout={logout} />
+
+          <BottomNav tab={tab} onChange={t => {
+            setTab(t);
+            if (t === 'food' || t === 'training') { /* panelTab syncs automatically */ }
+          }} />
+
+          <FAB tab={tab}
+            onAddMeal={() => setModal({ type: 'meal', data: null })}
+            onStartTraining={startSession} />
         </div>
 
         {!state.goalsSet && (
