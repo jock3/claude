@@ -19,6 +19,7 @@ export default defineConfig({
         'brus-fx': resolve(__dirname, 'apps/brus-fx/index.html'),
         'portfolio-case7': resolve(__dirname, 'apps/portfolio/case7/index.html'),
         musictheory: resolve(__dirname, 'apps/musictheory/index.html'),
+        'trackr-bento': resolve(__dirname, 'apps/trackr/bento.html'),
       },
     },
   },
