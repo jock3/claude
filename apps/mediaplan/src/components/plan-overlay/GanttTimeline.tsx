@@ -54,7 +54,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
 
   const cellClass = "border-r border-b border-gray-100 px-1 py-2.5 text-xs flex items-center";
   const stickyClass = "sticky left-0 z-10 bg-white";
-  const headerBg = "bg-gray-900 text-white";
+  const headerBg = "bg-[#F2F2F2] text-[#1C1C1C]";
 
   // ── Undo toast ──────────────────────────────────────────
   const [undoToast, setUndoToast] = useState<{ revert: () => void } | null>(null);
@@ -185,7 +185,7 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
       >
         {/* ── Month header row ── */}
         <div
-          className={`${cellClass} ${stickyClass} ${headerBg} font-semibold text-sm col-span-${INFO_COL_COUNT}`}
+          className={`${cellClass} sticky left-0 z-10 bg-[#F2F2F2] text-[#1C1C1C] font-semibold text-sm col-span-${INFO_COL_COUNT}`}
           style={{ gridColumn: `1 / span ${INFO_COL_COUNT}` }}
         >
           {plan.campaign_name}
@@ -204,14 +204,14 @@ export default function GanttTimeline({ plan, readOnly, compact, onPlanChanged }
         {(compact ? ["Kanal/Plattform", "Totalt", "Räckvidd"] : ["Kanal/Plattform", "Pris/enhet", "Enhet", "Antal", "Totalt", "Räckvidd"]).map((h, i) => (
           <div
             key={h}
-            className={`${cellClass} ${stickyClass} bg-gray-800 text-gray-300 text-xs font-medium`}
+            className={`${cellClass} ${stickyClass} bg-white text-[#E60330] text-sm font-bold border-b-2 border-[#E60330]`}
             style={{ left: i === 0 ? 0 : undefined }}
           >
             {h}
           </div>
         ))}
         {weeks.map((w) => (
-          <div key={w.index} className={`${cellClass} bg-gray-800 text-gray-400 justify-center`}>
+          <div key={w.index} className={`${cellClass} bg-[#F2F2F2] text-[#6C6C6C] justify-center`}>
             {w.label}
           </div>
         ))}
@@ -976,48 +976,38 @@ function BudgetSummaryRow({
   compact?: boolean;
   onPlanUpdate: (updates: Partial<MediaPlan>) => Promise<void>;
 }) {
-  const calcTotal = plan.categories.reduce((sum, cat) => sum + calcCategoryTotal(cat.lines), 0);
   const totalReach = plan.categories.reduce((sum, cat) => sum + calcCategoryReach(cat.lines), 0);
 
   return (
     <>
-      {/* Spans cols 1–5 */}
       <div
-        className={`${cellClass} ${stickyClass} bg-gray-900 text-white font-bold`}
+        className={`${cellClass} ${stickyClass} bg-[#F2F2F2] border-t-2 border-[#1C1C1C]`}
         style={{ gridColumn: `1 / span ${infoColCount - 1}` }}
       >
-        <div className="flex flex-col gap-0.5 w-full">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs text-gray-400">Budget</span>
-            {!readOnly ? (
-              <InlineEdit
-                value={plan.planned_budget ? String(plan.planned_budget) : ""}
-                onSave={(v) => onPlanUpdate({ planned_budget: v ? Number(v) : null })}
-                type="number"
-                placeholder="Ange budget"
-                className="text-sm font-bold text-white"
-                darkMode
-              />
-            ) : (
-              <span className="text-sm">{plan.planned_budget ? formatSEK(plan.planned_budget) : "–"}</span>
-            )}
-            {plan.planned_budget != null && (
-              <span className="text-xs text-gray-400 ml-1">/ {formatSEK(calcTotal)} använt</span>
-            )}
-            {plan.planned_budget == null && (
-              <span className="text-sm">{formatSEK(calcTotal)}</span>
-            )}
-          </div>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Budget</span>
+          {!readOnly ? (
+            <InlineEdit
+              value={plan.planned_budget ? String(plan.planned_budget) : ""}
+              onSave={(v) => onPlanUpdate({ planned_budget: v ? Number(v) : null })}
+              type="number"
+              placeholder="Ange budget"
+              className="text-sm font-bold text-[#1C1C1C]"
+            />
+          ) : (
+            <span className="text-sm font-bold text-[#1C1C1C]">
+              {plan.planned_budget ? formatSEK(plan.planned_budget) : "–"}
+            </span>
+          )}
         </div>
       </div>
-      {/* Col 6: total reach */}
-      <div className={`${cellClass} bg-gray-900 text-white justify-end`}>
+      <div className={`${cellClass} bg-[#F2F2F2] border-t-2 border-[#1C1C1C] justify-end`}>
         <div className="flex flex-col items-end gap-0.5">
-          <span className="text-xs text-gray-400">Räckvidd</span>
-          <span className="text-sm font-bold">{formatReach(totalReach)}</span>
+          <span className="text-xs font-semibold text-[#6C6C6C] uppercase tracking-wide">Räckvidd</span>
+          <span className="text-sm font-bold text-[#1C1C1C]">{formatReach(totalReach)}</span>
         </div>
       </div>
-      <div style={{ gridColumn: `span ${weekCount}` }} className="bg-gray-900 border-b border-gray-700" />
+      <div style={{ gridColumn: `span ${weekCount}` }} className="bg-[#F2F2F2] border-t-2 border-[#1C1C1C]" />
     </>
   );
 }
