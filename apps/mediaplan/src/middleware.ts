@@ -18,9 +18,9 @@ async function computeToken(secret: string): Promise<string> {
 export async function middleware(request: NextRequest) {
   const secret = process.env.ADMIN_COOKIE_SECRET;
 
-  // If no secret is configured, allow access (local dev without .env.local)
   if (!secret) {
-    return NextResponse.next();
+    const loginUrl = new URL("/login", request.url);
+    return NextResponse.redirect(loginUrl);
   }
 
   const cookie = request.cookies.get("admin_session")?.value ?? "";
