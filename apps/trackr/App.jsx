@@ -2458,7 +2458,7 @@ export default function TrackrApp() {
   const savedTheme = localStorage.getItem('ailabb_theme') || 'dark';
   const [theme, setTheme] = useState(savedTheme);
   const [uiTheme, setUiTheme] = useState(
-    () => localStorage.getItem('trackr_ui_theme') || 'shadow'
+    () => localStorage.getItem('trackr_ui_theme') || 'glass'
   );
   const [userName, setUserName] = useState(null);
   const [profileId, setProfileId] = useState(null);
@@ -2484,6 +2484,16 @@ export default function TrackrApp() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-ui-theme', uiTheme);
+  }, [uiTheme]);
+
+  useEffect(() => {
+    if (uiTheme === 'glass') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, [uiTheme]);
 
   /* Restore session on mount — redirect to the hub if not logged in (like todo). */
   useEffect(() => {
@@ -2540,6 +2550,7 @@ export default function TrackrApp() {
     const next = uiTheme === 'glass' ? 'shadow' : 'glass';
     setUiTheme(next);
     localStorage.setItem('trackr_ui_theme', next);
+    document.documentElement.setAttribute('data-ui-theme', next);
   };
 
   const flash = (msg, icon) => {
