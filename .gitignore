@@ -2,3 +2,4 @@ node_modules
 dist
 .claude/
 __pycache__/
+apps/mediaplan/tsconfig.tsbuildinfo
