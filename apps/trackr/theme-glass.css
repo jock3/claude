@@ -4,7 +4,7 @@ html[data-ui-theme="glass"] body {
   color: rgba(255, 255, 255, 0.88);
 }
 
-/* Silk base texture — diagonal weave lines */
+/* Silk base texture — diagonal weave lines, doubled brightness */
 html[data-ui-theme="glass"] body::after {
   content: '';
   position: fixed;
@@ -12,15 +12,15 @@ html[data-ui-theme="glass"] body::after {
   background-image:
     repeating-linear-gradient(
       -52deg,
-      rgba(255,255,255,0.018) 0px,
-      rgba(255,255,255,0.018) 1px,
+      rgba(255,255,255,0.035) 0px,
+      rgba(255,255,255,0.035) 1px,
       transparent 1px,
       transparent 9px
     ),
     repeating-linear-gradient(
       52deg,
-      rgba(255,255,255,0.012) 0px,
-      rgba(255,255,255,0.012) 1px,
+      rgba(255,255,255,0.022) 0px,
+      rgba(255,255,255,0.022) 1px,
       transparent 1px,
       transparent 9px
     );
@@ -28,7 +28,7 @@ html[data-ui-theme="glass"] body::after {
   z-index: 0;
 }
 
-/* Silk light reflections — diagonal sweeps that animate */
+/* Silk light reflections — bright diagonal sweeps + 3 radial light blobs */
 html[data-ui-theme="glass"] body::before {
   content: '';
   position: fixed;
@@ -37,26 +37,27 @@ html[data-ui-theme="glass"] body::before {
     linear-gradient(
       128deg,
       transparent 0%,
-      rgba(255,255,255,0.09) 22%,
-      rgba(255,255,255,0.14) 27%,
-      rgba(255,255,255,0.06) 33%,
+      rgba(255,255,255,0.16) 20%,
+      rgba(255,255,255,0.26) 26%,
+      rgba(255,255,255,0.12) 32%,
       transparent 42%,
-      rgba(255,255,255,0.04) 58%,
-      rgba(255,255,255,0.10) 65%,
-      rgba(255,255,255,0.05) 70%,
+      rgba(255,255,255,0.08) 58%,
+      rgba(255,255,255,0.20) 64%,
+      rgba(255,255,255,0.10) 70%,
       transparent 80%
     ),
-    radial-gradient(ellipse 90% 50% at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 65%),
-    radial-gradient(ellipse 70% 60% at 80% 70%, rgba(255,255,255,0.06) 0%, transparent 65%);
+    radial-gradient(ellipse 70% 55% at 18% 25%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 40%, transparent 70%),
+    radial-gradient(ellipse 55% 65% at 82% 72%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 40%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 55% 10%, rgba(255,255,255,0.14) 0%, transparent 65%);
   pointer-events: none;
   z-index: 0;
   animation: silk-shift 22s ease-in-out infinite alternate;
 }
 
 @keyframes silk-shift {
-  0%   { transform: rotate(0deg) scale(1);   opacity: 0.85; }
+  0%   { transform: rotate(0deg) scale(1);   opacity: 0.80; }
   40%  { transform: rotate(1deg) scale(1.04); opacity: 1; }
-  100% { transform: rotate(-1deg) scale(0.97); opacity: 0.90; }
+  100% { transform: rotate(-1deg) scale(0.97); opacity: 0.85; }
 }
 
 html[data-ui-theme="glass"] .t3-bento {
@@ -65,17 +66,17 @@ html[data-ui-theme="glass"] .t3-bento {
   z-index: 1;
 }
 
-/* True glass — high enough opacity that you see the panel, low enough to show the silk behind */
+/* True glass — frosted panel over bright silk background */
 html[data-ui-theme="glass"] .t3-m {
-  background: rgba(255, 255, 255, 0.09);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.32),
-    inset 1px 0 0 rgba(255, 255, 255, 0.08),
-    inset -1px 0 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.40),
+    inset 1px 0 0 rgba(255, 255, 255, 0.10),
+    inset -1px 0 0 rgba(255, 255, 255, 0.05),
     0 2px 8px rgba(0, 0, 0, 0.5),
     0 12px 40px rgba(0, 0, 0, 0.45);
   color: rgba(255, 255, 255, 0.90);
@@ -91,19 +92,20 @@ html[data-ui-theme="glass"] .t3-m::before {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    128deg,
-    rgba(255,255,255,0.10) 0%,
-    rgba(255,255,255,0.03) 35%,
-    transparent 60%
+    135deg,
+    rgba(255,255,255,0.14) 0%,
+    rgba(255,255,255,0.04) 40%,
+    transparent 65%
   );
   pointer-events: none;
+  border-radius: inherit;
 }
 
 html[data-ui-theme="glass"] .t3-m:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.10);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.40),
-    inset 1px 0 0 rgba(255, 255, 255, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
     0 4px 16px rgba(0, 0, 0, 0.55),
     0 16px 48px rgba(0, 0, 0, 0.50);
   transform: translateY(-1px);
@@ -344,11 +346,31 @@ html[data-ui-theme="glass"] .t3-m svg [style*="fill"] {
 
 html[data-ui-theme="glass"] .g-sidebar {
   background: rgba(255, 255, 255, 0.06) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-  border-radius: 6px !important;
+  backdrop-filter: blur(40px) !important;
+  -webkit-backdrop-filter: blur(40px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.40) !important;
+  border-radius: 14px !important;
+}
+
+/* Water module compact styling */
+html[data-ui-theme="glass"] .t3-m-water .t3-water-row {
+  flex-direction: column;
+  gap: 10px;
+}
+html[data-ui-theme="glass"] .t3-m-water .t3-water-cups {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Calendar module — full-width, compact calendar cells */
+html[data-ui-theme="glass"] .t3-m-calendar {
+  padding: 14px 16px;
+}
+
+/* Stats module — compact trend cards */
+html[data-ui-theme="glass"] .t3-m-stats {
+  padding: 14px 16px;
 }
 
 html[data-ui-theme="glass"] .g-sidebar a,
