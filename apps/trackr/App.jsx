@@ -490,7 +490,11 @@ function WaterRow({ water, onChange }) {
             className={`t3-water-cup${i < water ? ' filled' : ''}`}
             onClick={() => onChange(i < water ? i : i + 1)}
             aria-label={`${i + 1} glas vatten`}
-          >💧</button>
+          >
+            <svg viewBox="0 0 12 16" width="12" height="16" fill="none" aria-hidden="true">
+              <path d="M6 1.5C6 1.5 1.5 7 1.5 10.5a4.5 4.5 0 0 0 9 0C10.5 7 6 1.5 6 1.5z" strokeWidth="1.25" stroke="currentColor" fill={i < water ? 'currentColor' : 'none'}/>
+            </svg>
+          </button>
         ))}
       </div>
       <span className="t3-water-count">{water}/{WATER_GOAL} glas</span>

@@ -154,8 +154,8 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
 /* ── Water cups ───────────────────────────────────────────────────────────── */
 .t3-water-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
 .t3-water-cups { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
-.t3-water-cup { width: 30px; height: 30px; border-radius: 6px; border: 2px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: background 120ms, border-color 120ms; background: transparent; -webkit-tap-highlight-color: transparent; }
-.t3-water-cup.filled { background: rgba(58,165,156,0.15); border-color: var(--color-link); }
+.t3-water-cup { width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 120ms, border-color 120ms, color 120ms; background: transparent; color: var(--color-text-muted); -webkit-tap-highlight-color: transparent; }
+.t3-water-cup.filled { background: rgba(58,165,156,0.15); border-color: var(--color-link); color: var(--color-link); }
 .t3-water-count { font-size: 11px; font-weight: 700; color: var(--color-text-muted); white-space: nowrap; letter-spacing: 0.04em; }
 
 /* ── Bottom nav (desktop: hidden) ─────────────────────────────────────────── */
@@ -304,9 +304,9 @@ select.t3-input { appearance: none; cursor: pointer; padding-right: 30px; backgr
   display: grid;
   grid-template-columns: 200px 1fr 1fr 1fr;
   grid-template-rows: auto auto auto;
-  gap: 8px;
+  gap: 10px;
   padding: 12px;
-  align-items: start;
+  align-items: stretch;
   max-width: 1400px;
   margin: 0 auto;
   min-height: calc(100vh - 80px);
