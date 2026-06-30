@@ -16,7 +16,6 @@ export default defineConfig({
         todo: resolve(__dirname, 'apps/todo/index.html'),
         kampanj: resolve(__dirname, 'apps/kampanj/index.html'),
         'seo-audit': resolve(__dirname, 'apps/seo-audit/index.html'),
-        trackr: resolve(__dirname, 'apps/trackr/index.html'),
         'brus-fx': resolve(__dirname, 'apps/brus-fx/index.html'),
         'portfolio-case7': resolve(__dirname, 'apps/portfolio/case7/index.html'),
         musictheory: resolve(__dirname, 'apps/musictheory/index.html'),
