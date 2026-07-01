@@ -12,6 +12,7 @@ import type { CampaignPlan } from "@/lib/types";
 import CampaignPlanCard from "@/components/kampanj-dashboard/CampaignPlanCard";
 import NewCampaignPlanModal from "@/components/kampanj-dashboard/NewCampaignPlanModal";
 import CampaignOverlay from "@/components/campaign-overlay/CampaignOverlay";
+import TagFilterBar from "@/components/shared/TagFilterBar";
 
 export default function KampanjDashboard() {
   const [plans, setPlans] = useState<CampaignPlan[]>([]);
@@ -19,6 +20,7 @@ export default function KampanjDashboard() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -55,8 +57,17 @@ export default function KampanjDashboard() {
     setPlans((prev) => [newPlan, ...prev]);
   };
 
-  const active = plans.filter((p) => !p.archived);
-  const archived = plans.filter((p) => p.archived);
+  const toggleTag = (tag: string) => {
+    setActiveTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  };
+
+  const matchesTags = (p: CampaignPlan) =>
+    activeTags.length === 0 || activeTags.every((t) => p.tags?.includes(t));
+
+  const allTags = Array.from(new Set(plans.flatMap((p) => p.tags ?? []))).sort();
+
+  const active = plans.filter((p) => !p.archived && matchesTags(p));
+  const archived = plans.filter((p) => p.archived && matchesTags(p));
 
   return (
     <div className="min-h-full bg-gray-50">
@@ -79,11 +90,17 @@ export default function KampanjDashboard() {
           </div>
         ) : (
           <>
+            <TagFilterBar tags={allTags} activeTags={activeTags} onToggle={toggleTag} onClear={() => setActiveTags([])} />
+
             {active.length === 0 && (
               <div className="text-center py-20 text-gray-400">
                 <div className="text-5xl mb-4">📣</div>
-                <p className="text-lg font-medium text-gray-500">Inga kampanjer ännu</p>
-                <p className="text-sm mt-1">Klicka på &quot;Ny kampanj&quot; för att komma igång</p>
+                <p className="text-lg font-medium text-gray-500">
+                  {activeTags.length > 0 ? "Inga kampanjer matchar filtret" : "Inga kampanjer ännu"}
+                </p>
+                {activeTags.length === 0 && (
+                  <p className="text-sm mt-1">Klicka på &quot;Ny kampanj&quot; för att komma igång</p>
+                )}
               </div>
             )}
 

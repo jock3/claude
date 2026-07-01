@@ -6,6 +6,7 @@ import type { FullMediaPlan } from "@/lib/types";
 import GanttTimeline from "./GanttTimeline";
 import { formatSwedishDateFull } from "@/lib/utils/dates";
 import { calcPlanTotal, formatSEK } from "@/lib/utils/budget";
+import TagEditor from "@/components/shared/TagEditor";
 
 interface Props {
   planId: string;
@@ -96,6 +97,12 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
     setPlan((p) => p ? { ...p, [field]: value } : p);
   };
 
+  const handleTagsUpdate = async (tags: string[]) => {
+    if (!plan) return;
+    await updatePlan(plan.id, { tags });
+    setPlan((p) => p ? { ...p, tags } : p);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col" style={{ backgroundColor: "rgba(0,0,0,0.7)" }}>
       <div
@@ -163,6 +170,7 @@ export default function PlanOverlay({ planId, onClose, readOnly }: Props) {
                     className="text-xs bg-[#2B2B2B] text-gray-200 border border-[#3a3a3a] rounded px-2 py-1 w-20 focus:outline-none focus:border-milou-500"
                   />
                 </div>
+                {plan && <TagEditor tags={plan.tags ?? []} onChange={handleTagsUpdate} />}
                 <button
                   onClick={handleExportImage}
                   disabled={exporting}

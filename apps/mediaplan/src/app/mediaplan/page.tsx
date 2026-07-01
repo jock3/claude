@@ -6,6 +6,7 @@ import type { MediaPlan } from "@/lib/types";
 import PlanCard from "@/components/dashboard/PlanCard";
 import NewPlanModal from "@/components/dashboard/NewPlanModal";
 import PlanOverlay from "@/components/plan-overlay/PlanOverlay";
+import TagFilterBar from "@/components/shared/TagFilterBar";
 
 export default function Dashboard() {
   const [plans, setPlans] = useState<MediaPlan[]>([]);
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const loadPlans = useCallback(async () => {
     setLoading(true);
@@ -49,8 +51,17 @@ export default function Dashboard() {
     setPlans((prev) => [newPlan, ...prev]);
   };
 
-  const active = plans.filter((p) => !p.archived);
-  const archived = plans.filter((p) => p.archived);
+  const toggleTag = (tag: string) => {
+    setActiveTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+  };
+
+  const matchesTags = (p: MediaPlan) =>
+    activeTags.length === 0 || activeTags.every((t) => p.tags?.includes(t));
+
+  const allTags = Array.from(new Set(plans.flatMap((p) => p.tags ?? []))).sort();
+
+  const active = plans.filter((p) => !p.archived && matchesTags(p));
+  const archived = plans.filter((p) => p.archived && matchesTags(p));
 
   return (
     <div className="min-h-full bg-gray-50">
@@ -74,11 +85,17 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
+            <TagFilterBar tags={allTags} activeTags={activeTags} onToggle={toggleTag} onClear={() => setActiveTags([])} />
+
             {active.length === 0 && (
               <div className="text-center py-20 text-gray-400">
                 <div className="text-5xl mb-4">📋</div>
-                <p className="text-lg font-medium text-gray-500">Inga mediaplaner ännu</p>
-                <p className="text-sm mt-1">Klicka på &quot;Ny mediaplan&quot; för att komma igång</p>
+                <p className="text-lg font-medium text-gray-500">
+                  {activeTags.length > 0 ? "Inga mediaplaner matchar filtret" : "Inga mediaplaner ännu"}
+                </p>
+                {activeTags.length === 0 && (
+                  <p className="text-sm mt-1">Klicka på &quot;Ny mediaplan&quot; för att komma igång</p>
+                )}
               </div>
             )}
 

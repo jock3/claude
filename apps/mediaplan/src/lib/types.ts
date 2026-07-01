@@ -8,6 +8,7 @@ export interface MediaPlan {
   client_id: string | null;
   planned_budget: number | null;
   status: 'draft' | 'active' | 'approved';
+  tags: string[];
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +72,7 @@ export interface CampaignPlan {
   share_token: string;
   client_id: string | null;
   status: 'draft' | 'active' | 'approved';
+  tags: string[];
   created_at: string;
   updated_at: string;
 }

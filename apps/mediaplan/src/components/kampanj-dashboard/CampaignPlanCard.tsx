@@ -2,6 +2,7 @@
 
 import type { CampaignPlan } from "@/lib/types";
 import { formatSwedishDate } from "@/lib/utils/dates";
+import TagChips from "@/components/shared/TagChips";
 
 interface Props {
   plan: CampaignPlan;
@@ -50,6 +51,8 @@ export default function CampaignPlanCard({ plan, onOpen, onArchive, onDelete, on
         <p className="text-sm text-gray-500 mt-1">
           {formatSwedishDate(plan.period_start)} – {formatSwedishDate(plan.period_end)}
         </p>
+
+        <TagChips tags={plan.tags} />
 
         <p className="text-xs text-gray-400 mt-3">
           Skapad {new Date(plan.created_at).toLocaleDateString("sv-SE")}

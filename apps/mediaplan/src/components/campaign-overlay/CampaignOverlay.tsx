@@ -6,6 +6,7 @@ import type { FullCampaignPlan } from "@/lib/types";
 import CampaignTimeline from "./CampaignTimeline";
 import { formatSwedishDateFull } from "@/lib/utils/dates";
 import { calcCampaignPlanTotal, formatSEK } from "@/lib/utils/campaign-budget";
+import TagEditor from "@/components/shared/TagEditor";
 
 interface Props {
   planId: string;
@@ -65,6 +66,12 @@ export default function CampaignOverlay({ planId, onClose, readOnly }: Props) {
     if (!plan) return;
     await updateCampaignPlan(plan.id, { [field]: value });
     setPlan((p) => p ? { ...p, [field]: value } : p);
+  };
+
+  const handleTagsUpdate = async (tags: string[]) => {
+    if (!plan) return;
+    await updateCampaignPlan(plan.id, { tags });
+    setPlan((p) => p ? { ...p, tags } : p);
   };
 
   return (
@@ -130,6 +137,7 @@ export default function CampaignOverlay({ planId, onClose, readOnly }: Props) {
                     className="text-xs bg-[#2B2B2B] text-gray-200 border border-[#3a3a3a] rounded px-2 py-1 w-20 focus:outline-none focus:border-milou-500"
                   />
                 </div>
+                {plan && <TagEditor tags={plan.tags ?? []} onChange={handleTagsUpdate} />}
                 <button
                   onClick={handleShare}
                   className="text-sm bg-[#2B2B2B] hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
