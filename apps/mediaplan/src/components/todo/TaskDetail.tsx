@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { TodoList, TodoTask, TodoSubtask, TodoStatus, TodoPriority } from "@/lib/types";
-import { getSubtasks, createSubtask, updateSubtask, deleteSubtask, type UserOption } from "@/lib/api/todo";
+import { type UserOption } from "@/lib/api/todo";
 import { STATUS_CONFIG } from "./StatusPill";
 import { PRIORITY_CONFIG } from "./PriorityPill";
 
@@ -10,13 +10,16 @@ interface Props {
   task: TodoTask;
   lists: TodoList[];
   users: UserOption[];
+  subtasks: TodoSubtask[];
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<TodoTask>) => void;
   onDelete: (id: string) => void;
+  onCreateSubtask: (taskId: string, title: string) => void;
+  onToggleSubtask: (id: string) => void;
+  onDeleteSubtask: (id: string) => void;
 }
 
-export default function TaskDetail({ task, lists, users, onClose, onUpdate, onDelete }: Props) {
-  const [subtasks, setSubtasks] = useState<TodoSubtask[]>([]);
+export default function TaskDetail({ task, lists, users, subtasks, onClose, onUpdate, onDelete, onCreateSubtask, onToggleSubtask, onDeleteSubtask }: Props) {
   const [newSubtask, setNewSubtask] = useState("");
   const [title, setTitle] = useState(task.title);
   const [notes, setNotes] = useState(task.notes ?? "");
@@ -24,25 +27,12 @@ export default function TaskDetail({ task, lists, users, onClose, onUpdate, onDe
   useEffect(() => {
     setTitle(task.title);
     setNotes(task.notes ?? "");
-    getSubtasks(task.id).then(setSubtasks);
-  }, [task.id]);
+  }, [task.id, task.title, task.notes]);
 
-  const handleAddSubtask = async () => {
+  const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
-    const st = await createSubtask(task.id, newSubtask.trim());
-    setSubtasks((prev) => [...prev, st]);
+    onCreateSubtask(task.id, newSubtask.trim());
     setNewSubtask("");
-  };
-
-  const handleToggleSubtask = async (st: TodoSubtask) => {
-    const updated = { ...st, completed: !st.completed };
-    setSubtasks((prev) => prev.map((s) => (s.id === st.id ? updated : s)));
-    await updateSubtask(st.id, { completed: updated.completed });
-  };
-
-  const handleDeleteSubtask = async (id: string) => {
-    setSubtasks((prev) => prev.filter((s) => s.id !== id));
-    await deleteSubtask(id);
   };
 
   const doneCount = subtasks.filter((s) => s.completed).length;
@@ -105,15 +95,25 @@ export default function TaskDetail({ task, lists, users, onClose, onUpdate, onDe
           </div>
         </div>
 
-        {/* Due date */}
-        <div>
-          <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Datum</label>
-          <input
-            type="date"
-            value={task.due_date ?? ""}
-            onChange={(e) => onUpdate(task.id, { due_date: e.target.value || null })}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 w-full outline-none focus:border-milou-300 transition-colors"
-          />
+        {/* Deadline + Klar */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Deadline</label>
+            <input
+              type="date"
+              value={task.due_date ?? ""}
+              onChange={(e) => onUpdate(task.id, { due_date: e.target.value || null })}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 w-full outline-none focus:border-milou-300 transition-colors"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">Klar</label>
+            <div className="text-sm border border-gray-100 rounded-lg px-3 py-2 w-full bg-gray-50 text-gray-500">
+              {task.completed_at
+                ? new Date(task.completed_at).toLocaleDateString("sv-SE", { year: "numeric", month: "short", day: "numeric" })
+                : "—"}
+            </div>
+          </div>
         </div>
 
         {/* Assignee */}
@@ -176,14 +176,14 @@ export default function TaskDetail({ task, lists, users, onClose, onUpdate, onDe
                 <input
                   type="checkbox"
                   checked={st.completed}
-                  onChange={() => handleToggleSubtask(st)}
+                  onChange={() => onToggleSubtask(st.id)}
                   className="w-3.5 h-3.5 rounded border-gray-300 accent-milou-500"
                 />
                 <span className={`flex-1 text-sm ${st.completed ? "line-through text-gray-400" : "text-gray-700"}`}>
                   {st.title}
                 </span>
                 <button
-                  onClick={() => handleDeleteSubtask(st.id)}
+                  onClick={() => onDeleteSubtask(st.id)}
                   className="opacity-0 group-hover/st:opacity-100 text-gray-300 hover:text-red-400 text-sm transition-all"
                 >
                   ×

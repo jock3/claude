@@ -77,6 +77,12 @@ export async function getSubtasks(taskId: string): Promise<TodoSubtask[]> {
   return data as TodoSubtask[];
 }
 
+export async function getAllSubtasks(): Promise<TodoSubtask[]> {
+  const { data, error } = await sb().from("todo_subtasks").select("*").order("sort_order");
+  if (error) throw error;
+  return data as TodoSubtask[];
+}
+
 export async function createSubtask(taskId: string, title: string): Promise<TodoSubtask> {
   const { data: maxData } = await sb().from("todo_subtasks").select("sort_order").eq("task_id", taskId).order("sort_order", { ascending: false }).limit(1);
   const sort_order = (maxData?.[0]?.sort_order ?? 0) + 1;

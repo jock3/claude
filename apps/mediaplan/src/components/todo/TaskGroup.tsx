@@ -1,22 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import type { TodoList, TodoTask } from "@/lib/types";
+import type { TodoList, TodoTask, TodoSubtask } from "@/lib/types";
 import TaskRow from "./TaskRow";
 
 interface Props {
   list: TodoList | null;
   tasks: TodoTask[];
   selectedTaskId: string | null;
+  subtasksByTask: Record<string, TodoSubtask[]>;
   onSelectTask: (id: string) => void;
   onCreateTask: (listId: string | null, title: string) => void;
   onUpdateTask: (id: string, updates: Partial<TodoTask>) => void;
   onDeleteTask: (id: string) => void;
+  onToggleSubtask: (id: string) => void;
   disableAdd?: boolean;
 }
 
 export default function TaskGroup({
-  list, tasks, selectedTaskId, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask, disableAdd,
+  list, tasks, selectedTaskId, subtasksByTask, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask, onToggleSubtask, disableAdd,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [addingTask, setAddingTask] = useState(false);
@@ -56,12 +58,13 @@ export default function TaskGroup({
       {!collapsed && (
         <>
           {/* Column headers */}
-          <div className="grid grid-cols-[32px_minmax(0,1fr)_140px_100px_120px_32px] items-center gap-2 px-4 py-1.5 border-b border-gray-100 bg-gray-50/50">
+          <div className="grid grid-cols-[32px_minmax(0,1fr)_140px_100px_120px_120px_32px] items-center gap-2 px-4 py-1.5 border-b border-gray-100 bg-gray-50/50">
             <div />
             <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Uppgift</div>
             <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Status</div>
             <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Prioritet</div>
-            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Datum</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Deadline</div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wider">Klar</div>
             <div />
           </div>
 
@@ -73,10 +76,12 @@ export default function TaskGroup({
             <TaskRow
               key={task.id}
               task={task}
+              subtasks={subtasksByTask[task.id] ?? []}
               selected={selectedTaskId === task.id}
               onSelect={() => onSelectTask(task.id)}
               onUpdate={onUpdateTask}
               onDelete={onDeleteTask}
+              onToggleSubtask={onToggleSubtask}
             />
           ))}
 

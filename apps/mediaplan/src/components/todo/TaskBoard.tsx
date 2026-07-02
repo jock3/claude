@@ -1,6 +1,6 @@
 "use client";
 
-import type { TodoList, TodoTask } from "@/lib/types";
+import type { TodoList, TodoTask, TodoSubtask } from "@/lib/types";
 import TaskGroup from "./TaskGroup";
 
 interface Props {
@@ -8,16 +8,18 @@ interface Props {
   lists: TodoList[];
   view: string;
   selectedTaskId: string | null;
+  subtasksByTask: Record<string, TodoSubtask[]>;
   onSelectTask: (id: string) => void;
   onCreateTask: (listId: string | null, title: string) => void;
   onUpdateTask: (id: string, updates: Partial<TodoTask>) => void;
   onDeleteTask: (id: string) => void;
+  onToggleSubtask: (id: string) => void;
 }
 
 export default function TaskBoard({
-  tasks, lists, view, selectedTaskId, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask,
+  tasks, lists, view, selectedTaskId, subtasksByTask, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask, onToggleSubtask,
 }: Props) {
-  const common = { selectedTaskId, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask };
+  const common = { selectedTaskId, subtasksByTask, onSelectTask, onCreateTask, onUpdateTask, onDeleteTask, onToggleSubtask };
 
   if (view === "all") {
     const grouped = lists.map((list) => ({

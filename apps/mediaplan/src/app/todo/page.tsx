@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { getLists, getAllTasks, createTask, updateTask, deleteTask, createList, updateList, deleteList, unassignTasksFromList, getUsers, type UserOption } from "@/lib/api/todo";
-import type { TodoList, TodoTask, AppUser } from "@/lib/types";
+import { getLists, getAllTasks, getAllSubtasks, createTask, updateTask, deleteTask, createList, updateList, deleteList, unassignTasksFromList, getUsers, createSubtask, updateSubtask, deleteSubtask, type UserOption } from "@/lib/api/todo";
+import type { TodoList, TodoTask, TodoSubtask, AppUser } from "@/lib/types";
 import MilouLogo from "@/components/MilouLogo";
 import UserBadge from "@/components/UserBadge";
 import TodoSidebar from "@/components/todo/TodoSidebar";
@@ -14,6 +14,7 @@ type View = "all" | "today" | "completed" | string;
 export default function TodoPage() {
   const [lists, setLists] = useState<TodoList[]>([]);
   const [tasks, setTasks] = useState<TodoTask[]>([]);
+  const [subtasks, setSubtasks] = useState<TodoSubtask[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [view, setView] = useState<View>("all");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -22,9 +23,10 @@ export default function TodoPage() {
   const [users, setUsers] = useState<UserOption[]>([]);
 
   const load = useCallback(async () => {
-    const [listsData, tasksData, usersData] = await Promise.all([getLists(), getAllTasks(), getUsers()]);
+    const [listsData, tasksData, subtasksData, usersData] = await Promise.all([getLists(), getAllTasks(), getAllSubtasks(), getUsers()]);
     setLists(listsData);
     setTasks(tasksData);
+    setSubtasks(subtasksData);
     setUsers(usersData);
     setLoading(false);
   }, []);
@@ -49,6 +51,31 @@ export default function TodoPage() {
     if (selectedTaskId === id) setSelectedTaskId(null);
     await deleteTask(id);
   };
+
+  const handleCreateSubtask = async (taskId: string, title: string) => {
+    const st = await createSubtask(taskId, title);
+    setSubtasks((prev) => [...prev, st]);
+  };
+
+  const handleToggleSubtask = async (id: string) => {
+    let next = false;
+    setSubtasks((prev) => prev.map((s) => {
+      if (s.id !== id) return s;
+      next = !s.completed;
+      return { ...s, completed: next };
+    }));
+    await updateSubtask(id, { completed: next });
+  };
+
+  const handleDeleteSubtask = async (id: string) => {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
+    await deleteSubtask(id);
+  };
+
+  const subtasksByTask = subtasks.reduce<Record<string, TodoSubtask[]>>((acc, s) => {
+    (acc[s.task_id] ??= []).push(s);
+    return acc;
+  }, {});
 
   const handleCreateList = async (name: string, color: string) => {
     const list = await createList(name, color, currentUser?.id ?? null);
@@ -128,10 +155,12 @@ export default function TodoPage() {
               lists={lists}
               view={view}
               selectedTaskId={selectedTaskId}
+              subtasksByTask={subtasksByTask}
               onSelectTask={setSelectedTaskId}
               onCreateTask={handleCreateTask}
               onUpdateTask={handleUpdateTask}
               onDeleteTask={handleDeleteTask}
+              onToggleSubtask={handleToggleSubtask}
             />
           )}
         </main>
@@ -141,9 +170,13 @@ export default function TodoPage() {
             task={selectedTask}
             lists={lists}
             users={users}
+            subtasks={subtasksByTask[selectedTask.id] ?? []}
             onClose={() => setSelectedTaskId(null)}
             onUpdate={handleUpdateTask}
             onDelete={handleDeleteTask}
+            onCreateSubtask={handleCreateSubtask}
+            onToggleSubtask={handleToggleSubtask}
+            onDeleteSubtask={handleDeleteSubtask}
           />
         )}
       </div>

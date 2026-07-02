@@ -1,21 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import type { TodoTask } from "@/lib/types";
+import type { TodoTask, TodoSubtask } from "@/lib/types";
 import StatusPill from "./StatusPill";
 import PriorityPill from "./PriorityPill";
 
 interface Props {
   task: TodoTask;
+  subtasks: TodoSubtask[];
   selected: boolean;
   onSelect: () => void;
   onUpdate: (id: string, updates: Partial<TodoTask>) => void;
   onDelete: (id: string) => void;
+  onToggleSubtask: (id: string) => void;
 }
 
-export default function TaskRow({ task, selected, onSelect, onUpdate, onDelete }: Props) {
+export default function TaskRow({ task, subtasks, selected, onSelect, onUpdate, onDelete, onToggleSubtask }: Props) {
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(task.title);
+  const [expanded, setExpanded] = useState(false);
+
+  const openSubtasks = subtasks.filter((s) => !s.completed).length;
 
   const today = new Date().toISOString().split("T")[0];
   const isOverdue = task.due_date && task.due_date < today && !task.completed;
@@ -35,9 +40,13 @@ export default function TaskRow({ task, selected, onSelect, onUpdate, onDelete }
     return date.toLocaleDateString("sv-SE", { month: "short", day: "numeric" });
   };
 
+  const formatTimestamp = (ts: string) =>
+    new Date(ts).toLocaleDateString("sv-SE", { month: "short", day: "numeric" });
+
   return (
+    <>
     <div
-      className={`group grid grid-cols-[32px_minmax(0,1fr)_140px_100px_120px_32px] items-center gap-2 px-4 py-2 border-b border-gray-100 transition-colors cursor-pointer ${
+      className={`group grid grid-cols-[32px_minmax(0,1fr)_140px_100px_120px_120px_32px] items-center gap-2 px-4 py-2 border-b border-gray-100 transition-colors cursor-pointer ${
         selected ? "bg-milou-50" : "hover:bg-gray-50"
       }`}
       onClick={onSelect}
@@ -84,6 +93,20 @@ export default function TaskRow({ task, selected, onSelect, onUpdate, onDelete }
             {task.title}
           </span>
         )}
+        {subtasks.length > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+            title={`${openSubtasks} kvar av ${subtasks.length} deluppgifter`}
+            className={`shrink-0 inline-flex items-center gap-0.5 text-xs font-medium rounded-full px-1.5 py-0.5 transition-colors ${
+              openSubtasks > 0
+                ? "bg-milou-50 text-milou-500 hover:bg-milou-100"
+                : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+            }`}
+          >
+            <span className={`text-[10px] transition-transform ${expanded ? "rotate-45" : ""}`}>＋</span>
+            {openSubtasks > 0 ? openSubtasks : "✓"}
+          </button>
+        )}
       </div>
 
       {/* Status */}
@@ -96,11 +119,22 @@ export default function TaskRow({ task, selected, onSelect, onUpdate, onDelete }
         <PriorityPill priority={task.priority} onChange={(priority) => onUpdate(task.id, { priority })} />
       </div>
 
-      {/* Due date */}
+      {/* Deadline */}
       <div>
         {task.due_date ? (
           <span className={`text-xs font-medium ${isOverdue ? "text-red-500" : isToday ? "text-amber-500" : "text-gray-400"}`}>
             {formatDate(task.due_date)}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-200 opacity-0 group-hover:opacity-100">—</span>
+        )}
+      </div>
+
+      {/* Done date */}
+      <div>
+        {task.completed_at ? (
+          <span className="text-xs font-medium text-emerald-500">
+            {formatTimestamp(task.completed_at)}
           </span>
         ) : (
           <span className="text-xs text-gray-200 opacity-0 group-hover:opacity-100">—</span>
@@ -115,5 +149,25 @@ export default function TaskRow({ task, selected, onSelect, onUpdate, onDelete }
         ×
       </button>
     </div>
+
+    {/* Inline subtasks */}
+    {expanded && subtasks.map((st) => (
+      <div
+        key={st.id}
+        className="grid grid-cols-[32px_minmax(0,1fr)] items-center gap-2 pl-12 pr-4 py-1.5 border-b border-gray-50 bg-gray-50/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          type="checkbox"
+          checked={st.completed}
+          onChange={() => onToggleSubtask(st.id)}
+          className="w-3.5 h-3.5 rounded border-gray-300 cursor-pointer accent-milou-500"
+        />
+        <span className={`text-xs ${st.completed ? "line-through text-gray-400" : "text-gray-600"}`}>
+          {st.title}
+        </span>
+      </div>
+    ))}
+    </>
   );
 }
