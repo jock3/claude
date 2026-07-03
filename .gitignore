@@ -3,3 +3,6 @@ dist
 .claude/
 __pycache__/
 apps/mediaplan/tsconfig.tsbuildinfo
+
+# graphify derived output (each machine builds its own)
+graphify-out/

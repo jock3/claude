@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# graphify: refresh the code knowledge graph before every push.
+# AST-only (no LLM, deterministic, fast). Doc/image semantic layer is NOT
+# rebuilt here — run `/graphify` in Claude Code for that.
+# Non-blocking: never fails the push. Committed + core.hooksPath = both machines.
+
+set -u
+
+# Resolve graphify (git hooks get a minimal PATH)
+GRAPHIFY="$(command -v graphify 2>/dev/null || true)"
+[ -z "$GRAPHIFY" ] && [ -x "$HOME/.local/bin/graphify" ] && GRAPHIFY="$HOME/.local/bin/graphify"
+if [ -z "$GRAPHIFY" ]; then
+  echo "graphify pre-push: graphify not found on PATH — skipping graph rebuild." >&2
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+echo "graphify pre-push: updating code graph…" >&2
+# --update / update: re-extract changed code files, rebuild graph.json + report.
+"$GRAPHIFY" update "$REPO_ROOT" >/dev/null 2>&1 \
+  && echo "graphify pre-push: graph updated (graphify-out/graph.json)." >&2 \
+  || echo "graphify pre-push: update failed — pushing anyway." >&2
+
+exit 0
