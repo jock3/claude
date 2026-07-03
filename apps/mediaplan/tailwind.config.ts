@@ -10,6 +10,7 @@ const config: Config = {
       },
       colors: {
         milou: {
+          "50":  "#FFF5F7",
           "100": "#FEE5EA",
           "200": "#FDB0BF",
           "300": "#FB7A94",

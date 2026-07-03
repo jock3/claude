@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSessionToken, logoutToken, clearSessionCookie } from "@/lib/auth/session";
 
 export async function GET(request: NextRequest) {
+  const token = getSessionToken(request);
+  if (token) await logoutToken(token).catch(() => {});
+
   const response = NextResponse.redirect(new URL("/login", request.url));
-  response.cookies.set("admin_session", "", { maxAge: 0, path: "/" });
+  clearSessionCookie(response);
   return response;
 }
