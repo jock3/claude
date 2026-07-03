@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { login, setSessionCookie } from "@/lib/auth/session";
+import { signup, setSessionCookie } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   const { name, pin } = await request.json();
@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const session = await login(name, pin);
+    const session = await signup(name, pin);
     const response = NextResponse.json({
       ok: true,
       user: { id: session.user_id, name: session.name, isAdmin: session.is_admin },
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     setSessionCookie(response, session.token);
     return response;
   } catch (err) {
-    const error = err instanceof Error ? err.message : "INVALID_CREDENTIALS";
-    return NextResponse.json({ ok: false, error }, { status: 401 });
+    const error = err instanceof Error ? err.message : "SIGNUP_FAILED";
+    return NextResponse.json({ ok: false, error }, { status: 400 });
   }
 }

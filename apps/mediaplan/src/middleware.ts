@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { computeAdminToken } from "@/lib/auth/token";
+import { getSessionToken, validateSession, clearSessionCookie } from "@/lib/auth/session";
 
 export async function middleware(request: NextRequest) {
-  const secret = process.env.ADMIN_COOKIE_SECRET;
+  const token = getSessionToken(request);
 
-  if (!secret) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const cookie = request.cookies.get("admin_session")?.value ?? "";
-  const expected = await computeAdminToken(secret);
+  const user = await validateSession(token).catch(() => null);
 
-  if (cookie !== expected) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  if (!user) {
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    clearSessionCookie(response);
+    return response;
   }
 
   return NextResponse.next();
