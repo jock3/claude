@@ -327,12 +327,6 @@ function Sidebar({ activeUser, onSwitch }) {
           </div>
           <span className="s-icon-label">SEO</span>
         </a>
-        <a href="../trackr/" className="s-app-item" title="Track3r">
-          <div className="s-bubble ib-trackr" aria-hidden="true">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          </div>
-          <span className="s-icon-label">Track3r</span>
-        </a>
         <a href="../brus-fx/" className="s-app-item" title="Brus">
           <div className="s-bubble ib-brus" aria-hidden="true">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M12 12h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/></svg>
