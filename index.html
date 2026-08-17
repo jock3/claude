@@ -590,21 +590,41 @@
     function getPinValue() {
       return Array.from(document.querySelectorAll('.pin-input')).map(function(i) { return i.value; }).join('');
     }
-    function handleSubmit() {
+    /* Real auth now: the name+PIN is verified by the hub-login edge function,
+       which returns a Supabase session (see apps/shared/supabase.js, exposed on
+       window.__hub). The old localStorage PIN map is gone — it never verified
+       anything across devices and left the database open. */
+    async function handleSubmit() {
       var name = document.getElementById('name-input').value.trim();
       var pin  = getPinValue();
       if (!name) { showError('Ange ett namn.'); return; }
       if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { showError('Ange en 4-siffrig PIN-kod.'); return; }
-      var users = getUsers();
-      if (users.hasOwnProperty(name)) {
-        if (users[name] === pin) { storSet(ACTIVE_USER_KEY, name); showError(''); render(); }
-        else { showError('Fel PIN-kod.'); }
-      } else {
-        users[name] = pin; storSet(USERS_KEY, users); storSet(ACTIVE_USER_KEY, name);
-        showError(''); render();
+      if (!window.__hub) { showError('Laddar fortfarande — försök igen om en sekund.'); return; }
+
+      var btn = document.getElementById('login-btn');
+      if (btn) btn.disabled = true;
+      showError('');
+      try {
+        await window.__hub.login(name, pin);
+        storSet(ACTIVE_USER_KEY, name);
+        render();
+      } catch (e) {
+        var code = e && e.code;
+        showError(
+          code === 'wrong_pin' ? 'Fel PIN-kod.' :
+          code === 'invalid_pin' ? 'Ange en 4-siffrig PIN-kod.' :
+          code === 'invalid_name' ? 'Ogiltigt namn.' :
+          'Kunde inte logga in. Kontrollera nätet och försök igen.'
+        );
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
-    function logout() { localStorage.removeItem(ACTIVE_USER_KEY); render(); }
+    async function logout() {
+      localStorage.removeItem(ACTIVE_USER_KEY);
+      try { if (window.__hub) await window.__hub.logout(); } catch (e) { /* ignore */ }
+      render();
+    }
     function sanitize(n) { return n.replace(/[\s/\\'"]+/g, '_'); }
     function deleteAccount() {
       var user = getActiveUser(); if (!user) return;
@@ -684,6 +704,13 @@
 
       render();
     });
+  </script>
+
+  <!-- The auth boundary. A module so it can import the Supabase client; runs
+       before DOMContentLoaded, so window.__hub is ready when the form wires up. -->
+  <script type="module">
+    import { hubLogin, hubLogout, currentSession } from './apps/shared/supabase.js';
+    window.__hub = { login: hubLogin, logout: hubLogout, session: currentSession };
   </script>
   <script>
     /* ─── Canvas background: plasma orbs + warped grid + particle net ─── */

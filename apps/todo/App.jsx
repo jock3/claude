@@ -1433,6 +1433,14 @@ export default function TodoLabb() {
       let name = null;
       try { name = JSON.parse(localStorage.getItem('ailabb_active_user')); } catch {}
       if (!name) { window.location.replace('../../'); return; }
+
+      // The database is owner-scoped now: without a real session every query
+      // returns nothing. The hub establishes the session on login; if it's
+      // missing or expired, send the user back there rather than rendering an
+      // empty board that looks like data loss.
+      const session = await db.currentSession();
+      if (!session) { window.location.replace('../../'); return; }
+
       setActiveUser(name);
 
       const cachedId   = localStorage.getItem(SESSION_ID_KEY);

@@ -1,4 +1,5 @@
 import { supabase } from '../shared/supabase.js';
+export { currentSession } from '../shared/supabase.js';
 
 /* ── Profiler ─────────────────────────────────────────────── */
 
