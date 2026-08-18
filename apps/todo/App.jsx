@@ -5,7 +5,7 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Zap, GripVertical, Copy,
   MoreHorizontal, Archive, ArchiveRestore, Flag, CornerDownRight, Palette,
   CalendarDays, Users, Pencil, Inbox, Maximize2, MessageSquare, AlignLeft, ListChecks, Send,
-  ChevronLeft, Rows3, GanttChart
+  ChevronLeft, Rows3, GanttChart, Repeat
 } from 'lucide-react';
 import * as db from './db.js';
 
@@ -121,7 +121,7 @@ const groupTimeline = (items) => {
 const newItem = (name, status = 'todo') => ({
   id: uid(), name, status, priority: null, person: null,
   date: null, start: null, end: null, createdAt: ts(), subitems: [],
-  notes: '', comments: [],
+  notes: '', comments: [], repeat: null,
 });
 
 const emptyBoard = () => ({
@@ -664,6 +664,7 @@ function ItemRow({
                 onCommit={(v) => { if (v) onMutateItem(group.id, item.id, { name: v }); onStopEdit(); }} />
             : <button className={'bd-name-btn' + (item.status === 'done' ? ' done' : '')}
                 onClick={onStartEdit} title={item.name}>{item.name}</button>}
+          {item.repeat && <span className="bd-repeat-badge" title={'Upprepas: ' + (REPEAT_LABEL[item.repeat] || '')}><Repeat size={11} /></span>}
           {!editing && (
             <button className="bd-open-btn" onClick={() => onOpen(group.id, item.id)}
               title="Öppna" aria-label="Öppna objektet">
@@ -1628,6 +1629,15 @@ export default function TodoLabb() {
     const g = b.groups.find(x => x.id === gid);
     const it = g?.items.find(i => i.id === iid);
     if (!it) return null;
+    // Completing a recurring task rolls it forward instead of marking it done —
+    // the same living row reappears on its next date.
+    if (patch.status === 'done' && it.repeat && (it.date || it.start)) {
+      if (it.date)  it.date  = advanceDate(it.date, it.repeat);
+      if (it.start) it.start = advanceDate(it.start, it.repeat);
+      if (it.end)   it.end   = advanceDate(it.end, it.repeat);
+      it.status = 'todo'; it.odKey = null;
+      return { board: b, fired: [`↻ Återkommer ${it.date || it.start}`] };
+    }
     Object.assign(it, patch);
     if (patch.date !== undefined) it.odKey = null;
     if (evType === 'status') return runAutomations(b, [{ type: 'status', groupId: gid, itemId: iid, status: patch.status }]);
@@ -2132,6 +2142,15 @@ function TaskDrawer({ group, item, profiles, activeUser, onClose,
               <PersonCell value={item.person} profiles={profiles} onChange={v => onMutateItem(group.id, item.id, { person: v })} /></div>
             <div className="bd-drawer-prop"><label>Datum</label>
               <DateCell value={item.date} overdue={false} onChange={v => onMutateItem(group.id, item.id, { date: v }, 'date')} /></div>
+            <div className="bd-drawer-prop"><label><Repeat size={11} /> Upprepa</label>
+              <select className="bd-repeat-select" value={item.repeat || ''}
+                onChange={e => onMutateItem(group.id, item.id, { repeat: e.target.value || null })}>
+                <option value="">Aldrig</option>
+                <option value="daily">Dagligen</option>
+                <option value="weekdays">Varje vardag</option>
+                <option value="weekly">Veckovis</option>
+                <option value="monthly">Månadsvis</option>
+              </select></div>
             <div className="bd-drawer-prop wide"><label>Tidslinje</label>
               <TimelineCell start={item.start} end={item.end} color={group.color}
                 onChange={(sv, ev) => onMutateItem(group.id, item.id, { start: sv, end: ev })} /></div>
@@ -2209,6 +2228,16 @@ const MON_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep'
 const MON_LONG  = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
 
 function parseDate(k) { if (!k) return null; const [y, m, d] = String(k).split('-').map(Number); return y ? new Date(y, m - 1, d) : null; }
+function advanceDate(k, repeat) {
+  const d = parseDate(k); if (!d) return k;
+  if (repeat === 'daily') d.setDate(d.getDate() + 1);
+  else if (repeat === 'weekly') d.setDate(d.getDate() + 7);
+  else if (repeat === 'monthly') d.setMonth(d.getMonth() + 1);
+  else if (repeat === 'weekdays') { do { d.setDate(d.getDate() + 1); } while (d.getDay() === 0 || d.getDay() === 6); }
+  else return k;
+  return dkey(d);
+}
+const REPEAT_LABEL = { daily: 'Dagligen', weekdays: 'Varje vardag', weekly: 'Veckovis', monthly: 'Månadsvis' };
 function dkey(d) { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
 function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
 function flattenItems(groups) { const out = []; for (const g of groups) for (const it of g.items || []) out.push({ group: g, item: it }); return out; }
@@ -3287,9 +3316,21 @@ function BoardStyles() {
       .bd-drawer-prop { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
       .bd-drawer-prop.wide { grid-column: 1 / -1; }
       .bd-drawer-prop > label {
+        display: inline-flex; align-items: center; gap: 5px;
         font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
         color: var(--color-text-faint);
       }
+      .bd-repeat-select {
+        width: 100%; height: 30px; padding: 0 10px; border-radius: 8px;
+        border: 1px solid var(--glass-brd); background: var(--glass); color: var(--color-text);
+        font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+      }
+      .bd-repeat-select:focus { outline: none; border-color: var(--color-accent); }
+      .bd-repeat-badge {
+        display: inline-flex; align-items: center; color: var(--color-text-faint);
+        flex-shrink: 0; margin-left: 1px;
+      }
+      .bd-repeat-badge > svg { opacity: 0.7; }
       .bd-drawer-sec { display: flex; flex-direction: column; gap: 10px; }
       .bd-drawer-sec h4 {
         display: inline-flex; align-items: center; gap: 8px; margin: 0;
