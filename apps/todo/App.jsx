@@ -5,9 +5,10 @@ import {
   ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Zap, GripVertical, Copy,
   MoreHorizontal, Archive, ArchiveRestore, Flag, CornerDownRight, Palette,
   CalendarDays, Users, Pencil, Inbox, Maximize2, MessageSquare, AlignLeft, ListChecks, Send,
-  ChevronLeft, Rows3, GanttChart, Repeat
+  ChevronLeft, Rows3, GanttChart, Repeat, Bell, BellOff
 } from 'lucide-react';
 import * as db from './db.js';
+import { pushSupported, pushStatus, enablePush, disablePush } from './push.js';
 
 /* ═══════════════════════════════════════════════════════════
    Konstanter
@@ -936,10 +937,39 @@ function GroupHeader({ group, index, total, onMutateGroup, onMoveGroup, onArchiv
    Verktygsrad
    ═══════════════════════════════════════════════════════════ */
 
+function ReminderBell({ profileId, onToast }) {
+  const [status, setStatus] = useState('loading'); // loading|off|on|denied|unsupported
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { let ok = true; pushStatus().then(s => { if (ok) setStatus(s); }); return () => { ok = false; }; }, []);
+
+  if (status === 'unsupported') return null;
+
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (status === 'on') { await disablePush(); setStatus('off'); onToast?.('Påminnelser avstängda'); }
+      else { await enablePush(profileId); setStatus('on'); onToast?.('Påminnelser på — du får en notis när något förfaller'); }
+    } catch (e) {
+      onToast?.(e.message || 'Kunde inte ändra påminnelser');
+      setStatus(await pushStatus());
+    } finally { setBusy(false); }
+  };
+
+  const on = status === 'on';
+  return (
+    <button className={'bd-btn ghost' + (on ? ' on' : '')} onClick={toggle} disabled={busy || status === 'loading'}
+      title={on ? 'Påminnelser på' : 'Slå på påminnelser för förfallande uppgifter'}>
+      {on ? <Bell size={14} /> : <BellOff size={14} />} <span className="bd-bell-label">Påminnelser</span>
+    </button>
+  );
+}
+
 function Toolbar({
   onNewItem, onNewGroup, search, setSearch, profiles,
   filters, setFilters, sort, setSort, hiddenCols, setHiddenCols, onOpenAutomations,
-  automationsOn, view, setView,
+  automationsOn, view, setView, profileId, onToast,
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
@@ -1108,6 +1138,7 @@ function Toolbar({
 
       <span className="bd-tool-flex" />
 
+      <ReminderBell profileId={profileId} onToast={onToast} />
       <button className={'bd-btn auto' + (automationsOn > 0 ? ' on' : '')} onClick={onOpenAutomations}>
         <Zap size={14} strokeWidth={2.25} /> Automatisera
         {automationsOn > 0 && <span className="bd-chip zap">{automationsOn}</span>}
@@ -1952,6 +1983,7 @@ export default function TodoLabb() {
           onOpenAutomations={() => setAutoOpen(true)}
           automationsOn={automationsOn}
           view={view} setView={setView}
+          profileId={profileId} onToast={showToast}
         />
 
         {board.groups.length === 0 ? (
