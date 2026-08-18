@@ -4,7 +4,7 @@ import {
   Plus, X, Check, Trash2, ChevronDown, ChevronRight, LogOut, Search, Filter,
   ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Zap, GripVertical, Copy,
   MoreHorizontal, Archive, ArchiveRestore, Flag, CornerDownRight, Palette,
-  CalendarDays, Users, Pencil, Inbox
+  CalendarDays, Users, Pencil, Inbox, Maximize2, MessageSquare, AlignLeft, ListChecks, Send
 } from 'lucide-react';
 import * as db from './db.js';
 
@@ -120,6 +120,7 @@ const groupTimeline = (items) => {
 const newItem = (name, status = 'todo') => ({
   id: uid(), name, status, priority: null, person: null,
   date: null, start: null, end: null, createdAt: ts(), subitems: [],
+  notes: '', comments: [],
 });
 
 const emptyBoard = () => ({
@@ -615,7 +616,7 @@ function ItemRow({
   item, group, groups, profiles, visibleCols, sortActive,
   selected, onToggleSelect, expanded, onToggleExpand,
   editing, onStartEdit, onStopEdit,
-  onMutateItem, onMutateSub, onAddSub, onDeleteSub, onDeleteItem, onDuplicateItem, onMoveItem,
+  onMutateItem, onMutateSub, onAddSub, onDeleteSub, onDeleteItem, onDuplicateItem, onMoveItem, onOpen,
   dragProps, dropIndicator,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -662,6 +663,13 @@ function ItemRow({
                 onCommit={(v) => { if (v) onMutateItem(group.id, item.id, { name: v }); onStopEdit(); }} />
             : <button className={'bd-name-btn' + (item.status === 'done' ? ' done' : '')}
                 onClick={onStartEdit} title={item.name}>{item.name}</button>}
+          {!editing && (
+            <button className="bd-open-btn" onClick={() => onOpen(group.id, item.id)}
+              title="Öppna" aria-label="Öppna objektet">
+              <Maximize2 size={13} />
+              {(item.comments?.length > 0 || (item.notes && item.notes.trim())) && <span className="bd-open-dot" />}
+            </button>
+          )}
         </div>
 
         {visibleCols.map(col => (
@@ -699,6 +707,9 @@ function ItemRow({
           {menuOpen && (
             <Popover anchorRef={menuRef} onClose={() => { setMenuOpen(false); setMoveOpen(false); }} width={210} align="right">
               <div className="bd-pop-list">
+                <button className="bd-pop-item" onClick={() => { onOpen(group.id, item.id); setMenuOpen(false); }}>
+                  <Maximize2 size={13} /> Öppna
+                </button>
                 <button className="bd-pop-item" onClick={() => { onToggleExpand(true); setMenuOpen(false); }}>
                   <CornerDownRight size={13} /> Lägg till underobjekt
                 </button>
@@ -1302,6 +1313,7 @@ const AUTO_ORDER = ['date_on_done', 'move_on_status', 'collapse_done'];
 export default function TodoLabb() {
   const [activeUser, setActiveUser] = useState(null);
   const [profileId, setProfileId]   = useState(null);
+  const [drawerRef, setDrawerRef]   = useState(null);
   const [profiles, setProfiles]     = useState([]);
   const [board, setBoard]           = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -1680,6 +1692,23 @@ export default function TodoLabb() {
     return b;
   });
 
+  /* ── Detaljvy ── */
+  const openDrawer = useCallback((gid, iid) => setDrawerRef({ gid, iid }), []);
+  const closeDrawer = useCallback(() => setDrawerRef(null), []);
+  const addComment = (gid, iid, text) => apply(b => {
+    const it = b.groups.find(x => x.id === gid)?.items.find(i => i.id === iid);
+    if (!it) return null;
+    it.comments = it.comments || [];
+    it.comments.push({ id: uid(), author: activeUser || 'Jag', text, at: ts() });
+    return b;
+  });
+  const deleteComment = (gid, iid, cid) => apply(b => {
+    const it = b.groups.find(x => x.id === gid)?.items.find(i => i.id === iid);
+    if (!it) return null;
+    it.comments = (it.comments || []).filter(c => c.id !== cid);
+    return b;
+  });
+
   /* ── Markering & bulk ── */
   const toggleSelect = (iid) => setSelection(s => {
     const n = new Set(s); n.has(iid) ? n.delete(iid) : n.add(iid); return n;
@@ -1947,7 +1976,7 @@ export default function TodoLabb() {
                             onMutateItem={mutateItem} onMutateSub={mutateSub}
                             onAddSub={addSub} onDeleteSub={deleteSub}
                             onDeleteItem={deleteItem} onDuplicateItem={duplicateItem}
-                            onMoveItem={moveItemTo}
+                            onMoveItem={moveItemTo} onOpen={openDrawer}
                             dragProps={dragProps(group.id, item.id, realIndex)}
                             dropIndicator={dt === 'end' ? null : dt}
                           />
@@ -2001,8 +2030,153 @@ export default function TodoLabb() {
           onClose={() => setArchiveOpen(false)}
         />
       )}
+      {(() => {
+        if (!drawerRef) return null;
+        const g = board.groups.find(x => x.id === drawerRef.gid);
+        const it = g?.items.find(i => i.id === drawerRef.iid);
+        if (!it) return null;
+        return (
+          <TaskDrawer
+            group={g} item={it} profiles={profiles} activeUser={activeUser}
+            onClose={closeDrawer}
+            onMutateItem={mutateItem} onMutateSub={mutateSub}
+            onAddSub={addSub} onDeleteSub={deleteSub}
+            onAddComment={addComment} onDeleteComment={deleteComment}
+            onDeleteItem={(gid, iid) => { deleteItem(gid, iid); closeDrawer(); }}
+          />
+        );
+      })()}
       <Toast toast={toast} onDismiss={dismissToast} />
       <BoardStyles />
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   Detaljvy (slide-over)
+   ═══════════════════════════════════════════════════════════ */
+
+function timeAgo(iso) {
+  const d = new Date(iso).getTime();
+  if (!d) return '';
+  const s = Math.floor((Date.now() - d) / 1000);
+  if (s < 60) return 'nyss';
+  const m = Math.floor(s / 60); if (m < 60) return `${m} min sedan`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h} tim sedan`;
+  const dd = Math.floor(h / 24); if (dd < 7) return `${dd} d sedan`;
+  return new Date(iso).toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+}
+
+function TaskDrawer({ group, item, profiles, activeUser, onClose,
+  onMutateItem, onMutateSub, onAddSub, onDeleteSub, onAddComment, onDeleteComment, onDeleteItem }) {
+  const [notes, setNotes]     = useState(item.notes || '');
+  const [comment, setComment] = useState('');
+  const [subName, setSubName] = useState('');
+
+  useEffect(() => { setNotes(item.notes || ''); }, [item.id]);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const commitNotes = () => { if (notes !== (item.notes || '')) onMutateItem(group.id, item.id, { notes }); };
+  const close = () => { commitNotes(); onClose(); };
+
+  const subs = item.subitems || [];
+  const doneSubs = subs.filter(s => s.status === 'done').length;
+  const comments = item.comments || [];
+
+  const submitComment = () => { const t = comment.trim(); if (!t) return; onAddComment(group.id, item.id, t); setComment(''); };
+  const submitSub = () => { const t = subName.trim(); if (!t) return; onAddSub(group.id, item.id, t); setSubName(''); };
+
+  return (
+    <div className="bd-drawer-scrim" onClick={close}>
+      <aside className="bd-drawer" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true"
+        style={{ '--gcolor': group.color }}>
+        <header className="bd-drawer-head">
+          <div className="bd-drawer-eyebrow"><span className="bd-color-dot" style={{ background: group.color }} /> {group.title}</div>
+          <button className="bd-icon-btn" onClick={close} aria-label="Stäng"><X size={18} /></button>
+        </header>
+
+        <div className="bd-drawer-body">
+          <input className="bd-drawer-title" value={item.name}
+            onChange={e => onMutateItem(group.id, item.id, { name: e.target.value })}
+            placeholder="Namnlöst objekt" />
+
+          <div className="bd-drawer-props">
+            <div className="bd-drawer-prop"><label>Status</label>
+              <StatusCell value={item.status} onChange={v => onMutateItem(group.id, item.id, { status: v }, 'status')} /></div>
+            <div className="bd-drawer-prop"><label>Prioritet</label>
+              <PriorityCell value={item.priority} onChange={v => onMutateItem(group.id, item.id, { priority: v })} /></div>
+            <div className="bd-drawer-prop"><label>Person</label>
+              <PersonCell value={item.person} profiles={profiles} onChange={v => onMutateItem(group.id, item.id, { person: v })} /></div>
+            <div className="bd-drawer-prop"><label>Datum</label>
+              <DateCell value={item.date} overdue={false} onChange={v => onMutateItem(group.id, item.id, { date: v }, 'date')} /></div>
+            <div className="bd-drawer-prop wide"><label>Tidslinje</label>
+              <TimelineCell start={item.start} end={item.end} color={group.color}
+                onChange={(sv, ev) => onMutateItem(group.id, item.id, { start: sv, end: ev })} /></div>
+          </div>
+
+          <section className="bd-drawer-sec">
+            <h4><AlignLeft size={14} /> Anteckningar</h4>
+            <textarea className="bd-drawer-notes" value={notes}
+              onChange={e => setNotes(e.target.value)} onBlur={commitNotes}
+              placeholder="Skriv beskrivning, länkar, kontext…" rows={4} />
+          </section>
+
+          <section className="bd-drawer-sec">
+            <h4><ListChecks size={14} /> Checklista {subs.length > 0 && <span className="bd-drawer-count">{doneSubs}/{subs.length}</span>}</h4>
+            <div className="bd-drawer-checks">
+              {subs.map(sub => (
+                <div key={sub.id} className="bd-drawer-check">
+                  <button className={'bd-dcheck' + (sub.status === 'done' ? ' checked' : '')}
+                    onClick={() => onMutateSub(group.id, item.id, sub.id, { status: sub.status === 'done' ? 'todo' : 'done' })}
+                    aria-label="Växla klar">{sub.status === 'done' && <Check size={11} strokeWidth={3} />}</button>
+                  <span className={'bd-dcheck-name' + (sub.status === 'done' ? ' done' : '')}>{sub.name}</span>
+                  <button className="bd-icon-btn sm" onClick={() => onDeleteSub(group.id, item.id, sub.id)} aria-label="Ta bort"><X size={13} /></button>
+                </div>
+              ))}
+              <div className="bd-drawer-addrow">
+                <Plus size={14} />
+                <input value={subName} onChange={e => setSubName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') submitSub(); }} placeholder="Lägg till punkt" />
+              </div>
+            </div>
+          </section>
+
+          <section className="bd-drawer-sec">
+            <h4><MessageSquare size={14} /> Kommentarer {comments.length > 0 && <span className="bd-drawer-count">{comments.length}</span>}</h4>
+            <div className="bd-drawer-comments">
+              {comments.map(c => (
+                <div key={c.id} className="bd-drawer-comment">
+                  <Avatar name={c.author} size={28} />
+                  <div className="bd-drawer-comment-body">
+                    <div className="bd-drawer-comment-meta">
+                      <strong>{c.author}</strong><span>{timeAgo(c.at)}</span>
+                      <button className="bd-drawer-comment-del" onClick={() => onDeleteComment(group.id, item.id, c.id)} aria-label="Ta bort kommentar"><X size={12} /></button>
+                    </div>
+                    <p>{c.text}</p>
+                  </div>
+                </div>
+              ))}
+              {comments.length === 0 && <p className="bd-drawer-empty">Inga kommentarer än.</p>}
+            </div>
+            <div className="bd-drawer-addcomment">
+              <Avatar name={activeUser} size={28} />
+              <textarea value={comment} onChange={e => setComment(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitComment(); }}
+                placeholder="Skriv en kommentar…  (⌘↵ skickar)" rows={1} />
+              <button className="bd-btn primary sm" onClick={submitComment} disabled={!comment.trim()} aria-label="Skicka"><Send size={14} /></button>
+            </div>
+          </section>
+
+          <div className="bd-drawer-foot">
+            <button className="bd-btn ghost dim" onClick={() => onDeleteItem(group.id, item.id)}><Trash2 size={13} /> Ta bort objekt</button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }
@@ -2898,6 +3072,139 @@ function BoardStyles() {
       [data-theme="light"] .bd-pop { box-shadow: 0 14px 40px rgba(0,0,0,0.14), 0 3px 10px rgba(0,0,0,0.07); }
       [data-theme="light"] .bd-group:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.07); }
 
+
+      /* ── Detaljvy (slide-over) ── */
+      .bd-open-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 24px; height: 24px; border: 0; border-radius: 7px; margin-left: 2px;
+        background: transparent; color: var(--color-text-faint); cursor: pointer;
+        opacity: 0; flex-shrink: 0; position: relative;
+        transition: opacity 140ms, background 140ms, color 140ms;
+      }
+      .bd-row:hover .bd-open-btn { opacity: 1; }
+      .bd-open-btn:hover { background: var(--color-surface-3); color: var(--color-accent); }
+      .bd-open-btn:focus-visible { opacity: 1; outline: 2px solid var(--color-accent); outline-offset: 1px; }
+      .bd-open-dot { position: absolute; top: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--color-accent); }
+
+      .bd-drawer-scrim {
+        position: fixed; inset: 0; z-index: 450; display: flex; justify-content: flex-end;
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        animation: bd-fade 180ms var(--ease-out) both;
+      }
+      .bd-drawer {
+        width: 480px; max-width: 100%; height: 100%; overflow: hidden;
+        display: flex; flex-direction: column;
+        background: var(--glass-solid);
+        backdrop-filter: blur(34px) saturate(180%); -webkit-backdrop-filter: blur(34px) saturate(180%);
+        border-left: 1px solid var(--glass-brd);
+        box-shadow: -30px 0 80px -20px rgba(0,0,0,0.6), var(--glass-hi);
+        animation: bd-drawer-in 320ms var(--ease-spring) both;
+      }
+      @keyframes bd-drawer-in { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+      .bd-drawer-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 16px 18px; border-bottom: 1px solid var(--row-line); flex-shrink: 0;
+      }
+      .bd-drawer-eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+        color: var(--color-text-faint);
+      }
+      .bd-drawer-body {
+        flex: 1; overflow-y: auto; padding: 18px 18px 28px;
+        display: flex; flex-direction: column; gap: 20px;
+      }
+      .bd-drawer-title {
+        border: 0; background: transparent; color: var(--color-text);
+        font-family: var(--font-display); font-size: 24px; font-weight: 900; letter-spacing: -0.03em;
+        padding: 2px 0; width: 100%;
+      }
+      .bd-drawer-title:focus { outline: none; }
+      .bd-drawer-props {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px 14px;
+      }
+      .bd-drawer-prop { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+      .bd-drawer-prop.wide { grid-column: 1 / -1; }
+      .bd-drawer-prop > label {
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+        color: var(--color-text-faint);
+      }
+      .bd-drawer-sec { display: flex; flex-direction: column; gap: 10px; }
+      .bd-drawer-sec h4 {
+        display: inline-flex; align-items: center; gap: 8px; margin: 0;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--color-text-muted);
+      }
+      .bd-drawer-sec h4 > svg { color: var(--color-text-faint); }
+      .bd-drawer-count {
+        font-size: 10.5px; font-weight: 800; letter-spacing: 0; text-transform: none;
+        color: var(--color-text-muted); background: var(--color-surface-3);
+        border-radius: 999px; padding: 1px 7px;
+      }
+      .bd-drawer-notes {
+        width: 100%; resize: vertical; min-height: 84px;
+        border: 1px solid var(--glass-brd); border-radius: 14px;
+        background: var(--glass); color: var(--color-text);
+        font-family: inherit; font-size: 13.5px; line-height: 1.6; padding: 12px 13px;
+      }
+      .bd-drawer-notes:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(255,88,45,0.14); }
+      .bd-drawer-checks { display: flex; flex-direction: column; gap: 2px; }
+      .bd-drawer-check {
+        display: flex; align-items: center; gap: 10px; padding: 6px 4px;
+        border-radius: 8px; transition: background 130ms;
+      }
+      .bd-drawer-check:hover { background: var(--color-surface-2); }
+      .bd-dcheck {
+        width: 18px; height: 18px; flex-shrink: 0; border-radius: 6px;
+        border: 1.5px solid var(--color-border-strong); background: transparent;
+        display: inline-grid; place-content: center; color: #fff; cursor: pointer;
+        transition: background 130ms, border-color 130ms, transform 130ms var(--ease-spring);
+      }
+      .bd-dcheck:hover { border-color: var(--color-accent); }
+      .bd-dcheck.checked { background: var(--color-success); border-color: var(--color-success); }
+      .bd-dcheck-name { flex: 1; min-width: 0; font-size: 13.5px; color: var(--color-text); }
+      .bd-dcheck-name.done { color: var(--color-text-muted); text-decoration: line-through; text-decoration-color: rgba(59,165,93,0.6); }
+      .bd-drawer-check .bd-icon-btn { opacity: 0; }
+      .bd-drawer-check:hover .bd-icon-btn { opacity: 0.7; }
+      .bd-drawer-addrow {
+        display: flex; align-items: center; gap: 8px; padding: 6px 4px; color: var(--color-text-faint);
+      }
+      .bd-drawer-addrow input {
+        flex: 1; border: 0; background: transparent; color: var(--color-text);
+        font-family: inherit; font-size: 13.5px; padding: 4px 0;
+      }
+      .bd-drawer-addrow input:focus { outline: none; }
+      .bd-drawer-addrow input::placeholder { color: var(--color-text-faint); }
+      .bd-drawer-comments { display: flex; flex-direction: column; gap: 14px; }
+      .bd-drawer-empty { margin: 0; font-size: 13px; color: var(--color-text-faint); font-style: italic; }
+      .bd-drawer-comment { display: flex; gap: 10px; }
+      .bd-drawer-comment-body { flex: 1; min-width: 0; }
+      .bd-drawer-comment-meta { display: flex; align-items: center; gap: 8px; }
+      .bd-drawer-comment-meta strong { font-size: 12.5px; font-weight: 700; color: var(--color-text); }
+      .bd-drawer-comment-meta span { font-size: 11px; color: var(--color-text-faint); }
+      .bd-drawer-comment-del {
+        margin-left: auto; border: 0; background: transparent; color: var(--color-text-faint);
+        cursor: pointer; opacity: 0; padding: 2px; border-radius: 5px; display: inline-flex;
+      }
+      .bd-drawer-comment:hover .bd-drawer-comment-del { opacity: 0.7; }
+      .bd-drawer-comment-del:hover { color: var(--color-accent); }
+      .bd-drawer-comment-body p { margin: 3px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--color-text); white-space: pre-wrap; word-break: break-word; }
+      .bd-drawer-addcomment {
+        display: flex; align-items: flex-start; gap: 10px; margin-top: 4px;
+        padding-top: 14px; border-top: 1px solid var(--row-line);
+      }
+      .bd-drawer-addcomment textarea {
+        flex: 1; resize: none; min-height: 40px; max-height: 140px;
+        border: 1px solid var(--glass-brd); border-radius: 12px;
+        background: var(--glass); color: var(--color-text);
+        font-family: inherit; font-size: 13.5px; line-height: 1.5; padding: 10px 12px;
+      }
+      .bd-drawer-addcomment textarea:focus { outline: none; border-color: var(--color-accent); }
+      .bd-btn.primary.sm { padding: 9px 12px; border-radius: 11px; flex-shrink: 0; }
+      .bd-drawer-foot { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--row-line); }
+      .bd-drawer::-webkit-scrollbar, .bd-drawer-body::-webkit-scrollbar { width: 9px; }
+      .bd-drawer-body::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: 999px; }
+
       /* ── Responsivt ── */
       @media (max-width: 900px) {
         .bd-main { margin-left: 108px; padding: 26px 18px 140px; }
@@ -2905,6 +3212,8 @@ function BoardStyles() {
       }
       @media (max-width: 640px) {
         .bd-main { margin-left: 0; padding: 20px 14px 170px; }
+        .bd-drawer { width: 100%; }
+        .bd-drawer-props { grid-template-columns: 1fr; }
         .tl-sidebar {
           left: 50%; transform: translateX(-50%); top: auto; bottom: 12px;
           width: auto; max-width: calc(100vw - 24px);
