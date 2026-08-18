@@ -4,7 +4,8 @@ import {
   Plus, X, Check, Trash2, ChevronDown, ChevronRight, LogOut, Search, Filter,
   ArrowUpDown, ArrowUp, ArrowDown, EyeOff, Zap, GripVertical, Copy,
   MoreHorizontal, Archive, ArchiveRestore, Flag, CornerDownRight, Palette,
-  CalendarDays, Users, Pencil, Inbox, Maximize2, MessageSquare, AlignLeft, ListChecks, Send
+  CalendarDays, Users, Pencil, Inbox, Maximize2, MessageSquare, AlignLeft, ListChecks, Send,
+  ChevronLeft, Rows3, GanttChart
 } from 'lucide-react';
 import * as db from './db.js';
 
@@ -937,7 +938,7 @@ function GroupHeader({ group, index, total, onMutateGroup, onMoveGroup, onArchiv
 function Toolbar({
   onNewItem, onNewGroup, search, setSearch, profiles,
   filters, setFilters, sort, setSort, hiddenCols, setHiddenCols, onOpenAutomations,
-  automationsOn,
+  automationsOn, view, setView,
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [personOpen, setPersonOpen] = useState(false);
@@ -961,6 +962,17 @@ function Toolbar({
     <div className="bd-toolbar" role="toolbar" aria-label="Tavlans verktyg">
       <button className="bd-btn primary" onClick={onNewItem}><Plus size={15} strokeWidth={2.5} /> Nytt objekt</button>
       <button className="bd-btn ghost" onClick={onNewGroup}><Plus size={14} /> Grupp</button>
+
+      <div className="bd-tool-sep" />
+
+      <div className="bd-viewswitch" role="tablist" aria-label="Vy">
+        {[['table', Rows3, 'Tabell'], ['timeline', GanttChart, 'Tidslinje'], ['calendar', CalendarDays, 'Kalender']].map(([v, Icon, label]) => (
+          <button key={v} role="tab" aria-selected={view === v}
+            className={'bd-viewbtn' + (view === v ? ' on' : '')} onClick={() => setView(v)}>
+            <Icon size={14} /> <span>{label}</span>
+          </button>
+        ))}
+      </div>
 
       <div className="bd-tool-sep" />
 
@@ -1314,6 +1326,7 @@ export default function TodoLabb() {
   const [activeUser, setActiveUser] = useState(null);
   const [profileId, setProfileId]   = useState(null);
   const [drawerRef, setDrawerRef]   = useState(null);
+  const [view, setView]             = useState('table');
   const [profiles, setProfiles]     = useState([]);
   const [board, setBoard]           = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -1928,10 +1941,15 @@ export default function TodoLabb() {
           setHiddenCols={(fn) => apply(b => { b.hiddenCols = typeof fn === 'function' ? fn(b.hiddenCols) : fn; return b; })}
           onOpenAutomations={() => setAutoOpen(true)}
           automationsOn={automationsOn}
+          view={view} setView={setView}
         />
 
         {board.groups.length === 0 ? (
           <EmptyState onCreate={addGroup} />
+        ) : view === 'timeline' ? (
+          <TimelineView groups={board.groups} onOpen={openDrawer} />
+        ) : view === 'calendar' ? (
+          <CalendarView groups={board.groups} onOpen={openDrawer} />
         ) : (
           <div className="bd-board">
             {board.groups.map((group, gi) => {
@@ -2177,6 +2195,149 @@ function TaskDrawer({ group, item, profiles, activeUser, onClose,
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   Vyer: Tidslinje + Kalender
+   ═══════════════════════════════════════════════════════════ */
+
+const WEEKDAYS = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+const MON_SHORT = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const MON_LONG  = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
+
+function parseDate(k) { if (!k) return null; const [y, m, d] = String(k).split('-').map(Number); return y ? new Date(y, m - 1, d) : null; }
+function dkey(d) { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; }
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+function flattenItems(groups) { const out = []; for (const g of groups) for (const it of g.items || []) out.push({ group: g, item: it }); return out; }
+
+function CalendarView({ groups, onOpen }) {
+  const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d; });
+  const byDay = useMemo(() => {
+    const m = new Map();
+    for (const { group, item } of flattenItems(groups)) {
+      if (!item.date) continue;
+      if (!m.has(item.date)) m.set(item.date, []);
+      m.get(item.date).push({ group, item });
+    }
+    return m;
+  }, [groups]);
+
+  const y = month.getFullYear(), mo = month.getMonth();
+  const startOffset = (new Date(y, mo, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(y, mo + 1, 0).getDate();
+  const todayK = dkey(new Date());
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(y, mo, d));
+  while (cells.length % 7) cells.push(null);
+
+  return (
+    <div className="bd-cal">
+      <div className="bd-cal-head">
+        <button className="bd-icon-btn" onClick={() => setMonth(new Date(y, mo - 1, 1))} aria-label="Föregående månad"><ChevronLeft size={18} /></button>
+        <h3>{MON_LONG[mo]} {y}</h3>
+        <button className="bd-icon-btn" onClick={() => setMonth(new Date(y, mo + 1, 1))} aria-label="Nästa månad"><ChevronRight size={18} /></button>
+        <span className="bd-tool-flex" />
+        <button className="bd-btn ghost sm" onClick={() => { const t = new Date(); t.setDate(1); t.setHours(0, 0, 0, 0); setMonth(t); }}>Idag</button>
+      </div>
+      <div className="bd-cal-grid">
+        {WEEKDAYS.map(d => <div key={d} className="bd-cal-wd">{d}</div>)}
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} className="bd-cal-cell empty" />;
+          const k = dkey(d), items = byDay.get(k) || [];
+          return (
+            <div key={i} className={'bd-cal-cell' + (k === todayK ? ' today' : '')}>
+              <span className="bd-cal-daynum">{d.getDate()}</span>
+              <div className="bd-cal-items">
+                {items.slice(0, 4).map(({ group, item }) => (
+                  <button key={item.id} className={'bd-cal-chip' + (item.status === 'done' ? ' done' : '')}
+                    onClick={() => onOpen(group.id, item.id)} title={item.name}>
+                    <span className="bd-cal-dot" style={{ background: group.color }} /><span className="bd-cal-chip-name">{item.name}</span>
+                  </button>
+                ))}
+                {items.length > 4 && <span className="bd-cal-more">+{items.length - 4} till</span>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const TL_DAYW = 34, TL_NAMEW = 210;
+
+function TimelineView({ groups, onOpen }) {
+  const flat = useMemo(() => flattenItems(groups).filter(({ item }) => item.start), [groups]);
+  const range = useMemo(() => {
+    if (!flat.length) { const t = new Date(); t.setHours(0, 0, 0, 0); return { a: new Date(t.getFullYear(), t.getMonth(), 1), b: new Date(t.getFullYear(), t.getMonth() + 1, 0) }; }
+    let min = null, max = null;
+    for (const { item } of flat) {
+      const s = parseDate(item.start), e = parseDate(item.end) || s;
+      if (s && (!min || s < min)) min = s;
+      if (e && (!max || e > max)) max = e;
+    }
+    min = new Date(min); min.setDate(min.getDate() - 2);
+    max = new Date(max); max.setDate(max.getDate() + 2);
+    return { a: min, b: max };
+  }, [flat]);
+
+  if (!flat.length) return <div className="bd-tl-empty"><GanttChart size={30} /><p>Inga objekt med tidslinje än. Sätt en start- och slutperiod på ett objekt i tabellvyn, så ritas det här.</p></div>;
+
+  const total = Math.max(1, daysBetween(range.a, range.b) + 1);
+  const days = []; for (let i = 0; i < total; i++) { const d = new Date(range.a); d.setDate(d.getDate() + i); days.push(d); }
+  const todayK = dkey(new Date());
+  const todayOff = daysBetween(range.a, new Date(new Date().setHours(0, 0, 0, 0)));
+
+  return (
+    <div className="bd-tl">
+      <div className="bd-tl-scroll">
+        <div className="bd-tl-inner" style={{ width: TL_NAMEW + total * TL_DAYW + 'px' }}>
+          <div className="bd-tl-header">
+            <div className="bd-tl-corner" style={{ width: TL_NAMEW + 'px' }} />
+            <div className="bd-tl-days">
+              {days.map((d, i) => (
+                <div key={i} className={'bd-tl-day' + ([0, 6].includes(d.getDay()) ? ' we' : '') + (dkey(d) === todayK ? ' today' : '')} style={{ width: TL_DAYW + 'px' }}>
+                  {(d.getDate() === 1 || i === 0) && <span className="bd-tl-mon">{MON_SHORT[d.getMonth()]}</span>}
+                  <span className="bd-tl-dnum">{d.getDate()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {todayOff >= 0 && todayOff < total && (
+            <div className="bd-tl-nowline" style={{ left: TL_NAMEW + todayOff * TL_DAYW + TL_DAYW / 2 + 'px' }} />
+          )}
+          {groups.map(g => {
+            const its = (g.items || []).filter(it => it.start);
+            if (!its.length) return null;
+            return (
+              <div key={g.id} className="bd-tl-group">
+                <div className="bd-tl-glabel" style={{ color: g.color }}><span className="bd-color-dot" style={{ background: g.color }} />{g.title}</div>
+                {its.map(it => {
+                  const sd = parseDate(it.start), ed = parseDate(it.end) || sd;
+                  const off = daysBetween(range.a, sd), span = Math.max(1, daysBetween(sd, ed) + 1);
+                  return (
+                    <div key={it.id} className="bd-tl-row">
+                      <div className="bd-tl-name" style={{ width: TL_NAMEW + 'px' }} title={it.name}>{it.name}</div>
+                      <div className="bd-tl-track" style={{ width: total * TL_DAYW + 'px' }}>
+                        <button className={'bd-tl-bar' + (it.status === 'done' ? ' done' : '')}
+                          style={{ left: off * TL_DAYW + 'px', width: span * TL_DAYW - 5 + 'px', background: g.color }}
+                          onClick={() => onOpen(g.id, it.id)}
+                          title={`${it.name} · ${it.start}${it.end && it.end !== it.start ? ' – ' + it.end : ''}`}>
+                          <span>{it.name}</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -3204,6 +3365,97 @@ function BoardStyles() {
       .bd-drawer-foot { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--row-line); }
       .bd-drawer::-webkit-scrollbar, .bd-drawer-body::-webkit-scrollbar { width: 9px; }
       .bd-drawer-body::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: 999px; }
+
+
+      /* ── Vyväxlare ── */
+      .bd-viewswitch { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 12px; background: var(--glass); border: 1px solid var(--glass-brd); }
+      .bd-viewbtn {
+        display: inline-flex; align-items: center; gap: 6px;
+        border: 0; border-radius: 9px; padding: 6px 11px; cursor: pointer;
+        background: transparent; color: var(--color-text-muted);
+        font-family: inherit; font-size: 12.5px; font-weight: 700;
+        transition: background 150ms, color 150ms;
+      }
+      .bd-viewbtn:hover { color: var(--color-text); }
+      .bd-viewbtn.on { background: var(--grad-accent); color: #fff; box-shadow: 0 2px 8px rgba(255,88,45,0.3); }
+      @media (max-width: 760px) { .bd-viewbtn span { display: none; } }
+
+      /* ── Kalender ── */
+      .bd-cal {
+        background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-brd); border-radius: var(--r-card);
+        box-shadow: var(--shadow-soft), var(--glass-hi); padding: 16px; overflow: hidden;
+        animation: bd-rise 420ms var(--ease-out) both;
+      }
+      .bd-cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+      .bd-cal-head h3 { margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 900; letter-spacing: -0.03em; min-width: 190px; }
+      .bd-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+      .bd-cal-wd { text-align: center; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-text-faint); padding: 2px 0 6px; }
+      .bd-cal-cell {
+        min-height: 96px; border-radius: 12px; padding: 7px 8px;
+        background: var(--glass); border: 1px solid var(--row-line);
+        display: flex; flex-direction: column; gap: 5px; overflow: hidden;
+      }
+      .bd-cal-cell.empty { background: transparent; border-color: transparent; }
+      .bd-cal-cell.today { border-color: color-mix(in srgb, var(--color-accent) 55%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 30%, transparent); }
+      .bd-cal-daynum { font-size: 12.5px; font-weight: 800; color: var(--color-text-muted); }
+      .bd-cal-cell.today .bd-cal-daynum { color: var(--color-accent); }
+      .bd-cal-items { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+      .bd-cal-chip {
+        display: flex; align-items: center; gap: 5px; width: 100%;
+        border: 0; border-radius: 6px; padding: 3px 6px; cursor: pointer;
+        background: var(--color-surface-2); color: var(--color-text);
+        font-family: inherit; font-size: 11.5px; font-weight: 600; text-align: left;
+        transition: background 130ms, transform 130ms;
+      }
+      .bd-cal-chip:hover { background: var(--color-surface-3); transform: translateX(1px); }
+      .bd-cal-chip.done .bd-cal-chip-name { text-decoration: line-through; color: var(--color-text-muted); }
+      .bd-cal-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+      .bd-cal-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+      .bd-cal-more { font-size: 10.5px; font-weight: 700; color: var(--color-text-faint); padding-left: 6px; }
+
+      /* ── Tidslinje (Gantt) ── */
+      .bd-tl {
+        background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-brd); border-radius: var(--r-card);
+        box-shadow: var(--shadow-soft), var(--glass-hi); overflow: hidden;
+        animation: bd-rise 420ms var(--ease-out) both;
+      }
+      .bd-tl-scroll { overflow-x: auto; }
+      .bd-tl-inner { position: relative; padding-bottom: 12px; }
+      .bd-tl-header { display: flex; position: sticky; top: 0; z-index: 3; }
+      .bd-tl-corner { flex-shrink: 0; border-bottom: 1px solid var(--row-line); background: var(--glass-solid); }
+      .bd-tl-days { display: flex; border-bottom: 1px solid var(--row-line); background: var(--glass-solid); }
+      .bd-tl-day { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 8px 0 6px; position: relative; }
+      .bd-tl-day.we { background: rgba(0,0,0,0.10); }
+      .bd-tl-day.today { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
+      .bd-tl-mon { position: absolute; top: 1px; left: 3px; font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-accent); }
+      .bd-tl-dnum { font-size: 11.5px; font-weight: 700; color: var(--color-text-muted); }
+      .bd-tl-day.today .bd-tl-dnum { color: var(--color-accent); }
+      .bd-tl-nowline { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--color-accent); opacity: 0.55; z-index: 2; pointer-events: none; }
+      .bd-tl-group { position: relative; }
+      .bd-tl-glabel { display: flex; align-items: center; gap: 7px; padding: 10px 14px 5px; font-family: var(--font-display); font-size: 13px; font-weight: 900; letter-spacing: -0.01em; position: sticky; left: 0; width: max-content; }
+      .bd-tl-row { display: flex; align-items: center; min-height: 34px; }
+      .bd-tl-name {
+        flex-shrink: 0; padding: 0 12px; font-size: 12.5px; font-weight: 500; color: var(--color-text);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        position: sticky; left: 0; z-index: 1; background: var(--glass-solid);
+      }
+      .bd-tl-track { flex-shrink: 0; position: relative; height: 34px; }
+      .bd-tl-bar {
+        position: absolute; top: 5px; height: 24px; border: 0; border-radius: 999px;
+        color: #fff; cursor: pointer; padding: 0 10px; overflow: hidden;
+        display: flex; align-items: center;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.28);
+        transition: filter 140ms, transform 140ms;
+      }
+      .bd-tl-bar > span { font-size: 11px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.3); overflow: hidden; text-overflow: ellipsis; }
+      .bd-tl-bar:hover { filter: brightness(1.1); transform: translateY(-1px); }
+      .bd-tl-bar.done { opacity: 0.6; }
+      .bd-tl-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 64px 24px; color: var(--color-text-faint); }
+      .bd-tl-empty p { max-width: 360px; margin: 0; font-size: 13.5px; line-height: 1.6; }
+      .bd-tl-scroll::-webkit-scrollbar { height: 9px; }
+      .bd-tl-scroll::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: 999px; }
 
       /* ── Responsivt ── */
       @media (max-width: 900px) {
