@@ -2045,15 +2045,23 @@ function BoardStyles() {
       /* Ljust tema: glaset blir genomskinligt vitt över den ljusa skärmen,
          precis som Track3r:s Mat-flik. data-theme sitter på <html>. */
       [data-theme="light"] {
-        --glass:      rgba(255,255,255,0.42);
-        --glass-2:    rgba(255,255,255,0.55);
-        --glass-brd:  rgba(255,255,255,0.75);
-        --glass-blur: blur(30px) saturate(160%);
+        --glass:      rgba(255,255,255,0.5);
+        --glass-2:    rgba(255,255,255,0.62);
+        --glass-brd:  rgba(255,255,255,0.9);
+        --glass-blur: blur(30px) saturate(165%);
         --glass-hi:   inset 0 1px 0 rgba(255,255,255,0.95);
-        --glass-solid: rgba(255,255,255,0.8);
-        --row-line: rgba(20,40,60,0.07);
-        --empty-brd:  rgba(20,40,60,0.12);
-        --empty-fg:   rgba(20,40,60,0.34);
+        --glass-solid: rgba(255,252,248,0.84);
+        --row-line: rgba(120,70,40,0.08);
+        --empty-brd:  rgba(120,70,40,0.14);
+        --empty-fg:   rgba(90,70,55,0.42);
+      }
+      /* Todo-scopad varm grund så glaset läser mot något — inte kritvitt.
+         Bara todo-sidan; övriga appars ljusa tema är orört. */
+      [data-theme="light"] .board-root {
+        --color-bg:        #f3ede4;
+        --color-surface:   #fbf8f3;
+        --color-surface-2: #efe7db;
+        --color-surface-3: #e7ddce;
       }
       .board-root {
         min-height: 100vh;
@@ -2077,9 +2085,10 @@ function BoardStyles() {
       }
       [data-theme="light"] .board-root::before {
         background:
-          radial-gradient(60% 50% at 82% 0%, rgba(255,88,45,0.07), transparent 70%),
-          radial-gradient(55% 50% at 8% 12%, rgba(30,128,119,0.06), transparent 68%),
-          radial-gradient(70% 60% at 50% 108%, rgba(124,92,224,0.05), transparent 72%);
+          radial-gradient(58% 48% at 84% -4%, rgba(255,110,55,0.16), transparent 66%),
+          radial-gradient(52% 52% at 6% 14%, rgba(40,170,158,0.13), transparent 64%),
+          radial-gradient(60% 55% at 48% 112%, rgba(255,172,70,0.15), transparent 70%),
+          radial-gradient(42% 40% at 70% 60%, rgba(124,92,224,0.06), transparent 72%);
       }
       .board-root > * { position: relative; z-index: 1; }
       .board-root *, .board-root *::before, .board-root *::after { box-sizing: border-box; }
