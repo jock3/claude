@@ -277,8 +277,8 @@ const Logo = () => (
     <path d="M232.17,3c7.02-7.42,19.19.1,15.62,9.67-9.95,26.68-27.78,61.43-58.57,88.15-55.09,47.8-70.9,80.05-80.29,122.79-.83,3.78-4.33,6.37-8.19,6.09l-13.61-.98c-5.61-.4-9.92-5.11-9.82-10.73.52-29.28,13.8-103.04,70.2-141.85C183.44,51.41,212.65,23.65,232.17,3Z"/>
     <path d="M74.3,234.65s-22.36,17.42-24.83,29.76c-1.77,8.84,31.32,11.98,50.2,13.05,6.54.37,11.77-5.35,10.78-11.82-1.08-7.08-2.45-16.17-3.61-24.42-2.35-16.66-32.55-6.56-32.55-6.56Z"/>
     <path d="M51.87,290.51s-38.3,9.33-38.3,64.83,12.33,99.9-13.57,145.54c0,0,96.6-69.22,110.75-161.62,3.8-24.79-9.47-49.48-32.56-59.27-8.67-3.68-14.96,9.96-26.32,10.52Z"/>
-    <text style={{ fontSize: '193.17px', fontFamily: 'Montserrat-Bold, Montserrat', fontWeight: 700, opacity: 0.91 }} transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
-    <text style={{ fontSize: '189.12px', fontFamily: 'Montserrat-Bold, Montserrat', fontWeight: 700, opacity: 0.91 }} transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
+    <text style={{ fontSize: '193.17px', fontFamily: 'REM, system-ui, sans-serif', fontWeight: 700, opacity: 0.91 }} transform="translate(144.86 300.16)"><tspan x="0" y="0">0</tspan><tspan x="130" y="0">100</tspan></text>
+    <text style={{ fontSize: '189.12px', fontFamily: 'REM, system-ui, sans-serif', fontWeight: 700, opacity: 0.91 }} transform="translate(259.2 447.19) scale(1.04 1)"><tspan x="0" y="0">0</tspan><tspan x="127.28" y="0">111</tspan></text>
   </svg>
 );
 
@@ -2015,30 +2015,65 @@ function BoardStyles() {
   return (
     <style>{`
       /* ── Skal ── */
+      /* Design-tokens på :root — inte .board-root — så portalade popovers
+         (renderas till document.body, utanför .board-root) ärver dem också.
+         Detta style-block laddas bara på todo-sidan, så :root är säkert. */
+      :root {
+        /* REM är Track3r-ansiktet — hela tavlan byter till det, utom
+           handstämpeln (Patrick Hand), som är avsiktligt handritad. */
+        --font-body:    'REM', system-ui, -apple-system, "Helvetica Neue", sans-serif;
+        --font-display: 'REM', system-ui, -apple-system, sans-serif;
+        --font-tech:    'REM', system-ui, -apple-system, sans-serif;
+        --shadow-soft:  0 1px 2px rgba(0,0,0,0.16), 0 10px 30px -10px rgba(0,0,0,0.34);
+        --shadow-float: 0 2px 6px rgba(0,0,0,0.18), 0 22px 60px -14px rgba(0,0,0,0.5);
+        --shadow-glow:  0 0 0 1px rgba(255,88,45,0.30), 0 8px 36px -6px rgba(255,88,45,0.28);
+        --grad-accent:  linear-gradient(135deg, #FF7A45 0%, var(--color-accent) 55%, #E8431B 100%);
+        /* Track3r-glasreceptet: frostat, genomskinligt, mjuk topphögdager. */
+        --glass:      rgba(255,255,255,0.035);
+        --glass-2:    rgba(255,255,255,0.075);
+        --glass-brd:  rgba(255,255,255,0.13);
+        --glass-blur: blur(34px) saturate(180%);
+        --glass-hi:   inset 0 1px 0 rgba(255,255,255,0.26);
+        --glass-solid: rgba(18,20,24,0.74);
+        --empty-brd:  rgba(255,255,255,0.09);
+        --empty-fg:   rgba(255,255,255,0.30);
+        --r-card: 28px;
+        --r-pop: 20px;
+        --r-ctl: 14px;
+        --row-line: rgba(255,255,255,0.05);
+      }
+      /* Ljust tema: glaset blir genomskinligt vitt över den ljusa skärmen,
+         precis som Track3r:s Mat-flik. data-theme sitter på <html>. */
+      [data-theme="light"] {
+        --glass:      rgba(255,255,255,0.42);
+        --glass-2:    rgba(255,255,255,0.55);
+        --glass-brd:  rgba(255,255,255,0.75);
+        --glass-blur: blur(30px) saturate(160%);
+        --glass-hi:   inset 0 1px 0 rgba(255,255,255,0.95);
+        --glass-solid: rgba(255,255,255,0.8);
+        --row-line: rgba(20,40,60,0.07);
+        --empty-brd:  rgba(20,40,60,0.12);
+        --empty-fg:   rgba(20,40,60,0.34);
+      }
       .board-root {
         min-height: 100vh;
         background: var(--color-bg);
         color: var(--color-text);
-        font-family: var(--font-body, "Montserrat", sans-serif);
+        font-family: var(--font-body);
         -webkit-font-smoothing: antialiased;
         position: relative;
         --row-h: 38px;
         --rail-w: 4px;
-        /* High-tech display-typsnitt + mjuka lager-skuggor */
-        --font-tech: "Space Grotesk", var(--font-display, "Montserrat"), sans-serif;
-        --shadow-soft:  0 1px 2px rgba(0,0,0,0.16), 0 8px 24px -8px rgba(0,0,0,0.30);
-        --shadow-float: 0 2px 6px rgba(0,0,0,0.18), 0 18px 50px -12px rgba(0,0,0,0.45);
-        --shadow-glow:  0 0 0 1px rgba(255,88,45,0.30), 0 8px 36px -6px rgba(255,88,45,0.28);
-        --grad-accent:  linear-gradient(135deg, #FF7A45 0%, var(--color-accent) 55%, #E8431B 100%);
       }
       /* Ambient bakgrundsglow — fast bakom hela tavlan */
       .board-root::before {
         content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(60% 50% at 82% 0%, rgba(255,88,45,0.10), transparent 70%),
-          radial-gradient(55% 50% at 8% 12%, rgba(58,165,156,0.08), transparent 68%),
-          radial-gradient(70% 60% at 50% 108%, rgba(124,92,224,0.07), transparent 72%);
-        animation: bd-ambient 22s ease-in-out infinite alternate;
+          radial-gradient(58% 48% at 84% -4%, rgba(255,88,45,0.22), transparent 68%),
+          radial-gradient(52% 52% at 6% 14%, rgba(58,180,170,0.16), transparent 66%),
+          radial-gradient(60% 55% at 48% 112%, rgba(255,150,60,0.14), transparent 70%),
+          radial-gradient(45% 40% at 70% 60%, rgba(124,92,224,0.10), transparent 72%);
+        animation: bd-ambient 26s ease-in-out infinite alternate;
       }
       [data-theme="light"] .board-root::before {
         background:
@@ -2059,10 +2094,10 @@ function BoardStyles() {
       .tl-sidebar {
         position: fixed; left: 20px; top: 20px;
         width: 72px; border-radius: 9999px;
-        background: color-mix(in oklch, var(--color-surface) 88%, transparent);
-        backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1px solid var(--color-border);
-        box-shadow: 0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+        background: var(--glass-2);
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-brd);
+        box-shadow: 0 12px 34px rgba(0,0,0,0.28), var(--glass-hi);
         display: flex; flex-direction: column; align-items: center;
         gap: 4px; padding: 14px 0; z-index: 100;
         animation: bd-fade 450ms var(--ease-out) both;
@@ -2168,7 +2203,7 @@ function BoardStyles() {
       }
       .bd-title h1 {
         margin: 0; font-family: var(--font-tech);
-        font-size: clamp(26px, 3.4vw, 34px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1;
+        font-size: clamp(30px, 4.2vw, 44px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.0;
         background: linear-gradient(180deg, var(--color-text) 30%, color-mix(in srgb, var(--color-text) 62%, var(--color-accent)) 130%);
         -webkit-background-clip: text; background-clip: text;
         -webkit-text-fill-color: transparent; color: transparent;
@@ -2191,7 +2226,7 @@ function BoardStyles() {
       /* ── Knappar ── */
       .bd-btn {
         display: inline-flex; align-items: center; gap: 7px;
-        border: 1px solid transparent; border-radius: 8px;
+        border: 1px solid transparent; border-radius: var(--r-ctl);
         font-size: 13px; font-weight: 600; padding: 8px 13px;
         cursor: pointer; white-space: nowrap;
         transition: background 150ms var(--ease-out), color 150ms var(--ease-out),
@@ -2213,7 +2248,7 @@ function BoardStyles() {
       .bd-btn.primary:hover::before { transform: translateX(120%); }
       .bd-btn.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 22px rgba(255,88,45,0.45), inset 0 1px 0 rgba(255,255,255,0.3); }
       .bd-btn.primary:active { transform: translateY(0); }
-      .bd-btn.primary.lg { font-size: 14px; padding: 11px 18px; border-radius: 10px; }
+      .bd-btn.primary.lg { font-size: 14px; padding: 11px 18px; border-radius: 14px; }
       .bd-btn.ghost {
         background: transparent; color: var(--color-text-muted);
         border-color: transparent;
@@ -2259,8 +2294,9 @@ function BoardStyles() {
       .bd-search { display: inline-flex; align-items: center; }
       .bd-search-input {
         width: 200px; padding: 7px 11px; margin-left: 2px;
-        border: 1px solid var(--color-border); border-radius: 8px;
-        background: var(--color-surface); color: var(--color-text);
+        border: 1px solid var(--glass-brd); border-radius: var(--r-ctl);
+        background: var(--glass); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        color: var(--color-text);
         font-family: inherit; font-size: 13px;
         animation: bd-grow 200ms var(--ease-out) both;
       }
@@ -2269,11 +2305,11 @@ function BoardStyles() {
       /* ── Popover ── */
       .bd-pop {
         position: fixed; z-index: 600;
-        background: color-mix(in oklch, var(--color-surface) 85%, transparent);
-        backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
-        border: 1px solid color-mix(in srgb, var(--color-border-strong) 60%, transparent);
-        border-radius: 13px; padding: 6px;
-        box-shadow: 0 24px 60px -16px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
+        background: var(--glass-solid);
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-brd);
+        border-radius: var(--r-pop); padding: 6px;
+        box-shadow: 0 24px 60px -16px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.2), var(--glass-hi);
         animation: bd-pop-in 170ms var(--ease-spring) both;
       }
       .bd-pop-list { display: flex; flex-direction: column; gap: 1px; max-height: 320px; overflow-y: auto; }
@@ -2317,15 +2353,15 @@ function BoardStyles() {
       .bd-filter-pill.on { background: var(--pill); color: #fff; }
 
       /* ── Grupper ── */
-      .bd-board { display: flex; flex-direction: column; gap: 22px; overflow-x: auto; padding: 2px 2px 8px; }
+      .bd-board { display: flex; flex-direction: column; gap: 26px; overflow-x: auto; padding: 2px 2px 8px; }
       .bd-group {
         min-width: 1010px;
-        background: color-mix(in oklch, var(--color-surface) 82%, transparent);
-        backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
-        border: 1px solid var(--color-border);
-        border-radius: 16px;
+        background: var(--glass);
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-brd);
+        border-radius: var(--r-card);
         overflow: hidden;
-        box-shadow: var(--shadow-soft);
+        box-shadow: var(--shadow-soft), var(--glass-hi);
         animation: bd-rise 420ms var(--ease-out) both;
         transition: box-shadow 300ms var(--ease-out), border-color 300ms var(--ease-out), transform 300ms var(--ease-out);
       }
@@ -2336,7 +2372,7 @@ function BoardStyles() {
       }
       .bd-group-head {
         display: flex; align-items: center; gap: 10px;
-        padding: 12px 14px 12px 12px;
+        padding: 15px 16px 14px 14px;
         border-left: var(--rail-w) solid var(--gcolor);
         position: relative;
         background: linear-gradient(180deg, color-mix(in srgb, var(--gcolor) 9%, transparent), transparent 70%);
@@ -2358,7 +2394,7 @@ function BoardStyles() {
       .bd-collapse.closed { transform: rotate(-90deg); }
       .bd-group-title {
         background: none; border: 0; padding: 3px 7px; margin-left: -5px;
-        font-family: var(--font-display); font-size: 16.5px; font-weight: 700;
+        font-family: var(--font-display); font-size: 18px; font-weight: 900; letter-spacing: -0.02em;
         color: var(--gcolor); cursor: pointer; border-radius: 7px;
         max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         transition: background 140ms;
@@ -2397,7 +2433,7 @@ function BoardStyles() {
         display: grid; align-items: center;
         min-height: var(--row-h);
         border-left: var(--rail-w) solid var(--rail);
-        border-bottom: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+        border-bottom: 1px solid var(--row-line);
         position: relative;
         background: transparent;
         transition: background 130ms var(--ease-out);
@@ -2415,8 +2451,8 @@ function BoardStyles() {
       .bd-drop-end { height: 2.5px; background: var(--color-accent); box-shadow: 0 0 8px rgba(255,88,45,0.6); }
       .bd-row.header {
         min-height: 34px;
-        background: color-mix(in srgb, var(--color-surface-2) 55%, var(--color-surface));
-        border-bottom: 1px solid var(--color-border);
+        background: transparent;
+        border-bottom: 1px solid var(--row-line);
       }
       .bd-row.note {
         display: flex; padding: 10px 14px; font-size: 12.5px; color: var(--color-text-faint); font-style: italic;
@@ -2425,7 +2461,7 @@ function BoardStyles() {
       .bd-cell {
         display: flex; align-items: center; gap: 6px;
         padding: 0 8px; min-width: 0; height: 100%;
-        border-right: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
+        border-right: 0;
         position: relative;
       }
       .bd-cell:last-child, .bd-cell.end { border-right: 0; justify-content: center; }
@@ -2508,7 +2544,7 @@ function BoardStyles() {
 
       /* ── Cellinnehåll ── */
       .bd-status {
-        width: 100%; height: 30px; border: 0; border-radius: 7px;
+        width: 100%; height: 30px; border: 0; border-radius: 9px;
         color: #fff; font-family: inherit; font-size: 12px; font-weight: 700;
         cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,0.22);
         box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -8px 14px -8px rgba(0,0,0,0.35);
@@ -2537,15 +2573,15 @@ function BoardStyles() {
         transition: filter 140ms, transform 140ms var(--ease-out), box-shadow 180ms;
       }
       .bd-prio:hover { filter: brightness(1.1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 10px rgba(0,0,0,0.22); }
-      .bd-prio.empty { background: transparent; border: 1.5px dashed var(--color-border-strong); color: var(--color-text-faint); text-shadow: none; }
+      .bd-prio.empty { background: transparent; border: 1px dashed var(--empty-brd); color: var(--empty-fg); text-shadow: none; }
       .bd-prio.empty:hover { border-color: var(--color-text-muted); color: var(--color-text-muted); }
       .bd-dash { font-weight: 600; }
       .bd-person { background: none; border: 0; padding: 2px; cursor: pointer; border-radius: 50%; display: inline-flex; }
       .bd-person:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 1px; }
       .bd-person-empty {
         display: inline-flex; align-items: center; justify-content: center;
-        border: 1.5px dashed var(--color-border-strong); border-radius: 50%;
-        color: var(--color-text-faint); transition: border-color 140ms, color 140ms;
+        border: 1px dashed var(--empty-brd); border-radius: 50%;
+        color: var(--empty-fg); transition: border-color 140ms, color 140ms;
       }
       .bd-person:hover .bd-person-empty { border-color: var(--color-text-muted); color: var(--color-text-muted); }
       .bd-avatar {
@@ -2568,7 +2604,7 @@ function BoardStyles() {
         cursor: pointer; transition: background 140ms;
       }
       .bd-date:hover { background: var(--color-surface-3); }
-      .bd-date.empty { color: var(--color-text-faint); }
+      .bd-date.empty { color: var(--empty-fg); }
       .bd-date.empty span { opacity: 0; transition: opacity 140ms; }
       .bd-date.empty:hover span { opacity: 1; }
       .bd-date.overdue { color: var(--color-accent); }
@@ -2591,8 +2627,8 @@ function BoardStyles() {
       .bd-timeline:hover { filter: brightness(1.1); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 4px 14px rgba(0,0,0,0.28); }
       .bd-timeline:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
       .bd-timeline.empty {
-        background: transparent; border: 1.5px dashed var(--color-border-strong);
-        color: var(--color-text-faint);
+        background: transparent; border: 1px dashed var(--empty-brd);
+        color: var(--empty-fg);
       }
       .bd-timeline.empty:hover { border-color: var(--color-text-muted); color: var(--color-text-muted); filter: none; box-shadow: none; }
       .bd-timeline.mini { max-width: 156px; cursor: default; }
@@ -2673,11 +2709,11 @@ function BoardStyles() {
       }
       .bd-modal {
         width: 660px; max-width: 100%;
-        background: color-mix(in oklch, var(--color-surface) 88%, transparent);
-        backdrop-filter: blur(28px) saturate(1.4); -webkit-backdrop-filter: blur(28px) saturate(1.4);
-        border: 1px solid color-mix(in srgb, var(--color-border-strong) 55%, transparent);
-        border-radius: 20px;
-        box-shadow: 0 40px 90px -20px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
+        background: var(--glass-solid);
+        backdrop-filter: blur(30px) saturate(1.5); -webkit-backdrop-filter: blur(30px) saturate(1.5);
+        border: 1px solid var(--glass-brd);
+        border-radius: 24px;
+        box-shadow: 0 40px 90px -20px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.3), var(--glass-hi);
         animation: bd-modal-in 280ms var(--ease-spring) both;
       }
       .bd-modal.narrow { width: 520px; }
@@ -2685,7 +2721,7 @@ function BoardStyles() {
         display: flex; align-items: flex-start; gap: 13px;
         padding: 20px 20px 14px; border-bottom: 1px solid var(--color-border);
       }
-      .bd-modal-head h2 { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+      .bd-modal-head h2 { margin: 0; font-family: var(--font-display); font-size: 19px; font-weight: 900; letter-spacing: -0.03em; }
       .bd-modal-head p { margin: 3px 0 0; font-size: 12.5px; color: var(--color-text-muted); }
       .bd-modal-head > div { flex: 1; }
       .bd-modal-zap {
@@ -2698,7 +2734,7 @@ function BoardStyles() {
       .bd-modal-body { padding: 14px 20px 20px; display: flex; flex-direction: column; gap: 10px; }
       .bd-recipe {
         display: flex; align-items: center; gap: 12px;
-        padding: 13px 14px; border: 1px solid var(--color-border); border-radius: 11px;
+        padding: 13px 14px; border: 1px solid var(--color-border); border-radius: 16px;
         background: var(--color-bg); opacity: 0.65;
         transition: opacity 200ms var(--ease-out), border-color 200ms, box-shadow 250ms;
       }
@@ -2720,7 +2756,7 @@ function BoardStyles() {
       }
       .bd-auto-fixed { cursor: default; }
       .bd-auto-select:hover { filter: brightness(1.1); }
-      .bd-auto-select.unset { background: transparent; border: 1.5px dashed var(--color-border-strong); color: var(--color-text-muted); text-shadow: none; }
+      .bd-auto-select.unset { background: transparent; border: 1px dashed var(--empty-brd); color: var(--empty-fg); text-shadow: none; }
       .bd-auto-select select { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
       .bd-auto-select.group { max-width: 200px; }
       .bd-switch {
@@ -2767,7 +2803,7 @@ function BoardStyles() {
       /* ── Arkiv ── */
       .bd-archive-row {
         display: flex; align-items: center; gap: 12px;
-        padding: 12px 13px; border: 1px solid var(--color-border); border-radius: 11px;
+        padding: 12px 13px; border: 1px solid var(--color-border); border-radius: 16px;
         background: var(--color-bg);
       }
       .bd-archive-meta { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -2815,7 +2851,7 @@ function BoardStyles() {
         display: flex; flex-direction: column; align-items: center; text-align: center;
         padding: 70px 20px 40px; animation: bd-rise 450ms var(--ease-out) both;
       }
-      .bd-empty h2 { margin: 22px 0 8px; font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
+      .bd-empty h2 { margin: 22px 0 8px; font-family: var(--font-display); font-size: 22px; font-weight: 900; letter-spacing: -0.03em; }
       .bd-empty p { margin: 0 0 22px; max-width: 380px; font-size: 13.5px; line-height: 1.6; color: var(--color-text-muted); }
       .bd-empty-board { display: flex; gap: 9px; }
       .bd-empty-board span {
