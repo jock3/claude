@@ -543,6 +543,11 @@ export default function KampanjLabb() {
 
       if (!userName) { window.location.replace('../../'); return; }
 
+      // Owner-scoped DB: no session means every query is empty. Bounce to the
+      // hub to sign in rather than showing a blank, logged-in-looking screen.
+      const session = await db.currentSession();
+      if (!session) { window.location.replace('../../'); return; }
+
       setActiveUser(userName);
 
       const cachedId   = localStorage.getItem(SESSION_ID_KEY);
@@ -692,7 +697,6 @@ export default function KampanjLabb() {
                   <li role="none"><a href="../todo/" role="menuitem">Todo</a></li>
                   <li role="none"><a href="../kampanj/" role="menuitem" className="active">Kampanjplanerare</a></li>
                   <li role="none"><a href="../seo-audit/" role="menuitem">SEO & GEO-granskning</a></li>
-                  <li role="none"><a href="../trackr/" role="menuitem">Track3r</a></li>
                 </ul>
               </li>
             </ul>
