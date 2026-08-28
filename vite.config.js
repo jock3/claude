@@ -13,7 +13,6 @@ export default defineConfig({
         'portfolio-case1': resolve(__dirname, 'apps/portfolio/case1/index.html'),
         'portfolio-case1-marke': resolve(__dirname, 'apps/portfolio/case1/marke/index.html'),
         'portfolio-case6': resolve(__dirname, 'apps/portfolio/case6/index.html'),
-        todo: resolve(__dirname, 'apps/todo/index.html'),
         kampanj: resolve(__dirname, 'apps/kampanj/index.html'),
         'seo-audit': resolve(__dirname, 'apps/seo-audit/index.html'),
         'brus-fx': resolve(__dirname, 'apps/brus-fx/index.html'),

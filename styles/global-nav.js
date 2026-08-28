@@ -21,7 +21,6 @@
   var apps = [
     { rel: '',                  cls: 'ib-home',      label: 'Hem',       icon: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>' },
     { rel: 'apps/portfolio/',   cls: 'ib-portfolio', label: 'Portfolio', icon: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>' },
-    { rel: 'apps/todo/',        cls: 'ib-todo',      label: 'Todo',      icon: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/>' },
     { rel: 'apps/kampanj/',     cls: 'ib-kampanj',   label: 'Kampanj',   icon: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>' },
     { rel: 'apps/seo-audit/',   cls: 'ib-seo',       label: 'SEO',       icon: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>' },
     { rel: 'apps/brus-fx/',     cls: 'ib-brus',      label: 'Brus',      icon: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 8h.01"/><path d="M16 8h.01"/><path d="M12 12h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/>' },
@@ -69,7 +68,6 @@
     '.g-active .g-label{color:#22D3EE!important;font-weight:600}',
     '.ib-home     {background:linear-gradient(135deg,rgba(255,88,45,.22),rgba(255,120,55,.32));border:1px solid rgba(255,88,45,.42);color:#FF7040}',
     '.ib-portfolio{background:linear-gradient(135deg,rgba(34,211,238,.14),rgba(6,182,212,.22));border:1px solid rgba(34,211,238,.28);color:#22D3EE}',
-    '.ib-todo     {background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(22,163,74,.25));border:1px solid rgba(34,197,94,.26);color:#4ADE80}',
     '.ib-kampanj  {background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(251,191,36,.22));border:1px solid rgba(245,158,11,.30);color:#FCD34D}',
     '.ib-seo      {background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(129,140,248,.23));border:1px solid rgba(99,102,241,.28);color:#A5B4FC}',
     '.ib-brus     {background:linear-gradient(135deg,rgba(214,255,61,.12),rgba(184,232,50,.18));border:1px solid rgba(214,255,61,.28);color:#D6FF3D}',
