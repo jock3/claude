@@ -608,6 +608,7 @@
         var code = e && e.code;
         showError(
           code === 'wrong_pin' ? 'Fel PIN-kod.' :
+          code === 'locked' ? 'För många försök. Vänta en stund och försök igen.' :
           code === 'invalid_pin' ? 'Ange en 4-siffrig PIN-kod.' :
           code === 'invalid_name' ? 'Ogiltigt namn.' :
           'Kunde inte logga in. Kontrollera nätet och försök igen.'
